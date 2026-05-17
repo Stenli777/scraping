@@ -5,28 +5,34 @@ from app.core.config import get_settings
 
 @lru_cache
 def is_hermes_enabled() -> bool:
-  return get_settings().enable_hermes
+    return get_settings().enable_hermes
 
 
 @lru_cache
 def is_auto_publish_enabled() -> bool:
-  return get_settings().enable_auto_publish
+    return get_settings().enable_auto_publish
 
 
 @lru_cache
 def is_seo_enrich_enabled() -> bool:
-  return get_settings().enable_seo_enrich
+    return get_settings().enable_seo_enrich
 
 
 @lru_cache
 def is_llm_review_enabled() -> bool:
-  return get_settings().enable_llm_review
+    return get_settings().enable_llm_review
+
+
+@lru_cache
+def is_project_profiles_enabled() -> bool:
+    return get_settings().enable_project_profiles
 
 
 def all_flags() -> dict[str, bool]:
-  return {
-    "ENABLE_HERMES": is_hermes_enabled(),
-    "ENABLE_AUTO_PUBLISH": is_auto_publish_enabled(),
-    "ENABLE_SEO_ENRICH": is_seo_enrich_enabled(),
-    "ENABLE_LLM_REVIEW": is_llm_review_enabled(),
-  }
+    return {
+        "ENABLE_HERMES": is_hermes_enabled(),
+        "ENABLE_AUTO_PUBLISH": is_auto_publish_enabled(),
+        "ENABLE_SEO_ENRICH": is_seo_enrich_enabled(),
+        "ENABLE_LLM_REVIEW": is_llm_review_enabled(),
+        "ENABLE_PROJECT_PROFILES": is_project_profiles_enabled(),
+    }

@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     enable_auto_publish: bool = False
     enable_seo_enrich: bool = True
     enable_llm_review: bool = True
+    enable_project_profiles: bool = True
 
     crmflow24_export_webhook_url: str = ""
     crmflow24_export_api_key: str = ""

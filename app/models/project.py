@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, func
+from sqlalchemy import Boolean, DateTime, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -17,6 +18,17 @@ class Project(Base):
     rewrite_profile: Mapped[str] = mapped_column(String(64), default="default")
     seo_profile: Mapped[str] = mapped_column(String(64), default="default")
     publish_mode: Mapped[str] = mapped_column(String(32), default="draft")
+
+    content_rules_md: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rewrite_instructions_md: Mapped[str | None] = mapped_column(Text, nullable=True)
+    seo_instructions_md: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review_instructions_md: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tone_of_voice: Mapped[str | None] = mapped_column(Text, nullable=True)
+    target_audience: Mapped[str | None] = mapped_column(Text, nullable=True)
+    allowed_topics_json: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    blocked_topics_json: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    default_language: Mapped[str] = mapped_column(String(16), default="ru")
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
