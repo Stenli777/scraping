@@ -35,6 +35,14 @@ class PublishRun(Base):
     draft_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     payload_version: Mapped[str] = mapped_column(String(32), default="article_v1")
     force_used: Mapped[bool] = mapped_column(Boolean, default=False)
+    retry_parent_publish_run_id: Mapped[int | None] = mapped_column(
+        ForeignKey("publish_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_retry_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    response_schema_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    remote_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

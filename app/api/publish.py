@@ -9,7 +9,13 @@ from app.models.publish_run import PublishRun
 from app.models.publish_target import PublishTarget
 from app.publishers.exceptions import PublishValidationError
 from app.services.publish_readiness_service import get_publish_readiness
+from app.services.publish_retry_service import (
+    get_retry_chain,
+    is_retryable_publish_run,
+    retry_publish_run,
+)
 from app.services.publish_service import publish_draft_for_document
+from app.services.publish_target_health_service import check_all_publish_targets_health
 
 router = APIRouter(tags=["publish"])
 
@@ -18,6 +24,35 @@ class PublishDraftRequest(BaseModel):
     publish_target_id: int | None = None
     dry_run: bool | None = None
     force: bool = False
+
+
+def _serialize_publish_run(db: Session, r: PublishRun) -> dict:
+    rev_no = None
+    if r.document_revision_id:
+        rev = db.get(DocumentRevision, r.document_revision_id)
+        rev_no = rev.revision_number if rev else None
+    return {
+        "id": r.id,
+        "publish_target_id": r.publish_target_id,
+        "document_revision_id": r.document_revision_id,
+        "revision_number": rev_no,
+        "status": r.status,
+        "dry_run": r.dry_run,
+        "force_used": r.force_used,
+        "payload_version": r.payload_version,
+        "response_schema_version": r.response_schema_version,
+        "response_status_code": r.response_status_code,
+        "external_id": r.external_id,
+        "draft_url": r.draft_url,
+        "remote_status": r.remote_status,
+        "error_message": r.error_message,
+        "retry_parent_publish_run_id": r.retry_parent_publish_run_id,
+        "retry_count": r.retry_count,
+        "next_retry_at": r.next_retry_at.isoformat() if r.next_retry_at else None,
+        "last_retry_error": r.last_retry_error,
+        "retryable": is_retryable_publish_run(r),
+        "created_at": r.created_at.isoformat() if r.created_at else None,
+    }
 
 
 @router.get("/api/publish-targets")
@@ -45,6 +80,52 @@ def list_publish_targets(db: Session = Depends(get_db)):
     }
 
 
+@router.get("/api/publish-targets/health")
+def publish_targets_health(db: Session = Depends(get_db)):
+    return check_all_publish_targets_health(db)
+
+
+@router.get("/api/publish-runs/{publish_run_id}")
+def get_publish_run(publish_run_id: int, db: Session = Depends(get_db)):
+    run = db.get(PublishRun, publish_run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Publish run not found")
+    chain = get_retry_chain(db, publish_run_id)
+    return {
+        "run": _serialize_publish_run(db, run),
+        "retry_chain": [_serialize_publish_run(db, c) for c in chain],
+    }
+
+
+@router.post("/api/publish-runs/{publish_run_id}/retry")
+def api_retry_publish_run(publish_run_id: int, db: Session = Depends(get_db)):
+    try:
+        result = retry_publish_run(db, publish_run_id)
+    except PublishValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    if not result.success and not result.new_publish_run_id:
+        raise HTTPException(
+            status_code=400,
+            detail=result.error_message or "Retry not allowed",
+        )
+
+    chain = []
+    if result.new_publish_run_id:
+        chain = [
+            _serialize_publish_run(db, c)
+            for c in get_retry_chain(db, result.new_publish_run_id)
+        ]
+
+    return {
+        "success": result.success,
+        "parent_publish_run_id": result.parent_publish_run_id,
+        "new_publish_run_id": result.new_publish_run_id,
+        "error_message": result.error_message,
+        "retry_chain": chain,
+    }
+
+
 @router.get("/api/documents/{document_id}/publish-runs")
 def list_document_publish_runs(document_id: int, db: Session = Depends(get_db)):
     document = db.get(ParsedDocument, document_id)
@@ -58,30 +139,10 @@ def list_document_publish_runs(document_id: int, db: Session = Depends(get_db)):
         .limit(50)
         .all()
     )
-    items = []
-    for r in runs:
-        rev_no = None
-        if r.document_revision_id:
-            rev = db.get(DocumentRevision, r.document_revision_id)
-            rev_no = rev.revision_number if rev else None
-        items.append(
-            {
-                "id": r.id,
-                "publish_target_id": r.publish_target_id,
-                "document_revision_id": r.document_revision_id,
-                "revision_number": rev_no,
-                "status": r.status,
-                "dry_run": r.dry_run,
-                "force_used": r.force_used,
-                "payload_version": r.payload_version,
-                "response_status_code": r.response_status_code,
-                "external_id": r.external_id,
-                "draft_url": r.draft_url,
-                "error_message": r.error_message,
-                "created_at": r.created_at.isoformat() if r.created_at else None,
-            }
-        )
-    return {"document_id": document_id, "runs": items}
+    return {
+        "document_id": document_id,
+        "runs": [_serialize_publish_run(db, r) for r in runs],
+    }
 
 
 @router.post("/api/documents/{document_id}/publish-draft")
