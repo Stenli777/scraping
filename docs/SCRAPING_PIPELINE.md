@@ -2,7 +2,45 @@
 
 ## Статусы
 
-`queued` → `fetching` → `parsing` → `cleaning` → `rewriting` → `saving` → `done` | `error`
+`queued` → `fetching` → `parsing` → `cleaning` → `rewriting` → `saving` → `done`
+
+При ошибке rewrite (CLIProxy недоступен и т.п.): `failed_retryable` — raw/clean сохранены, `rewritten_text` пустой или прежний.
+
+Критическая ошибка fetch/parse: `error`.
+
+## Rewrite providers
+
+| `REWRITER_PROVIDER` | Поведение |
+|---------------------|-----------|
+| `mock` | Dev/fallback: префикс `[MOCK REWRITE]` |
+| `cliproxy` | LLM layer → CLIProxyAPI OpenAI `/v1/chat/completions` |
+
+Env (см. `.env.example`):
+
+- `REWRITE_MODEL_ALIAS=local/rewrite-main` — обязателен для cliproxy
+- `REVIEW_MODEL_ALIAS`, `SEO_MODEL_ALIAS` — для будущих стадий review/SEO
+- `CLIPROXYAPI_BASE_URL`, `CLIPROXYAPI_API_KEY`
+
+Prompt template: `rewrite_article_v1` (`app/llm/prompts.py`). TODO: перенос в DB `prompt_templates`.
+
+### Production switch
+
+```bash
+# включить CLIProxy rewrite
+REWRITER_PROVIDER=cliproxy
+REWRITE_MODEL_ALIAS=local/rewrite-main
+CLIPROXYAPI_BASE_URL=http://127.0.0.1:8317
+# systemctl restart scrap-api scrap-worker
+
+# откат на mock
+REWRITER_PROVIDER=mock
+```
+
+После смены env: `systemctl restart scrap-api scrap-worker`.
+
+### Rerun rewrite
+
+Без повторного fetch: admin кнопка или `POST /api/documents/{id}/rerun-rewrite`.
 
 ## Выбор парсера (по домену)
 
