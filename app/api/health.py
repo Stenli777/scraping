@@ -6,7 +6,9 @@ from fastapi import APIRouter
 from sqlalchemy import text
 
 from app.core.config import get_settings
+from app.core.feature_flags import is_hermes_enabled
 from app.db.session import SessionLocal
+from app.hermes.health import check_hermes_health
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
@@ -18,7 +20,6 @@ def health_ready():
     checks: dict[str, str] = {}
     ok = True
 
-    # Database
     try:
         with SessionLocal() as db:
             db.execute(text("SELECT 1"))
@@ -27,7 +28,6 @@ def health_ready():
         checks["database"] = f"error: {exc}"
         ok = False
 
-    # Worker (process-level: service expected running; lightweight signal)
     try:
         proc = subprocess.run(
             ["systemctl", "is-active", "scrap-worker"],
@@ -45,7 +45,6 @@ def health_ready():
         checks["worker"] = f"error: {type(exc).__name__}"
         ok = False
 
-    # CLIProxyAPI
     if settings.cliproxyapi_base_url:
         try:
             url = f"{settings.cliproxyapi_base_url.rstrip('/')}/v1/models"
@@ -65,8 +64,20 @@ def health_ready():
     else:
         checks["cliproxyapi"] = "not_configured"
 
+    hermes_checked = False
+    if is_hermes_enabled():
+        hermes_checked = True
+        h = check_hermes_health()
+        if h.available:
+            checks["hermes"] = "ok"
+        else:
+            checks["hermes"] = h.detail or h.status or "unavailable"
+            ok = False
+    else:
+        checks["hermes"] = "disabled"
+
     return {
         "status": "ready" if ok else "degraded",
         "checks": checks,
-        "hermes_checked": False,
+        "hermes_checked": hermes_checked,
     }
