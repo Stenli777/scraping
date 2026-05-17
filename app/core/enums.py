@@ -33,3 +33,11 @@ class LogLevel(str, Enum):
 class ExportType(str, Enum):
     JSON = "json"
     MARKDOWN = "markdown"
+
+
+class PublishRunStatus(str, Enum):
+    PENDING = "pending"
+    DRY_RUN = "dry_run"
+    SUCCESS = "success"
+    FAILED_RETRYABLE = "failed_retryable"
+    FAILED_TERMINAL = "failed_terminal"
