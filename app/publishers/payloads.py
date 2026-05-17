@@ -9,6 +9,9 @@ from app.models.review_result import ReviewResult
 from app.models.scraping_task import ScrapingTask
 from app.models.seo_metadata import SeoMetadata
 from app.publishers.exceptions import PublishValidationError
+from app.publishers.validators import PAYLOAD_VERSION
+
+PAYLOAD_VERSION_ARTICLE_V1 = PAYLOAD_VERSION
 
 
 def _extract_h1_from_markdown(text: str) -> str:
@@ -38,6 +41,7 @@ def build_article_v1_payload(
 
     meta = document.metadata_json or {}
     rewrite_meta = meta.get("rewrite") or {}
+    review_meta = meta.get("review") or {}
 
     title = (
         seo.h1
@@ -61,7 +65,12 @@ def build_article_v1_payload(
     else:
         faq_normalized = []
 
+    review_score = review.score if review else review_meta.get("score")
+    review_take = review.take if review else review_meta.get("take")
+    llm_alias = rewrite_meta.get("model_alias")
+
     return {
+        "payload_version": PAYLOAD_VERSION,
         "external_source": "scrap",
         "project_slug": project.slug,
         "status": publish_status,
@@ -85,7 +94,9 @@ def build_article_v1_payload(
         "meta": {
             "scrap_document_id": document.id,
             "scrap_task_id": task.id,
-            "review_score": review.score if review else None,
-            "llm_model_alias": rewrite_meta.get("model_alias"),
+            "review_score": review_score,
+            "review_take": review_take,
+            "llm_model_alias": llm_alias,
+            "publish_target_id": target.id,
         },
     }

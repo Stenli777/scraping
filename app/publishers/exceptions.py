@@ -20,3 +20,11 @@ class PublishClientError(PublishError):
 
 class PublishServerError(PublishError):
     """HTTP 5xx — retryable."""
+
+
+class PublishDuplicateError(PublishError):
+    """Successful publish already exists for document+target+payload version."""
+
+    def __init__(self, message: str, *, existing_publish_run_id: int | None = None):
+        super().__init__(message)
+        self.existing_publish_run_id = existing_publish_run_id
