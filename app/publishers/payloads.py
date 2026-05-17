@@ -31,6 +31,7 @@ def build_article_v1_payload(
     seo: SeoMetadata,
     review: ReviewResult | None = None,
     status: str | None = None,
+    media: dict | None = None,
 ) -> dict[str, Any]:
     if not document.rewritten_text or not document.rewritten_text.strip():
         raise PublishValidationError("rewritten_text is required for publish")
@@ -91,6 +92,7 @@ def build_article_v1_payload(
             "title": meta.get("extracted_title") or meta.get("title") or "",
             "content_hash": document.content_hash,
         },
+        "media": media or {"preview": None},
         "meta": {
             "scrap_document_id": document.id,
             "scrap_task_id": task.id,

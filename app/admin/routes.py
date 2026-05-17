@@ -53,6 +53,15 @@ from app.services.quality_service import get_latest_quality_score, run_quality_f
 from app.hermes.health import check_hermes_health
 from app.hermes.routing import list_hermes_aliases
 from app.models.hermes_run import HermesRun
+from app.models.media_asset import MediaAsset
+from app.models.media_job import MediaJob
+from app.services.media_service import (
+    approve_media,
+    list_document_media,
+    reject_media,
+    run_preview_generation,
+)
+from app.media.exceptions import MediaDisabledError
 from app.services.hermes_service import (
     get_latest_hermes_result,
     run_research_summary,
@@ -219,6 +228,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     quality_record = get_latest_quality_score(db, document_id)
     hermes_research = get_latest_hermes_result(db, document_id, "research_summary")
     hermes_critique = get_latest_hermes_result(db, document_id, "rewrite_critique")
+    media_assets = list_document_media(db, document_id) if all_flags().get("ENABLE_MEDIA_PIPELINE") else []
+    preview_media = next((a for a in media_assets if a.media_type == "preview"), None)
     timeline = build_document_timeline(db, document)
     revision_count = document.current_revision_number or 0
     return templates.TemplateResponse(
@@ -233,6 +244,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "quality_record": quality_record,
             "hermes_research": hermes_research,
             "hermes_critique": hermes_critique,
+            "media_assets": media_assets,
+            "preview_media": preview_media,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
             "publish_revision_numbers": publish_revision_numbers,
@@ -645,6 +658,61 @@ def admin_editorial_queue(request: Request, db: Session = Depends(get_db)):
             "title": "Editorial Queue",
         },
     )
+
+
+
+
+@router.get("/admin/media", response_class=HTMLResponse)
+def admin_media(request: Request, db: Session = Depends(get_db)):
+    assets = db.query(MediaAsset).order_by(MediaAsset.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "media.html",
+        {
+            "request": request,
+            "assets": assets,
+            "feature_flags": all_flags(),
+            "settings": get_settings(),
+            "title": "Media Assets",
+        },
+    )
+
+
+@router.get("/admin/media-jobs", response_class=HTMLResponse)
+def admin_media_jobs(request: Request, db: Session = Depends(get_db)):
+    jobs = db.query(MediaJob).order_by(MediaJob.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "media_jobs.html",
+        {"request": request, "jobs": jobs, "title": "Media Jobs"},
+    )
+
+
+@router.post("/admin/documents/{document_id}/media/generate-preview")
+def admin_media_generate_preview(document_id: int, db: Session = Depends(get_db)):
+    try:
+        run_preview_generation(db, document_id, provider="placeholder")
+    except (MediaDisabledError, ValueError) as exc:
+        pass
+    return RedirectResponse(f"/admin/documents/{document_id}#media", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/media/{media_asset_id}/approve")
+def admin_media_approve(document_id: int, media_asset_id: int, db: Session = Depends(get_db)):
+    try:
+        approve_media(db, media_asset_id)
+    except MediaDisabledError:
+        pass
+    return RedirectResponse(f"/admin/documents/{document_id}#media", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/media/{media_asset_id}/reject")
+def admin_media_reject(document_id: int, media_asset_id: int, db: Session = Depends(get_db)):
+    try:
+        reject_media(db, media_asset_id)
+    except MediaDisabledError:
+        pass
+    return RedirectResponse(f"/admin/documents/{document_id}#media", status_code=303)
 
 
 @router.get("/admin/llm/smoke", response_class=HTMLResponse)

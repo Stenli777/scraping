@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Pipeline: <strong>{{ 'enabled' if feature_flags.get('ENABLE_MEDIA_PIPELINE') else 'disabled' }}</strong>
+ · Generation: <strong>{{ 'enabled' if feature_flags.get('ENABLE_MEDIA_GENERATION') else 'disabled' }}</strong>
+ · Provider: <code>{{ settings.media_provider }}</code></p>
+<table class="table">
+  <thead><tr><th>ID</th><th>Doc</th><th>Rev</th><th>Type</th><th>Source</th><th>Status</th><th>Alt</th><th>Path</th><th>Updated</th></tr></thead>
+  <tbody>
+    {% for a in assets %}
+    <tr>
+      <td>#{{ a.id }}</td>
+      <td><a href="/admin/documents/{{ a.document_id }}">#{{ a.document_id }}</a></td>
+      <td>{{ a.revision_id or '—' }}</td>
+      <td>{{ a.media_type }}</td>
+      <td>{{ a.source_type }}</td>
+      <td><span class="badge status-{{ a.status }}">{{ a.status }}</span></td>
+      <td>{{ (a.alt_text or '—')[:40] }}</td>
+      <td class="url">{{ a.storage_path or a.original_url or '—' }}</td>
+      <td>{{ a.updated_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">No media assets yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

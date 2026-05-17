@@ -43,6 +43,7 @@ from app.publishers.validators import (
 from app.services.editorial_service import mark_published_draft
 from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
 from app.services.revision_service import ensure_revision_for_publish
+from app.services.media_service import build_media_block_for_publish, get_approved_preview_asset
 from app.services.pipeline_event_service import emit_pipeline_event
 from app.services.project_profile_service import resolve_task_project
 
@@ -255,6 +256,7 @@ def publish_draft_for_document(
     if target.payload_format != "article_v1":
         raise PublishValidationError(f"Unsupported payload_format: {target.payload_format}")
 
+    media_block = build_media_block_for_publish(db, document.id)
     payload = build_article_v1_payload(
         document=document,
         task=task,
@@ -262,6 +264,7 @@ def publish_draft_for_document(
         target=target,
         seo=seo,
         review=review,
+        media=media_block,
     )
     validate_article_v1_publish(
         document=document,
@@ -293,6 +296,7 @@ def publish_draft_for_document(
     )
 
     revision = ensure_revision_for_publish(db, document)
+    preview_asset = get_approved_preview_asset(db, document.id)
 
     run = PublishRun(
         project_id=project.id,
@@ -300,6 +304,7 @@ def publish_draft_for_document(
         task_id=task.id,
         publish_target_id=target.id,
         document_revision_id=revision.id,
+        preview_media_asset_id=preview_asset.id if preview_asset else None,
         status=PublishRunStatus.PENDING.value,
         dry_run=effective_dry_run,
         endpoint_url=endpoint or target.endpoint_url,

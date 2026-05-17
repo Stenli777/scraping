@@ -9,6 +9,7 @@ from app.api.discovery import router as discovery_router
 from app.api.documents import router as documents_router
 from app.api.health import router as health_router
 from app.api.hermes import router as hermes_router
+from app.api.media import router as media_router
 from app.api.llm import router as llm_router
 from app.api.prompts import router as prompts_router
 from app.api.publish import router as publish_router
@@ -35,6 +36,7 @@ app.include_router(prompts_router)
 app.include_router(quality_router)
 app.include_router(editorial_router)
 app.include_router(hermes_router)
+app.include_router(media_router)
 app.include_router(discovery_router)
 app.include_router(llm_router)
 app.include_router(admin_router)

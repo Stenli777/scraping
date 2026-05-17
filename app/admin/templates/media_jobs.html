@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead><tr><th>ID</th><th>Doc</th><th>Type</th><th>Provider</th><th>Status</th><th>Asset</th><th>Latency</th><th>Error</th><th>Created</th></tr></thead>
+  <tbody>
+    {% for j in jobs %}
+    <tr>
+      <td>#{{ j.id }}</td>
+      <td><a href="/admin/documents/{{ j.document_id }}">#{{ j.document_id }}</a></td>
+      <td>{{ j.job_type }}</td>
+      <td>{{ j.provider }}</td>
+      <td><span class="badge status-{{ j.status }}">{{ j.status }}</span></td>
+      <td>{% if j.media_asset_id %}#{{ j.media_asset_id }}{% else %}—{% endif %}</td>
+      <td>{{ j.latency_ms or '—' }} ms</td>
+      <td class="url">{{ (j.error_message or '—')[:50] }}</td>
+      <td>{{ j.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">No media jobs yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

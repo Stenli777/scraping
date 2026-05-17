@@ -116,7 +116,42 @@
     <form method="post" action="/admin/documents/{{ document.id }}/run-quality" style="display:inline">
       <button type="submit" class="btn">Run quality</button>
     </form>
-    {% if feature_flags.get('ENABLE_HERMES') %}
+    
+{% if feature_flags.get('ENABLE_MEDIA_PIPELINE') %}
+<div class="panel" id="media">
+  <h2>Media</h2>
+  {% if preview_media %}
+  <p><strong>Preview #{{ preview_media.id }}</strong> · {{ preview_media.source_type }} ·
+     <span class="badge status-{{ preview_media.status }}">{{ preview_media.status }}</span></p>
+  {% if preview_media.storage_path %}
+  <p><img src="/api/media/assets/{{ preview_media.id }}/file" alt="{{ preview_media.alt_text or '' }}" style="max-width:100%;border-radius:8px;"></p>
+  {% endif %}
+  <p><strong>Alt:</strong> {{ preview_media.alt_text or '—' }}</p>
+  <p><strong>Caption:</strong> {{ preview_media.caption or '—' }}</p>
+  <p><strong>Prompt:</strong> <code>{{ (preview_media.prompt_text or '—')[:120] }}</code></p>
+  {% if preview_media.status != 'approved' %}
+  <form method="post" action="/admin/documents/{{ document.id }}/media/{{ preview_media.id }}/approve" class="inline-form">
+    <button type="submit" class="btn primary">Approve preview</button>
+  </form>
+  {% endif %}
+  {% if preview_media.status != 'rejected' %}
+  <form method="post" action="/admin/documents/{{ document.id }}/media/{{ preview_media.id }}/reject" class="inline-form">
+    <button type="submit" class="btn">Reject preview</button>
+  </form>
+  {% endif %}
+  {% else %}
+  <p class="warn-box">No preview image yet.</p>
+  {% endif %}
+  <form method="post" action="/admin/documents/{{ document.id }}/media/generate-preview" class="inline-form">
+    <button type="submit" class="btn">Generate placeholder preview</button>
+  </form>
+  {% if publish_readiness.checks.media.warnings %}
+  <p class="warn-box">Media warnings: {{ publish_readiness.checks.media.warnings | join(', ') }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if feature_flags.get('ENABLE_HERMES') %}
     <form method="post" action="/admin/documents/{{ document.id }}/hermes/research" style="display:inline">
       <button type="submit" class="btn">Hermes research</button>
     </form>
@@ -161,6 +196,41 @@
   <p><small>{{ quality_record.created_at }}</small></p>
   {% else %}
   <p class="warn-box">No quality score yet. Run quality review after rewrite + SEO.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+
+{% if feature_flags.get('ENABLE_MEDIA_PIPELINE') %}
+<div class="panel" id="media">
+  <h2>Media</h2>
+  {% if preview_media %}
+  <p><strong>Preview #{{ preview_media.id }}</strong> · {{ preview_media.source_type }} ·
+     <span class="badge status-{{ preview_media.status }}">{{ preview_media.status }}</span></p>
+  {% if preview_media.storage_path %}
+  <p><img src="/api/media/assets/{{ preview_media.id }}/file" alt="{{ preview_media.alt_text or '' }}" style="max-width:100%;border-radius:8px;"></p>
+  {% endif %}
+  <p><strong>Alt:</strong> {{ preview_media.alt_text or '—' }}</p>
+  <p><strong>Caption:</strong> {{ preview_media.caption or '—' }}</p>
+  <p><strong>Prompt:</strong> <code>{{ (preview_media.prompt_text or '—')[:120] }}</code></p>
+  {% if preview_media.status != 'approved' %}
+  <form method="post" action="/admin/documents/{{ document.id }}/media/{{ preview_media.id }}/approve" class="inline-form">
+    <button type="submit" class="btn primary">Approve preview</button>
+  </form>
+  {% endif %}
+  {% if preview_media.status != 'rejected' %}
+  <form method="post" action="/admin/documents/{{ document.id }}/media/{{ preview_media.id }}/reject" class="inline-form">
+    <button type="submit" class="btn">Reject preview</button>
+  </form>
+  {% endif %}
+  {% else %}
+  <p class="warn-box">No preview image yet.</p>
+  {% endif %}
+  <form method="post" action="/admin/documents/{{ document.id }}/media/generate-preview" class="inline-form">
+    <button type="submit" class="btn">Generate placeholder preview</button>
+  </form>
+  {% if publish_readiness.checks.media.warnings %}
+  <p class="warn-box">Media warnings: {{ publish_readiness.checks.media.warnings | join(', ') }}</p>
   {% endif %}
 </div>
 {% endif %}

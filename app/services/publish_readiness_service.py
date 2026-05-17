@@ -11,11 +11,13 @@ from app.core.feature_flags import (
     is_quality_review_enabled,
 )
 from app.services.editorial_service import is_editorially_publishable
+from app.models.media_asset import MediaAsset
 from app.models.parsed_document import ParsedDocument
 from app.models.publish_target import PublishTarget
 from app.models.review_result import ReviewResult
 from app.services.project_profile_service import resolve_task_project
 from app.services.publish_service import _latest_review, _latest_seo, find_duplicate_publish_run
+from app.services.media_service import get_approved_preview_asset
 from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
 from app.publishers.validators import PAYLOAD_VERSION
 
@@ -53,6 +55,11 @@ def get_publish_readiness(
         "editorial_status": None,
         "approved_for_publish": None,
         "current_revision_number": None,
+        "media": {
+            "preview_exists": False,
+            "approved_preview_exists": False,
+            "warnings": [],
+        },
     }
 
     document = db.get(ParsedDocument, document_id)
@@ -201,6 +208,26 @@ def get_publish_readiness(
         status = target.default_status or "draft"
         if status != "draft":
             warnings.append(f"target_{target.id}_status_not_draft")
+
+    preview_asset = get_approved_preview_asset(db, document_id)
+    any_preview = db.scalar(
+        select(MediaAsset)
+        .where(
+            MediaAsset.document_id == document_id,
+            MediaAsset.media_type == "preview",
+            MediaAsset.status.in_(["generated", "approved"]),
+        )
+        .order_by(MediaAsset.id.desc())
+        .limit(1)
+    )
+    checks["media"]["preview_exists"] = any_preview is not None
+    checks["media"]["approved_preview_exists"] = preview_asset is not None
+    if not checks["media"]["preview_exists"]:
+        checks["media"]["warnings"].append("missing_preview_image")
+        warnings.append("missing_preview_image")
+    elif not checks["media"]["approved_preview_exists"]:
+        checks["media"]["warnings"].append("preview_not_approved")
+        warnings.append("preview_not_approved")
 
     ready = len(missing) == 0
     return {
