@@ -145,6 +145,16 @@ def rerun_rewrite_for_document(db: Session, document_id: int) -> RewriteStageRes
             finished_at=datetime.now(timezone.utc),
         )
         add_task_log(db, task.id, "Rewrite rerun succeeded", LogLevel.INFO, meta["rewrite"])
+        from app.core.enums import RevisionSourceType
+        from app.services.revision_service import create_revision_snapshot
+
+        create_revision_snapshot(
+            db,
+            document,
+            source_type=RevisionSourceType.REWRITE.value,
+            source_reference_id=result.llm_run_id,
+            rewrite_text=document.rewritten_text,
+        )
         db.commit()
     else:
         meta["rewrite_error"] = result.error_message

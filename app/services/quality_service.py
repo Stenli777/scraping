@@ -163,6 +163,32 @@ def run_quality_for_document(db: Session, document_id: int) -> QualityStageResul
                 "overall_score": record.overall_score,
             },
         )
+        from app.core.enums import EditorialStatus, RevisionSourceType
+        from app.services.revision_service import create_revision_snapshot
+
+        create_revision_snapshot(
+            db,
+            document,
+            source_type=RevisionSourceType.QUALITY_UPDATE.value,
+            source_reference_id=record.id,
+            quality=record,
+        )
+        if record.verdict == QualityVerdict.NEEDS_REVISION.value:
+            from app.core.feature_flags import is_editorial_workflow_enabled
+            from app.services import editorial_service
+
+            if is_editorial_workflow_enabled() and document.editorial_status in (
+                EditorialStatus.GENERATED.value,
+                EditorialStatus.OPERATOR_REVIEW.value,
+            ):
+                try:
+                    editorial_service.mark_needs_revision(
+                        db,
+                        document.id,
+                        notes="Auto: quality verdict needs_revision",
+                    )
+                except editorial_service.EditorialTransitionError:
+                    pass
         db.commit()
         db.refresh(record)
 

@@ -1,112 +1,223 @@
-"""Editorial queue — documents ready for human QC before publish."""
+"""Editorial state machine — operator decisions (separate from LLM quality verdict)."""
 
-from dataclasses import dataclass
+from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.enums import PublishRunStatus
-from app.models.content_quality_score import ContentQualityScore
+from app.core.enums import EditorialStatus
+from app.core.feature_flags import is_editorial_workflow_enabled
 from app.models.parsed_document import ParsedDocument
-from app.models.publish_run import PublishRun
-from app.models.review_result import ReviewResult
-from app.models.scraping_task import ScrapingTask
-from app.models.seo_metadata import SeoMetadata
-from app.services.project_profile_service import resolve_task_project
-from app.services.publish_readiness_service import get_publish_readiness
+from app.services.pipeline_event_service import emit_pipeline_event
+
+EDITORIAL_STAGE = "editorial"
+
+_ALLOWED: dict[EditorialStatus, set[EditorialStatus]] = {
+    EditorialStatus.GENERATED: {
+        EditorialStatus.OPERATOR_REVIEW,
+        EditorialStatus.NEEDS_REVISION,
+        EditorialStatus.REJECTED,
+    },
+    EditorialStatus.NEEDS_REVISION: {
+        EditorialStatus.OPERATOR_REVIEW,
+        EditorialStatus.GENERATED,
+    },
+    EditorialStatus.OPERATOR_REVIEW: {
+        EditorialStatus.APPROVED,
+        EditorialStatus.REJECTED,
+        EditorialStatus.NEEDS_REVISION,
+    },
+    EditorialStatus.APPROVED: {
+        EditorialStatus.READY_TO_PUBLISH,
+        EditorialStatus.NEEDS_REVISION,
+        EditorialStatus.REJECTED,
+        EditorialStatus.OPERATOR_REVIEW,
+    },
+    EditorialStatus.READY_TO_PUBLISH: {
+        EditorialStatus.PUBLISHED_DRAFT,
+        EditorialStatus.NEEDS_REVISION,
+        EditorialStatus.REJECTED,
+    },
+    EditorialStatus.PUBLISHED_DRAFT: {EditorialStatus.ARCHIVED},
+    EditorialStatus.REJECTED: {EditorialStatus.OPERATOR_REVIEW, EditorialStatus.ARCHIVED},
+    EditorialStatus.ARCHIVED: set(),
+}
 
 
-@dataclass
-class EditorialQueueItem:
-    document_id: int
-    task_id: int
-    project_id: int | None
-    project_slug: str | None
-    source_url: str
-    review_score: int | None
-    review_take: bool | None
-    quality_overall_score: int | None
-    quality_verdict: str | None
-    publish_ready: bool
-    publish_missing: list[str]
-    has_successful_publish: bool
+class EditorialTransitionError(ValueError):
+    pass
 
 
-def list_editorial_queue(db: Session, *, limit: int = 100) -> list[EditorialQueueItem]:
-    """Documents with review take, rewrite, SEO; quality missing or needs_revision; not published."""
-    docs = db.scalars(
-        select(ParsedDocument)
-        .join(ScrapingTask, ParsedDocument.task_id == ScrapingTask.id)
-        .where(ParsedDocument.rewritten_text.isnot(None))
-        .order_by(ParsedDocument.id.desc())
-        .limit(limit * 3)
-    ).all()
+def _require_workflow() -> None:
+    if not is_editorial_workflow_enabled():
+        raise EditorialTransitionError("Editorial workflow is disabled (ENABLE_EDITORIAL_WORKFLOW=false)")
 
-    items: list[EditorialQueueItem] = []
-    for doc in docs:
-        if not doc.rewritten_text or not doc.rewritten_text.strip():
-            continue
 
-        review = db.scalar(
-            select(ReviewResult)
-            .where(ReviewResult.document_id == doc.id)
-            .order_by(ReviewResult.id.desc())
+def _parse_status(value: str | None) -> EditorialStatus:
+    if not value:
+        return EditorialStatus.GENERATED
+    try:
+        return EditorialStatus(value)
+    except ValueError as exc:
+        raise EditorialTransitionError(f"Unknown editorial status: {value}") from exc
+
+
+def can_transition(current: EditorialStatus, target: EditorialStatus) -> bool:
+    return target in _ALLOWED.get(current, set())
+
+
+def _transition(
+    db: Session,
+    document: ParsedDocument,
+    target: EditorialStatus,
+    *,
+    notes: str | None = None,
+    approved_for_publish: bool | None = None,
+    set_approved_at: bool = False,
+    set_rejected_at: bool = False,
+    set_reviewed_at: bool = False,
+) -> ParsedDocument:
+    _require_workflow()
+    current = _parse_status(document.editorial_status)
+    if not can_transition(current, target):
+        raise EditorialTransitionError(
+            f"Invalid editorial transition: {current.value} -> {target.value}"
         )
-        meta = doc.metadata_json or {}
-        review_meta = meta.get("review") or {}
-        take = review.take if review else review_meta.get("take")
-        if take is not True:
-            continue
 
-        seo = db.scalar(
-            select(SeoMetadata)
-            .where(SeoMetadata.document_id == doc.id)
-            .order_by(SeoMetadata.id.desc())
+    now = datetime.now(timezone.utc)
+    document.editorial_status = target.value
+    if notes is not None:
+        document.editorial_notes = notes
+    if approved_for_publish is not None:
+        document.approved_for_publish = approved_for_publish
+    if set_approved_at:
+        document.operator_approved_at = now
+        document.approved_for_publish = True
+    if set_rejected_at:
+        document.operator_rejected_at = now
+        document.approved_for_publish = False
+    if set_reviewed_at:
+        document.operator_reviewed_at = now
+
+    task = document.task
+    if task:
+        emit_pipeline_event(
+            db,
+            task.id,
+            EDITORIAL_STAGE,
+            status="transition",
+            payload={
+                "document_id": document.id,
+                "from": current.value,
+                "to": target.value,
+                "notes": notes,
+                "revision_number": document.current_revision_number,
+            },
         )
-        if not seo or not seo.slug:
-            continue
+    db.flush()
+    return document
 
-        quality = db.scalar(
-            select(ContentQualityScore)
-            .where(ContentQualityScore.document_id == doc.id)
-            .order_by(ContentQualityScore.id.desc())
+
+def approve_document(db: Session, document_id: int, *, notes: str | None = None) -> ParsedDocument:
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise ValueError(f"Document {document_id} not found")
+    current = _parse_status(document.editorial_status)
+    if current == EditorialStatus.GENERATED:
+        _transition(db, document, EditorialStatus.OPERATOR_REVIEW, set_reviewed_at=True)
+        db.refresh(document)
+    return _transition(
+        db,
+        document,
+        EditorialStatus.APPROVED,
+        notes=notes,
+        set_approved_at=True,
+    )
+
+
+def reject_document(db: Session, document_id: int, *, notes: str | None = None) -> ParsedDocument:
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise ValueError(f"Document {document_id} not found")
+    return _transition(
+        db,
+        document,
+        EditorialStatus.REJECTED,
+        notes=notes,
+        set_rejected_at=True,
+    )
+
+
+def mark_needs_revision(db: Session, document_id: int, *, notes: str | None = None) -> ParsedDocument:
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise ValueError(f"Document {document_id} not found")
+    return _transition(
+        db,
+        document,
+        EditorialStatus.NEEDS_REVISION,
+        notes=notes,
+        approved_for_publish=False,
+    )
+
+
+def move_to_operator_review(db: Session, document_id: int, *, notes: str | None = None) -> ParsedDocument:
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise ValueError(f"Document {document_id} not found")
+    return _transition(
+        db,
+        document,
+        EditorialStatus.OPERATOR_REVIEW,
+        notes=notes,
+        set_reviewed_at=True,
+        approved_for_publish=False,
+    )
+
+
+def mark_ready_to_publish(db: Session, document_id: int, *, notes: str | None = None) -> ParsedDocument:
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise ValueError(f"Document {document_id} not found")
+    current = _parse_status(document.editorial_status)
+    if current not in (EditorialStatus.APPROVED, EditorialStatus.READY_TO_PUBLISH):
+        raise EditorialTransitionError(
+            f"Document must be approved before ready_to_publish (current={current.value})"
         )
-        if quality and quality.verdict == "approved":
-            continue
+    return _transition(
+        db,
+        document,
+        EditorialStatus.READY_TO_PUBLISH,
+        notes=notes,
+        approved_for_publish=True,
+    )
 
-        success_publish = db.scalar(
-            select(PublishRun.id)
-            .where(
-                PublishRun.document_id == doc.id,
-                PublishRun.status == PublishRunStatus.SUCCESS.value,
-                PublishRun.dry_run.is_(False),
-            )
-            .limit(1)
-        )
-        if success_publish:
-            continue
 
-        task = doc.task
-        project = resolve_task_project(db, task) if task else None
-        readiness = get_publish_readiness(db, doc.id)
+def mark_published_draft(db: Session, document_id: int) -> ParsedDocument:
+    """Called after successful publish — not exposed as operator action."""
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise ValueError(f"Document {document_id} not found")
+    if not is_editorial_workflow_enabled():
+        return document
+    current = _parse_status(document.editorial_status)
+    if current == EditorialStatus.PUBLISHED_DRAFT:
+        return document
+    if can_transition(current, EditorialStatus.PUBLISHED_DRAFT):
+        return _transition(db, document, EditorialStatus.PUBLISHED_DRAFT, approved_for_publish=True)
+    document.editorial_status = EditorialStatus.PUBLISHED_DRAFT.value
+    document.approved_for_publish = True
+    db.flush()
+    return document
 
-        items.append(
-            EditorialQueueItem(
-                document_id=doc.id,
-                task_id=task.id if task else 0,
-                project_id=project.id if project else None,
-                project_slug=project.slug if project else None,
-                source_url=doc.source_url or "",
-                review_score=review.score if review else review_meta.get("score"),
-                review_take=take,
-                quality_overall_score=quality.overall_score if quality else None,
-                quality_verdict=quality.verdict if quality else None,
-                publish_ready=readiness["ready"],
-                publish_missing=readiness["missing"],
-                has_successful_publish=False,
-            )
-        )
-        if len(items) >= limit:
-            break
 
-    return items
+def is_editorially_publishable(document: ParsedDocument) -> bool:
+    if not is_editorial_workflow_enabled():
+        return True
+    status = document.editorial_status or EditorialStatus.GENERATED.value
+    if status not in (
+        EditorialStatus.APPROVED.value,
+        EditorialStatus.READY_TO_PUBLISH.value,
+        EditorialStatus.PUBLISHED_DRAFT.value,
+    ):
+        return False
+    return bool(document.approved_for_publish)

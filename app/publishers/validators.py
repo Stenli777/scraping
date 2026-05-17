@@ -173,3 +173,35 @@ def validate_quality_for_publish(
             pass
 
     return PublishValidationResult(valid=len(errors) == 0, errors=errors)
+
+
+def validate_editorial_for_publish(
+    *,
+    editorial_enabled: bool,
+    document: ParsedDocument,
+    force: bool,
+) -> PublishValidationResult:
+    errors: list[ValidationIssue] = []
+    if not editorial_enabled or force:
+        return PublishValidationResult(valid=True, errors=errors)
+
+    status = getattr(document, "editorial_status", None) or "generated"
+    approved = bool(getattr(document, "approved_for_publish", False))
+    allowed_statuses = {"approved", "ready_to_publish", "published_draft"}
+
+    if status not in allowed_statuses:
+        errors.append(
+            ValidationIssue(
+                "editorial_status",
+                f"Editorial status {status!r} not publishable",
+            )
+        )
+    if not approved:
+        errors.append(
+            ValidationIssue(
+                "approved_for_publish",
+                "Operator approval required",
+            )
+        )
+
+    return PublishValidationResult(valid=len(errors) == 0, errors=errors)

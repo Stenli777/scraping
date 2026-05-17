@@ -96,6 +96,18 @@ def run_seo_for_document(db: Session, document_id: int) -> SeoStageResult:
             "llm_run_id": result.llm_run_id,
         }
         document.metadata_json = meta
+        from app.core.enums import RevisionSourceType
+        from app.models.seo_metadata import SeoMetadata
+        from app.services.revision_service import create_revision_snapshot
+
+        seo_row = db.get(SeoMetadata, result.seo_metadata_id) if result.seo_metadata_id else None
+        create_revision_snapshot(
+            db,
+            document,
+            source_type=RevisionSourceType.SEO_UPDATE.value,
+            source_reference_id=result.seo_metadata_id,
+            seo=seo_row,
+        )
         db.commit()
     return result
 

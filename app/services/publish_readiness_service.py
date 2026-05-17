@@ -4,7 +4,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.feature_flags import is_publishing_enabled, is_quality_review_enabled
+from app.core.enums import EditorialStatus
+from app.core.feature_flags import (
+    is_editorial_workflow_enabled,
+    is_publishing_enabled,
+    is_quality_review_enabled,
+)
+from app.services.editorial_service import is_editorially_publishable
 from app.models.parsed_document import ParsedDocument
 from app.models.publish_target import PublishTarget
 from app.models.review_result import ReviewResult
@@ -24,6 +30,7 @@ def get_publish_readiness(
     warnings: list[str] = []
     settings = get_settings()
     quality_enabled = is_quality_review_enabled()
+    editorial_enabled = is_editorial_workflow_enabled()
     min_quality = settings.min_quality_score_for_publish
 
     checks: dict = {
@@ -42,6 +49,10 @@ def get_publish_readiness(
         "min_quality_score_for_publish": min_quality,
         "duplicate_publish": False,
         "force_required_for_duplicate": False,
+        "editorial_workflow_enabled": editorial_enabled,
+        "editorial_status": None,
+        "approved_for_publish": None,
+        "current_revision_number": None,
     }
 
     document = db.get(ParsedDocument, document_id)
@@ -133,6 +144,27 @@ def get_publish_readiness(
     elif not quality_enabled:
         if not quality:
             warnings.append("quality_review_optional")
+
+    checks["editorial_status"] = document.editorial_status
+    checks["approved_for_publish"] = document.approved_for_publish
+    checks["current_revision_number"] = document.current_revision_number
+
+    if editorial_enabled:
+        if not is_editorially_publishable(document):
+            if document.editorial_status not in (
+                EditorialStatus.APPROVED.value,
+                EditorialStatus.READY_TO_PUBLISH.value,
+                EditorialStatus.PUBLISHED_DRAFT.value,
+            ):
+                missing.append("editorial_not_approved")
+            elif not document.approved_for_publish:
+                missing.append("operator_approval_required")
+            else:
+                missing.append("editorial_not_publishable")
+        if document.editorial_status == EditorialStatus.REJECTED.value:
+            missing.append("editorial_rejected")
+        if document.editorial_status == EditorialStatus.NEEDS_REVISION.value:
+            missing.append("editorial_needs_revision")
 
     enabled_targets: list[PublishTarget] = []
     if project:
