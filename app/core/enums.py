@@ -69,3 +69,22 @@ class QualityVerdict(str, Enum):
     APPROVED = "approved"
     NEEDS_REVISION = "needs_revision"
     REJECTED = "rejected"
+
+
+class EditorialStatus(str, Enum):
+    GENERATED = "generated"
+    NEEDS_REVISION = "needs_revision"
+    OPERATOR_REVIEW = "operator_review"
+    APPROVED = "approved"
+    READY_TO_PUBLISH = "ready_to_publish"
+    PUBLISHED_DRAFT = "published_draft"
+    REJECTED = "rejected"
+    ARCHIVED = "archived"
+
+
+class RevisionSourceType(str, Enum):
+    REWRITE = "rewrite"
+    MANUAL = "manual"
+    SEO_UPDATE = "seo_update"
+    QUALITY_UPDATE = "quality_update"
+    PUBLISH_SNAPSHOT = "publish_snapshot"

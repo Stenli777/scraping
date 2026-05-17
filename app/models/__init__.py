@@ -3,6 +3,7 @@ from app.models.discovered_url import DiscoveredUrl
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
 from app.models.prompt_version import PromptVersion
+from app.models.document_revision import DocumentRevision
 from app.models.document_version import DocumentVersion
 from app.models.export import Export
 from app.models.llm_run import LLMRun
@@ -23,6 +24,7 @@ __all__ = [
     "ScrapingTask",
     "ParsedDocument",
     "DocumentVersion",
+    "DocumentRevision",
     "TaskLog",
     "Export",
     "Project",
