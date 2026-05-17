@@ -57,6 +57,10 @@ source_directory → discover → discovered_urls → manual enqueue → scrapin
 - Limits: `max_urls_per_run`, same-host only, allow/block patterns
 - **No auto enqueue**, no scheduler, no headless browser
 
+### Manual end-to-end (operations)
+
+См. [OPERATIONS.md](OPERATIONS.md): discovery → enqueue → task → review → rewrite → SEO → publish dry-run.
+
 ### Publish draft (manual only)
 
 После rewrite + SEO: `POST /api/documents/{id}/publish-draft` с payload `article_v1`.

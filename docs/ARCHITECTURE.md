@@ -894,6 +894,14 @@ Controlled URL discovery from `source_directories` → `discovered_urls` → man
 - Safety: `max_urls_per_run`, same-host only, allow/block patterns, crawl delay, no headless browser
 - **No** auto enqueue, scheduler, or deep crawl
 
+### Operations layer (Stage 2F)
+
+- Admin dashboard with task/discovered/failure metrics
+- Pipeline summary on task/document detail
+- `get_publish_readiness()` before publish draft
+- Failed-items view; safe skip/stale reset
+- See `docs/OPERATIONS.md`
+
 ### Production-safe defaults
 
 - Hermes disabled;

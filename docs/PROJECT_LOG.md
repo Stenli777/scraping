@@ -113,3 +113,12 @@
 - **Миграция:** `005` — extend `source_directories`, `discovered_urls`, seed crmflow24 blogs
 - **Services:** URL normalizer, sitemap + HTML discovery, manual enqueue
 - **Без:** auto enqueue, scheduler, headless crawler, distributed crawl
+
+---
+
+## 2026-05-17 — Stage 2F: operational hardening + E2E
+
+- Admin entity links, pipeline summary, operational dashboard
+- `/admin/failed-items`, publish readiness checker
+- `docs/OPERATIONS.md`, `scripts/test_2f_e2e.py`
+- Safe task skip / stale reset (non-destructive)

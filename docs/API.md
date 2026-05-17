@@ -23,6 +23,7 @@ Base: **https://scrap.crmflow24.ru**
 | GET | `/api/discovered-urls` | Очередь URL (filters: project_id, source_directory_id, status) |
 | POST | `/api/discovered-urls/{id}/enqueue` | Создать scraping task (manual) |
 | POST | `/api/discovered-urls/{id}/ignore` | Игнорировать URL |
+| GET | `/api/documents/{id}/publish-readiness` | Проверка готовности к publish draft |
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |

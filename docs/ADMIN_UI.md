@@ -20,6 +20,9 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/source-directories` | Список discovery sources |
 | `/admin/source-directories/{id}` | Детали + Run discovery |
 | `/admin/discovered-urls` | Очередь URL: Enqueue / Ignore (по одному) |
+| `/admin/failed-items` | Failed tasks, LLM, publish + stale running |
+| Dashboard | Operational metrics, recent failures, pipeline events |
+| Task/Document detail | Pipeline Summary, entity links, publish readiness |
 
 На странице **задачи** и **документа**: блок Rewrite metadata — provider, model_alias, upstream_model, fallback_used, ссылка на llm_run; кнопка **Rerun rewrite**.
 
