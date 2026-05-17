@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+{% if warnings %}
+<div class="panel warn-box">
+  <h2>Workspace warnings</h2>
+  <ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+<div class="panel">
+  <h2>System (read-only)</h2>
+  <table class="table">
+    <tbody>
+      <tr><td>Hostname</td><td><code>{{ info.hostname }}</code></td></tr>
+      <tr><td>Project path</td><td><code>{{ info.project_path }}</code></td></tr>
+      <tr><td>Git branch</td><td><code>{{ info.git_branch }}</code></td></tr>
+      <tr><td>Git clean</td><td>{{ info.git_clean }}</td></tr>
+      <tr><td>Latest commit</td><td><code>{{ info.git_head_short }}</code></td></tr>
+      <tr><td>Scheduler</td><td>{{ scheduler_enabled }}</td></tr>
+      <tr><td>Automation</td><td>{{ automation_enabled }}</td></tr>
+      <tr><td>Storage root</td><td><code>{{ paths.storage }}</code></td></tr>
+      <tr><td>Media storage</td><td><code>{{ paths.media }}</code></td></tr>
+      <tr><td>Logs</td><td><code>{{ paths.logs }}</code></td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="panel">
+  <h3>Git status</h3>
+  <pre class="content">{% if info.git_status_porcelain %}{{ info.git_status_porcelain | join('\n') }}{% else %}(clean){% endif %}</pre>
+</div>
+<div class="panel">
+  <h3>Safety scripts</h3>
+  <pre class="content">python scripts/check_repo_safety.py
+python scripts/check_git_integrity.py
+python scripts/pre_deploy_check.py
+python scripts/post_deploy_check.py</pre>
+</div>
+{% endblock %}

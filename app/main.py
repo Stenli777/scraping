@@ -12,6 +12,7 @@ from app.api.hermes import router as hermes_router
 from app.api.media import router as media_router
 from app.api.analytics import router as analytics_router
 from app.api.automation import router as automation_router
+from app.api.system import router as system_router
 from app.api.llm import router as llm_router
 from app.api.prompts import router as prompts_router
 from app.api.publish import router as publish_router
@@ -38,6 +39,11 @@ for _e in _cv.errors:
 if not _cv.ok:
     _startup_log.error("Config validation has errors — service continues (check /health/config)")
 
+from app.core.workspace import get_workspace_warnings as _workspace_warnings
+
+for _ww in _workspace_warnings():
+    _startup_log.warning("Workspace: %s", _ww)
+
 app = FastAPI(title=settings.app_name, debug=settings.app_debug)
 app.include_router(health_router)
 app.include_router(tasks_router)
@@ -53,6 +59,7 @@ app.include_router(hermes_router)
 app.include_router(media_router)
 app.include_router(analytics_router)
 app.include_router(automation_router)
+app.include_router(system_router)
 app.include_router(discovery_router)
 app.include_router(llm_router)
 app.include_router(admin_router)

@@ -86,6 +86,9 @@ class Settings(BaseSettings):
     automation_run_stale_seconds: int = 600
     automation_run_lock_seconds: int = 1800
 
+    expected_hostname: str = "hermes,psychedelic"
+    expected_project_path: str = "/opt/scrap"
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 

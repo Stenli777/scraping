@@ -1020,3 +1020,30 @@ def admin_automation_mark_failed(run_id: int, db: Session = Depends(get_db)):
     except AutomationError:
         pass
     return RedirectResponse(f"/admin/automation-runs/{run_id}", status_code=303)
+
+@router.get("/admin/system", response_class=HTMLResponse)
+def admin_system(request: Request, db: Session = Depends(get_db)):
+    from app.core.config import get_settings
+    from app.core.feature_flags import is_automation_enabled, is_scheduler_enabled
+    from app.core.workspace import get_workspace_info, get_workspace_warnings
+
+    settings = get_settings()
+    info = get_workspace_info()
+    return templates.TemplateResponse(
+        request,
+        "system.html",
+        {
+            "request": request,
+            "title": "System",
+            "info": info,
+            "warnings": get_workspace_warnings(),
+            "scheduler_enabled": is_scheduler_enabled(),
+            "automation_enabled": is_automation_enabled(),
+            "paths": {
+                "storage": str(settings.storage_root),
+                "media": str(settings.media_storage_root),
+                "logs": str(settings.logs_path),
+            },
+        },
+    )
+
