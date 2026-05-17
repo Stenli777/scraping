@@ -70,6 +70,11 @@ class Settings(BaseSettings):
 
     enable_editorial_workflow: bool = True
 
+    enable_media_pipeline: bool = True
+    enable_media_generation: bool = False
+    media_provider: str = "placeholder"
+    media_storage_path: str = "/opt/scrap/storage/media"
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 
@@ -80,6 +85,11 @@ class Settings(BaseSettings):
     @property
     def backups_root(self) -> Path:
         return self.storage_root / "backups"
+
+    @property
+    def media_storage_root(self) -> Path:
+        p = Path(self.media_storage_path)
+        return p if p.is_absolute() else PROJECT_ROOT / p
 
     @property
     def logs_path(self) -> Path:

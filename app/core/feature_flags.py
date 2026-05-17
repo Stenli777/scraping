@@ -65,6 +65,16 @@ def is_editorial_workflow_enabled() -> bool:
     return get_settings().enable_editorial_workflow
 
 
+@lru_cache
+def is_media_pipeline_enabled() -> bool:
+    return get_settings().enable_media_pipeline
+
+
+@lru_cache
+def is_media_generation_enabled() -> bool:
+    return get_settings().enable_media_generation
+
+
 def all_flags() -> dict[str, bool]:
     return {
         "ENABLE_HERMES": is_hermes_enabled(),
@@ -79,4 +89,6 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_SOURCE_DISCOVERY": is_source_discovery_enabled(),
         "ENABLE_QUALITY_REVIEW": is_quality_review_enabled(),
         "ENABLE_EDITORIAL_WORKFLOW": is_editorial_workflow_enabled(),
+        "ENABLE_MEDIA_PIPELINE": is_media_pipeline_enabled(),
+        "ENABLE_MEDIA_GENERATION": is_media_generation_enabled(),
     }
