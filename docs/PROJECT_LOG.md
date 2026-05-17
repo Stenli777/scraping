@@ -87,3 +87,12 @@
 - **Файлы:** `app/services/rewrite_service.py`, `app/llm/prompts.py`, `app/services/pipeline.py`, `app/services/llm_tasks.py`, `app/api/rewrite.py`, admin templates, docs.
 - **Production switch:** по умолчанию остаётся `REWRITER_PROVIDER=mock`; cliproxy включается явно через env.
 - **Не сделано:** Hermes runtime, auto-publish, crawler, RAG, React/SPA.
+
+---
+
+## 2026-05-17 — Stage 2C: project profiles + review + SEO foundation
+
+- **Миграция:** `003` — project profile fields, `review_results`, `seo_metadata`, seed crmflow24
+- **Prompts:** `review_article_v1`, `seo_enrich_v1`
+- **Pipeline:** optional review → rewrite → seo_enrich
+- **Admin:** `/admin/projects/{id}`, `/admin/review-queue`, SEO на document/task

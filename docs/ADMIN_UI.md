@@ -12,7 +12,9 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/llm-runs` | Аудит LLM: task_id, project_id, alias, upstream, tokens, latency, success, fallback |
 | `/admin/pipeline-events` | События pipeline по стадиям |
 | `/admin/llm/smoke` | Ручной smoke test LLM |
-| `/admin/projects` | Проекты (multiproject foundation) |
+| `/admin/projects` | Список проектов |
+| `/admin/projects/{id}` | Профиль проекта (read-only): instructions, topics, tone |
+| `/admin/review-queue` | Очередь review: take/reject, score, risks |
 
 На странице **задачи** и **документа**: блок Rewrite metadata — provider, model_alias, upstream_model, fallback_used, ссылка на llm_run; кнопка **Rerun rewrite**.
 

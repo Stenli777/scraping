@@ -2,7 +2,7 @@
 
 ## Статусы
 
-`queued` → `fetching` → `parsing` → `cleaning` → `rewriting` → `saving` → `done`
+`queued` → `fetching` → `parsing` → `cleaning` → `reviewing` (optional) → `rewriting` → `seo_enriching` (optional) → `saving` → `done`
 
 При ошибке rewrite (CLIProxy недоступен и т.п.): `failed_retryable` — raw/clean сохранены, `rewritten_text` пустой или прежний.
 
@@ -37,6 +37,19 @@ REWRITER_PROVIDER=mock
 ```
 
 После смены env: `systemctl restart scrap-api scrap-worker`.
+
+### Feature flags
+
+| Flag | Default | Эффект |
+|------|---------|--------|
+| `ENABLE_LLM_REVIEW` | true | Стадия review после clean |
+| `ENABLE_SEO_ENRICH` | true | SEO metadata после rewrite |
+| `ENABLE_PROJECT_PROFILES` | true | Профиль проекта в промптах |
+
+### Manual review / SEO
+
+- `POST /api/documents/{id}/run-review` — без повторного fetch
+- `POST /api/documents/{id}/run-seo` — по rewritten_text или clean_text
 
 ### Rerun rewrite
 

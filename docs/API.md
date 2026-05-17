@@ -13,6 +13,8 @@ Base: **https://scrap.crmflow24.ru**
 | GET | `/api/documents/{id}/export/json` | JSON: title, metadata_json, raw/clean/rewritten |
 | GET | `/api/documents/{id}/export/markdown` | Markdown: clean + rewritten + metadata |
 | POST | `/api/documents/{id}/rerun-rewrite` | Повторить rewrite по `clean_text` (без повторного fetch) |
+| POST | `/api/documents/{id}/run-review` | LLM review по `clean_text` → `review_results` |
+| POST | `/api/documents/{id}/run-seo` | SEO enrich по rewritten/clean → `seo_metadata` |
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |
