@@ -160,3 +160,14 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py
 
 See `docs/BACKUP_AND_RECOVERY.md`, `docs/DEPLOYMENT_WORKFLOW.md`, `docs/LOGGING.md`.
 
+
+## Analytics import
+
+```bash
+curl -X POST http://127.0.0.1:8800/api/publications/{id}/analytics/import \
+  -H 'Content-Type: application/json' \
+  -d '{"views":1200,"ctr":0.04,"source":"manual"}'
+```
+
+Flags: `ENABLE_ANALYTICS`, `ENABLE_PUBLICATION_TRACKING`.
+

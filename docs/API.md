@@ -99,3 +99,17 @@ OpenAPI: `/docs`
 
 Readiness (`/health/ready`) includes: `storage`, `media_storage`, `config`, optional `hermes`.
 
+
+## Analytics & publications
+
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | `/api/publications` | Список publication records |
+| POST | `/api/publications/{id}/analytics/import` | Manual metrics import |
+| GET | `/api/documents/{id}/analytics` | Analytics по документу |
+| GET | `/api/analytics/insights/top` | Top content |
+| GET | `/api/analytics/insights/low` | Low content |
+| GET | `/api/analytics/project/{id}/summary` | Project summary |
+
+Requires `ENABLE_ANALYTICS=true`.
+

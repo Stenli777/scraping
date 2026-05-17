@@ -49,3 +49,10 @@ Base: **https://scrap.crmflow24.ru/admin**
 - `/admin/media-jobs` — jobs audit
 - Document detail — блок Media: preview, approve/reject, generate placeholder
 
+
+## Publications & Analytics
+
+- `/admin/publications` — external URLs, status, latest metrics
+- `/admin/analytics` — top/low content, snapshots, project summary, aging
+- Document detail — блок Publication & performance
+

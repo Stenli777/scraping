@@ -1042,3 +1042,14 @@ document → media_prompt (LLM, llm_runs) → media_job → provider → media_a
 - Config validation at startup (non-fatal) + `/health/config`
 - Readiness: storage, media_storage, config checks
 
+
+## Analytics feedback loop (Stage 3D)
+
+```text
+publish_run (success, not dry) → publication_record → manual import → analytics_snapshot
+  → content_performance (score, trend, status) → editorial insights
+```
+
+- `performance_feedback_json` — future AI hook (not used automatically)
+- No live tracking / no GA clone
+

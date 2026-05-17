@@ -143,3 +143,9 @@ rewrite → seo_enrich → [quality_review manual] → publish draft
 После rewrite/SEO — опционально manual preview generation. Не в worker loop.
 Readiness: `missing_preview_image` warning; publish allowed without media.
 
+
+### Publication feedback (Stage 3D)
+
+После успешного publish (не dry-run) создаётся `publication_record`.
+Метрики импортируются вручную через API — snapshots immutable.
+

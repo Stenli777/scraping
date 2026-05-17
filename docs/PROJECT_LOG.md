@@ -192,3 +192,12 @@
 - Integrity: `check_storage_integrity.py`, `check_db_integrity.py`
 - Docs: BACKUP_AND_RECOVERY, DEPLOYMENT_WORKFLOW, LOGGING
 
+## 2026-05-17 — Этап 3D: Analytics & publication feedback
+
+- `publication_records`, `analytics_snapshots`, `content_performance` (migration 011)
+- Publication tracking after successful non-dry publish
+- Manual analytics import API
+- Deterministic performance score (v1 formula) and trends
+- Editorial insights service (no LLM)
+- Admin: `/admin/publications`, `/admin/analytics`
+
