@@ -1,37 +1,134 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <h3>Tasks</h3>
+    <ul class="stat-list">
+      <li>queued: <strong>{{ stats.task_counts.get('queued', 0) }}</strong></li>
+      <li>done: <strong>{{ stats.task_counts.get('done', 0) }}</strong></li>
+      <li>failed: <strong>{{ stats.task_counts.get('error', 0) + stats.task_counts.get('failed_retryable', 0) }}</strong></li>
+    </ul>
+  </div>
+  <div class="stat-card">
+    <h3>Discovered URLs</h3>
+    <ul class="stat-list">
+      {% for st, cnt in stats.discovered_counts.items() %}
+      <li>{{ st }}: <strong>{{ cnt }}</strong></li>
+      {% else %}
+      <li>—</li>
+      {% endfor %}
+    </ul>
+    <p><a href="/admin/discovered-urls">Open queue</a></p>
+  </div>
+  <div class="stat-card">
+    <h3>Catalog</h3>
+    <p>Projects: <strong>{{ stats.projects_count }}</strong></p>
+    <p>Source directories: <strong>{{ stats.source_directories_count }}</strong></p>
+    <p><a href="/admin/source-directories">Discovery sources</a></p>
+  </div>
+</div>
+
 <div class="actions">
   <a class="btn primary" href="/admin/tasks/new">+ Новая задача</a>
+  <a class="btn" href="/admin/failed-items">Failed items</a>
+  <a class="btn" href="/admin/discovered-urls">Discovered URLs</a>
 </div>
+
+{% if stats.failed_tasks %}
+<div class="panel">
+  <h2>Recent failed tasks</h2>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Status</th><th>Error</th><th></th></tr></thead>
+    <tbody>
+      {% for t in stats.failed_tasks %}
+      <tr>
+        <td><a href="/admin/tasks/{{ t.id }}">#{{ t.id }}</a></td>
+        <td><span class="badge status-{{ t.status }}">{{ t.status }}</span></td>
+        <td class="url">{{ (t.error_message or '—')[:120] }}</td>
+        <td><a href="/admin/tasks/{{ t.id }}">Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if stats.failed_llm %}
+<div class="panel">
+  <h2>Recent LLM failures</h2>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Alias</th><th>Error</th><th>Task</th></tr></thead>
+    <tbody>
+      {% for r in stats.failed_llm %}
+      <tr>
+        <td>#{{ r.id }}</td>
+        <td><code>{{ r.model_alias }}</code></td>
+        <td class="url">{{ (r.error_message or '—')[:100] }}</td>
+        <td>{% if r.task_id %}<a href="/admin/tasks/{{ r.task_id }}">#{{ r.task_id }}</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if stats.failed_publish %}
+<div class="panel">
+  <h2>Recent publish failures</h2>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Status</th><th>Doc</th><th>Error</th></tr></thead>
+    <tbody>
+      {% for r in stats.failed_publish %}
+      <tr>
+        <td>#{{ r.id }}</td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td><a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a></td>
+        <td class="url">{{ (r.error_message or '—')[:100] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>Last pipeline events</h2>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Task</th><th>Stage</th><th>Status</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for e in stats.pipeline_events %}
+      <tr>
+        <td>#{{ e.id }}</td>
+        <td>{% if e.task_id %}<a href="/admin/tasks/{{ e.task_id }}">#{{ e.task_id }}</a>{% else %}—{% endif %}</td>
+        <td><code>{{ e.stage }}</code></td>
+        <td>{{ e.status }}</td>
+        <td>{{ e.created_at }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">No events</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><a href="/admin/pipeline-events">All events</a></p>
+</div>
+
+<h2>Recent tasks</h2>
 <table class="table">
   <thead>
-    <tr>
-      <th>ID</th>
-      <th>URL</th>
-      <th>Статус</th>
-      <th>Парсер</th>
-      <th>Документ</th>
-      <th>Создана</th>
-      <th></th>
-    </tr>
+    <tr><th>ID</th><th>URL</th><th>Статус</th><th>Документ</th><th>Создана</th><th></th></tr>
   </thead>
   <tbody>
-    {% for task in tasks %}
+    {% for task in recent_tasks %}
     <tr>
       <td>{{ task.id }}</td>
-      <td class="url">{{ task.source_url }}</td>
+      <td class="url">{{ task.source_url[:70] }}{% if task.source_url|length > 70 %}…{% endif %}</td>
       <td><span class="badge status-{{ task.status }}">{{ task.status }}</span></td>
-      <td><code>{{ task.parser_type }}</code></td>
-      <td>
-        {% if task.document %}
-        <a href="/admin/documents/{{ task.document.id }}">#{{ task.document.id }}</a>
-        {% else %}—{% endif %}
-      </td>
+      <td>{% if task.document %}<a href="/admin/documents/{{ task.document.id }}">#{{ task.document.id }}</a>{% else %}—{% endif %}</td>
       <td>{{ task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '—' }}</td>
       <td><a href="/admin/tasks/{{ task.id }}">Открыть</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="7">Задач пока нет</td></tr>
+    <tr><td colspan="6">Задач пока нет</td></tr>
     {% endfor %}
   </tbody>
 </table>

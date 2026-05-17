@@ -109,3 +109,24 @@ body {
 .level-warning { background: #713f12; }
 .level-info { background: #1e3a5f; }
 .level-debug { background: #334155; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: var(--card);
+  padding: 1rem;
+  border-radius: 8px;
+}
+.stat-list { margin: 0; padding-left: 1.2rem; }
+.pipeline-summary .summary-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
+.entity-links p { margin: 0; }
+.ok-box { background: #14532d; color: #bbf7d0; padding: 0.75rem 1rem; border-radius: 6px; }
+.table.compact th, .table.compact td { padding: 0.35rem 0.5rem; font-size: 0.85rem; }
+.summary-done, .summary-take, .summary-success, .summary-mock, .summary-cliproxy { background: #14532d; }
+.summary-failed, .summary-error, .summary-reject { background: #7f1d1d; }
+.summary-pending, .summary-not_published { background: #374151; }
+.summary-skipped { background: #4b5563; }
+.summary-dry_run { background: #1e3a5f; }

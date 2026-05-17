@@ -32,7 +32,17 @@ from app.services.publish_service import publish_draft_for_document
 from app.services.review_service import run_review_for_document
 from app.services.rewrite_service import rerun_rewrite_for_document
 from app.services.seo_service import run_seo_for_document
-from app.services.task_service import create_task, get_task, list_tasks
+from app.services.admin_context_service import load_document_context, load_task_context
+from app.services.operations_service import get_dashboard_stats, get_failed_items, list_stale_running_tasks
+from app.services.pipeline_summary_service import build_pipeline_summary
+from app.services.publish_readiness_service import get_publish_readiness
+from app.services.task_service import (
+    create_task,
+    get_task,
+    list_tasks,
+    mark_task_skipped,
+    reset_stale_running_task,
+)
 
 router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -40,12 +50,46 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 @router.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
-    tasks = list_tasks(db, limit=50)
+    stats = get_dashboard_stats(db)
+    recent_tasks = list_tasks(db, limit=15)
     return templates.TemplateResponse(
         request,
         "dashboard.html",
-        {"request": request, "tasks": tasks, "title": "Dashboard"},
+        {
+            "request": request,
+            "stats": stats,
+            "recent_tasks": recent_tasks,
+            "title": "Dashboard",
+        },
     )
+
+
+@router.get("/admin/failed-items", response_class=HTMLResponse)
+def admin_failed_items(request: Request, db: Session = Depends(get_db)):
+    items = get_failed_items(db)
+    stale = list_stale_running_tasks(db)
+    return templates.TemplateResponse(
+        request,
+        "failed_items.html",
+        {
+            "request": request,
+            "items": items,
+            "stale_tasks": stale,
+            "title": "Failed Items",
+        },
+    )
+
+
+@router.post("/admin/tasks/{task_id}/mark-skipped")
+def admin_mark_task_skipped(task_id: int, db: Session = Depends(get_db)):
+    mark_task_skipped(db, task_id)
+    return RedirectResponse(f"/admin/tasks/{task_id}", status_code=303)
+
+
+@router.post("/admin/tasks/{task_id}/reset-stale")
+def admin_reset_stale_task(task_id: int, db: Session = Depends(get_db)):
+    reset_stale_running_task(db, task_id)
+    return RedirectResponse(f"/admin/failed-items", status_code=303)
 
 
 @router.get("/admin/tasks/new", response_class=HTMLResponse)
@@ -77,20 +121,16 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
     if not task:
         return RedirectResponse("/admin", status_code=302)
     logs = sorted(task.logs, key=lambda x: x.created_at)
-    meta = {}
-    review_meta = {}
-    rewrite_meta = {}
-    seo_record = None
-    if task.document:
-        meta = task.document.metadata_json or {}
-        review_meta = meta.get("review") or {}
-        rewrite_meta = meta.get("rewrite") or {}
-        seo_record = (
-            db.query(SeoMetadata)
-            .filter(SeoMetadata.document_id == task.document.id)
-            .order_by(SeoMetadata.id.desc())
-            .first()
-        )
+    ctx = load_task_context(db, task)
+    document = task.document
+    meta = (document.metadata_json or {}) if document else {}
+    review_meta = meta.get("review") or {}
+    rewrite_meta = meta.get("rewrite") or {}
+    seo_record = ctx.get("seo_record")
+    pipeline_summary = build_pipeline_summary(db, task, document)
+    publish_readiness = (
+        get_publish_readiness(db, document.id) if document else None
+    )
     return templates.TemplateResponse(
         request,
         "task_detail.html",
@@ -101,8 +141,12 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
             "review_meta": review_meta,
             "rewrite_meta": rewrite_meta,
             "seo_record": seo_record,
+            "pipeline_summary": pipeline_summary,
+            "publish_readiness": publish_readiness,
+            "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Задача #{task_id}",
+            **ctx,
         },
     )
 
@@ -139,6 +183,12 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
         .limit(20)
         .all()
     )
+    ctx = load_document_context(db, document)
+    task = document.task
+    pipeline_summary = (
+        build_pipeline_summary(db, task, document) if task else None
+    )
+    publish_readiness = get_publish_readiness(db, document_id)
     return templates.TemplateResponse(
         request,
         "document_detail.html",
@@ -150,9 +200,12 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "seo_record": seo_record,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
+            "publish_readiness": publish_readiness,
+            "pipeline_summary": pipeline_summary,
             "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Документ #{document_id}",
+            **ctx,
         },
     )
 
@@ -322,17 +375,28 @@ def admin_discovered_urls(
     q = db.query(DiscoveredUrl).order_by(DiscoveredUrl.id.desc()).limit(200)
     if status:
         q = q.filter(DiscoveredUrl.status == status)
-    urls = q.all()
+    urls = q.limit(200).all()
+    projects = {p.id: p for p in db.query(Project).all()}
+    directories = {d.id: d for d in db.query(SourceDirectory).all()}
     return templates.TemplateResponse(
         request,
         "discovered_urls.html",
-        {"request": request, "urls": urls, "filter_status": status, "title": "Discovered URLs"},
+        {
+            "request": request,
+            "urls": urls,
+            "filter_status": status,
+            "projects": projects,
+            "directories": directories,
+            "title": "Discovered URLs",
+        },
     )
 
 
 @router.post("/admin/discovered-urls/{discovered_url_id}/enqueue")
 def admin_enqueue_discovered(discovered_url_id: int, db: Session = Depends(get_db)):
-    enqueue_discovered_url(db, discovered_url_id)
+    record = enqueue_discovered_url(db, discovered_url_id)
+    if record.existing_task_id:
+        return RedirectResponse(f"/admin/tasks/{record.existing_task_id}", status_code=303)
     return RedirectResponse("/admin/discovered-urls", status_code=303)
 
 

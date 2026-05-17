@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a class="btn" href="/admin">← Dashboard</a></p>
+
+{% if stale_tasks %}
+<div class="panel warn-box">
+  <h2>Stale running tasks (read-only + safe reset)</h2>
+  <p>Tasks in running status without update for 2+ hours.</p>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Status</th><th>Updated</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for t in stale_tasks %}
+      <tr>
+        <td><a href="/admin/tasks/{{ t.id }}">#{{ t.id }}</a></td>
+        <td><span class="badge status-{{ t.status }}">{{ t.status }}</span></td>
+        <td>{{ t.updated_at }}</td>
+        <td>
+          <form method="post" action="/admin/tasks/{{ t.id }}/reset-stale" style="display:inline">
+            <button type="submit" class="btn">Reset to failed_retryable</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>Failed retryable tasks</h2>
+  <table class="table">
+    <thead><tr><th>ID</th><th>URL</th><th>Error</th><th>Doc</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for t in items.failed_retryable_tasks %}
+      <tr>
+        <td><a href="/admin/tasks/{{ t.id }}">#{{ t.id }}</a></td>
+        <td class="url">{{ t.source_url[:80] }}</td>
+        <td class="url">{{ (t.error_message or '—')[:120] }}</td>
+        <td>{% if t.document %}<a href="/admin/documents/{{ t.document.id }}">#{{ t.document.id }}</a>{% else %}—{% endif %}</td>
+        <td>
+          <a class="btn" href="/admin/tasks/{{ t.id }}">Open</a>
+          <form method="post" action="/admin/tasks/{{ t.id }}/mark-skipped" style="display:inline">
+            <button type="submit" class="btn">Mark skipped</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">None</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Failed terminal tasks</h2>
+  <table class="table">
+    <thead><tr><th>ID</th><th>URL</th><th>Error</th><th>Doc</th></tr></thead>
+    <tbody>
+      {% for t in items.failed_terminal_tasks %}
+      <tr>
+        <td><a href="/admin/tasks/{{ t.id }}">#{{ t.id }}</a></td>
+        <td class="url">{{ t.source_url[:80] }}</td>
+        <td class="url">{{ (t.error_message or '—')[:120] }}</td>
+        <td>{% if t.document %}<a href="/admin/documents/{{ t.document.id }}">#{{ t.document.id }}</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">None</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Failed LLM runs</h2>
+  <table class="table">
+    <thead><tr><th>ID</th><th>Alias</th><th>Error</th><th>Task</th></tr></thead>
+    <tbody>
+      {% for r in items.failed_llm_runs %}
+      <tr>
+        <td><a href="/admin/llm-runs">#{{ r.id }}</a></td>
+        <td><code>{{ r.model_alias }}</code></td>
+        <td class="url">{{ (r.error_message or '—')[:120] }}</td>
+        <td>{% if r.task_id %}<a href="/admin/tasks/{{ r.task_id }}">#{{ r.task_id }}</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">None</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Failed publish runs</h2>
+  <table class="table">
+    <thead><tr><th>ID</th><th>Status</th><th>Document</th><th>Error</th></tr></thead>
+    <tbody>
+      {% for r in items.failed_publish_runs %}
+      <tr>
+        <td><a href="/admin/publish-runs">#{{ r.id }}</a></td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td><a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a></td>
+        <td class="url">{{ (r.error_message or '—')[:120] }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">None</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
