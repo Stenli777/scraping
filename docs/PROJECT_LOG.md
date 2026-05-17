@@ -182,3 +182,13 @@
 - API: generate-preview, approve/reject, list media/jobs, file serve
 - Flags: `ENABLE_MEDIA_PIPELINE=true`, `ENABLE_MEDIA_GENERATION=false`, `MEDIA_PROVIDER=placeholder`
 
+## 2026-05-17 — Этап 3C: Production hardening
+
+- Cleanup tmp deploy scripts from repo
+- Backup/restore scripts + `storage/system_backups/` manifests
+- Smoke framework `scripts/smoke/`
+- `config_validator.py`, `/health/config`, extended `/health/ready`
+- Admin `/admin/operations`
+- Integrity: `check_storage_integrity.py`, `check_db_integrity.py`
+- Docs: BACKUP_AND_RECOVERY, DEPLOYMENT_WORKFLOW, LOGGING
+

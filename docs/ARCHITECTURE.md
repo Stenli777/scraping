@@ -1034,3 +1034,11 @@ document → media_prompt (LLM, llm_runs) → media_job → provider → media_a
 - Storage: local only, `storage/media/`, не в Git
 - Provider abstraction: `placeholder` default; future AI providers
 
+
+## Operations & resilience (Stage 3C)
+
+- Manual backups: PostgreSQL + storage archives + JSON manifests
+- Smoke checks: read-only by default (`scripts/smoke/run_all.py`)
+- Config validation at startup (non-fatal) + `/health/config`
+- Readiness: storage, media_storage, config checks
+

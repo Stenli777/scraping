@@ -90,3 +90,12 @@ OpenAPI: `/docs`
 
 Требует `ENABLE_MEDIA_PIPELINE=true`. Generation AI — `ENABLE_MEDIA_GENERATION=true` (не на этом этапе).
 
+
+## Health — config
+
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | `/health/config` | Config validation (errors/warnings) |
+
+Readiness (`/health/ready`) includes: `storage`, `media_storage`, `config`, optional `hermes`.
+

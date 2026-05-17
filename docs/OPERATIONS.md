@@ -135,3 +135,28 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/test_2f_e2e.py --execute  # limit
 - `ENABLE_MEDIA_GENERATION` — real AI providers (off by default)
 - `MEDIA_PROVIDER=placeholder` — safe test provider
 
+
+## Backup (manual)
+
+```bash
+cd /opt/scrap
+bash scripts/backup_postgres.sh
+bash scripts/backup_storage.sh
+bash scripts/verify_backup.sh
+```
+
+## Smoke tests
+
+```bash
+PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py
+```
+
+## Integrity checks
+
+```bash
+.venv/bin/python scripts/check_storage_integrity.py
+.venv/bin/python scripts/check_db_integrity.py
+```
+
+See `docs/BACKUP_AND_RECOVERY.md`, `docs/DEPLOYMENT_WORKFLOW.md`, `docs/LOGGING.md`.
+
