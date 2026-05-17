@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.admin.routes import router as admin_router
+from app.api.discovery import router as discovery_router
 from app.api.documents import router as documents_router
 from app.api.health import router as health_router
 from app.api.llm import router as llm_router
@@ -26,6 +27,7 @@ app.include_router(rewrite_router)
 app.include_router(review_router)
 app.include_router(seo_router)
 app.include_router(publish_router)
+app.include_router(discovery_router)
 app.include_router(llm_router)
 app.include_router(admin_router)
 

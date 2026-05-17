@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th><th>Project</th><th>Name</th><th>Base URL</th><th>Mode</th>
+      <th>Enabled</th><th>Max URLs</th><th>Last discovered</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in directories %}
+    <tr>
+      <td><a href="/admin/source-directories/{{ d.id }}">{{ d.id }}</a></td>
+      <td>{{ d.project_id }}</td>
+      <td>{{ d.name }}</td>
+      <td class="url"><a href="{{ d.base_url }}" target="_blank">{{ d.base_url }}</a></td>
+      <td><code>{{ d.discovery_mode }}</code></td>
+      <td>{{ "yes" if d.enabled else "no" }}</td>
+      <td>{{ d.max_urls_per_run }}</td>
+      <td>{{ d.last_discovered_at or "—" }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8">Нет source directories. Запустите migration 005.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="export-links">
+  <a class="btn" href="/admin/discovered-urls">All</a>
+  <a class="btn" href="/admin/discovered-urls?status=discovered">Discovered</a>
+  <a class="btn" href="/admin/discovered-urls?status=duplicate">Duplicate</a>
+  <a class="btn" href="/admin/discovered-urls?status=enqueued">Enqueued</a>
+  <a class="btn" href="/admin/discovered-urls?status=ignored">Ignored</a>
+</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th><th>URL</th><th>Project</th><th>Dir</th><th>Status</th>
+      <th>Source</th><th>Task</th><th>Discovered</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in urls %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td class="url"><a href="{{ u.url }}" target="_blank">{{ u.normalized_url[:80] }}{% if u.normalized_url|length > 80 %}…{% endif %}</a></td>
+      <td>{{ u.project_id }}</td>
+      <td><a href="/admin/source-directories/{{ u.source_directory_id }}">#{{ u.source_directory_id }}</a></td>
+      <td><span class="badge status-{{ u.status }}">{{ u.status }}</span></td>
+      <td>{{ u.discovery_source }}</td>
+      <td>{% if u.existing_task_id %}<a href="/admin/tasks/{{ u.existing_task_id }}">#{{ u.existing_task_id }}</a>{% else %}—{% endif %}</td>
+      <td>{{ u.discovered_at }}</td>
+      <td>
+        {% if u.status == 'discovered' %}
+        <form method="post" action="/admin/discovered-urls/{{ u.id }}/enqueue" style="display:inline">
+          <button type="submit" class="btn">Enqueue</button>
+        </form>
+        <form method="post" action="/admin/discovered-urls/{{ u.id }}/ignore" style="display:inline">
+          <button type="submit" class="btn">Ignore</button>
+        </form>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Нет discovered URLs{% if filter_status %} (filter: {{ filter_status }}){% endif %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

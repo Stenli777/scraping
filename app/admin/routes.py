@@ -15,12 +15,19 @@ from app.models.llm_run import LLMRun
 from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
+from app.models.discovered_url import DiscoveredUrl
 from app.models.publish_run import PublishRun
 from app.models.publish_target import PublishTarget
+from app.models.source_directory import SourceDirectory
 from app.models.review_result import ReviewResult
 from app.models.seo_metadata import SeoMetadata
 from app.services.llm_tasks import execute_rewrite
 from app.services.project_profile_service import resolve_task_project
+from app.services.discovery_service import (
+    enqueue_discovered_url,
+    ignore_discovered_url,
+    run_discovery,
+)
 from app.services.publish_service import publish_draft_for_document
 from app.services.review_service import run_review_for_document
 from app.services.rewrite_service import rerun_rewrite_for_document
@@ -269,6 +276,70 @@ def admin_pipeline_events(request: Request, db: Session = Depends(get_db)):
         "pipeline_events.html",
         {"request": request, "events": events, "title": "Pipeline Events"},
     )
+
+
+@router.get("/admin/source-directories", response_class=HTMLResponse)
+def admin_source_directories(request: Request, db: Session = Depends(get_db)):
+    directories = db.query(SourceDirectory).order_by(SourceDirectory.id.asc()).all()
+    return templates.TemplateResponse(
+        request,
+        "source_directories.html",
+        {"request": request, "directories": directories, "title": "Source Directories"},
+    )
+
+
+@router.get("/admin/source-directories/{directory_id}", response_class=HTMLResponse)
+def admin_source_directory_detail(
+    directory_id: int, request: Request, db: Session = Depends(get_db)
+):
+    directory = db.get(SourceDirectory, directory_id)
+    if not directory:
+        return RedirectResponse("/admin/source-directories", status_code=302)
+    return templates.TemplateResponse(
+        request,
+        "source_directory_detail.html",
+        {
+            "request": request,
+            "directory": directory,
+            "feature_flags": all_flags(),
+            "title": f"Source: {directory.name}",
+        },
+    )
+
+
+@router.post("/admin/source-directories/{directory_id}/discover")
+def admin_run_discovery(directory_id: int, db: Session = Depends(get_db)):
+    run_discovery(db, directory_id)
+    return RedirectResponse(f"/admin/source-directories/{directory_id}", status_code=303)
+
+
+@router.get("/admin/discovered-urls", response_class=HTMLResponse)
+def admin_discovered_urls(
+    request: Request,
+    status: str | None = None,
+    db: Session = Depends(get_db),
+):
+    q = db.query(DiscoveredUrl).order_by(DiscoveredUrl.id.desc()).limit(200)
+    if status:
+        q = q.filter(DiscoveredUrl.status == status)
+    urls = q.all()
+    return templates.TemplateResponse(
+        request,
+        "discovered_urls.html",
+        {"request": request, "urls": urls, "filter_status": status, "title": "Discovered URLs"},
+    )
+
+
+@router.post("/admin/discovered-urls/{discovered_url_id}/enqueue")
+def admin_enqueue_discovered(discovered_url_id: int, db: Session = Depends(get_db)):
+    enqueue_discovered_url(db, discovered_url_id)
+    return RedirectResponse("/admin/discovered-urls", status_code=303)
+
+
+@router.post("/admin/discovered-urls/{discovered_url_id}/ignore")
+def admin_ignore_discovered(discovered_url_id: int, db: Session = Depends(get_db)):
+    ignore_discovered_url(db, discovered_url_id)
+    return RedirectResponse("/admin/discovered-urls", status_code=303)
 
 
 @router.get("/admin/llm/smoke", response_class=HTMLResponse)

@@ -49,6 +49,11 @@ body {
 .status-success { background: #14532d; color: #bbf7d0; }
 .status-failed_terminal { background: #7f1d1d; color: #fecaca; }
 .status-pending { background: #374151; color: #e5e7eb; }
+.status-discovered { background: #1e3a5f; color: #bfdbfe; }
+.status-duplicate { background: #4b5563; color: #e5e7eb; }
+.status-ignored { background: #374151; color: #9ca3af; }
+.status-enqueued { background: #14532d; color: #bbf7d0; }
+.status-blocked { background: #7f1d1d; color: #fecaca; }
 .status-queued { background: #1e3a5f; }
 .btn {
   display: inline-block;

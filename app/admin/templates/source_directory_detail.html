@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="meta grid-meta">
+  <p><strong>Name:</strong> {{ directory.name }}</p>
+  <p><strong>Project ID:</strong> {{ directory.project_id }}</p>
+  <p><strong>Base URL:</strong> <a href="{{ directory.base_url }}" target="_blank">{{ directory.base_url }}</a></p>
+  <p><strong>Mode:</strong> <code>{{ directory.discovery_mode }}</code></p>
+  <p><strong>Enabled:</strong> {{ "yes" if directory.enabled else "no" }}</p>
+  <p><strong>Max URLs/run:</strong> {{ directory.max_urls_per_run }}</p>
+  <p><strong>Max depth:</strong> {{ directory.max_depth }}</p>
+  <p><strong>Crawl delay:</strong> {{ directory.crawl_delay_seconds }}s</p>
+  <p><strong>Last discovered:</strong> {{ directory.last_discovered_at or "—" }}</p>
+</div>
+
+<section class="panel">
+  <h2>Allow patterns</h2>
+  <pre class="content">{{ (directory.allow_patterns_json or []) | tojson(indent=2) }}</pre>
+</section>
+<section class="panel">
+  <h2>Block patterns</h2>
+  <pre class="content">{{ (directory.block_patterns_json or []) | tojson(indent=2) }}</pre>
+</section>
+
+{% if directory.enabled and feature_flags.get('ENABLE_SOURCE_DISCOVERY') %}
+<form method="post" action="/admin/source-directories/{{ directory.id }}/discover">
+  <button type="submit" class="btn primary">Run discovery</button>
+</form>
+{% elif not feature_flags.get('ENABLE_SOURCE_DISCOVERY') %}
+<div class="warn-box">Discovery disabled (ENABLE_SOURCE_DISCOVERY=false)</div>
+{% endif %}
+
+<p><a class="btn" href="/admin/source-directories">← Directories</a>
+   <a class="btn" href="/admin/discovered-urls?source_directory_id={{ directory.id }}">Discovered URLs</a></p>
+{% endblock %}
