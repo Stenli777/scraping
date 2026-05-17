@@ -30,9 +30,14 @@ from app.publishers.exceptions import (
     PublishError,
     PublishServerError,
     PublishTransportError,
+    PublishUnsupportedPayloadError,
     PublishValidationError,
 )
-from app.publishers.payloads import PAYLOAD_VERSION_ARTICLE_V1, build_article_v1_payload
+from app.publishers.payloads import (
+    PAYLOAD_VERSION_ARTICLE_V1,
+    PAYLOAD_VERSION_ARTICLE_V2,
+    build_publish_payload,
+)
 from app.publishers.registry import get_publisher
 from app.publishers.validators import (
     validate_article_v1_publish,
@@ -40,6 +45,9 @@ from app.publishers.validators import (
     validate_quality_for_publish,
     validate_review_for_publish,
 )
+from app.publishers.validators_v2 import validate_article_v2_publish
+from app.publishers.versions import is_supported_payload_format
+from app.services.publish_retry_service import compute_next_retry_at, classify_failure
 from app.services.editorial_service import mark_published_draft
 from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
 from app.services.revision_service import ensure_revision_for_publish
@@ -204,6 +212,8 @@ def publish_draft_for_document(
     publish_target_id: int | None = None,
     dry_run: bool | None = None,
     force: bool = False,
+    retry_parent_publish_run_id: int | None = None,
+    retry_count: int = 0,
 ) -> PublishDraftResult:
     document = db.get(ParsedDocument, document_id)
     if not document:
@@ -242,6 +252,7 @@ def publish_draft_for_document(
             db,
             document_id=document.id,
             publish_target_id=target.id,
+            payload_version=payload_format,
         )
         if existing:
             return PublishDraftResult(
@@ -255,11 +266,18 @@ def publish_draft_for_document(
                 validation_error=True,
             )
 
-    if target.payload_format != "article_v1":
-        raise PublishValidationError(f"Unsupported payload_format: {target.payload_format}")
+    payload_format = (target.payload_format or PAYLOAD_VERSION_ARTICLE_V1).strip()
+    if not is_supported_payload_format(payload_format):
+        return PublishDraftResult(
+            success=False,
+            error_message=f"Unsupported payload_format: {payload_format}",
+            validation_error=True,
+        )
 
     media_block = build_media_block_for_publish(db, document.id)
-    payload = build_article_v1_payload(
+    revision = ensure_revision_for_publish(db, document)
+    payload = build_publish_payload(
+        payload_format,
         document=document,
         task=task,
         project=project,
@@ -267,14 +285,24 @@ def publish_draft_for_document(
         seo=seo,
         review=review,
         media=media_block,
+        revision_id=revision.id,
     )
-    validate_article_v1_publish(
-        document=document,
-        project=project,
-        target=target,
-        seo=seo,
-        payload=payload,
-    ).raise_if_invalid()
+    if payload_format == PAYLOAD_VERSION_ARTICLE_V2:
+        validate_article_v2_publish(
+            document=document,
+            project=project,
+            target=target,
+            seo=seo,
+            payload=payload,
+        ).raise_if_invalid()
+    else:
+        validate_article_v1_publish(
+            document=document,
+            project=project,
+            target=target,
+            seo=seo,
+            payload=payload,
+        ).raise_if_invalid()
 
     endpoint, endpoint_requires_dry = resolve_target_endpoint(target)
     if dry_run is not None:
@@ -297,7 +325,6 @@ def publish_draft_for_document(
         },
     )
 
-    revision = ensure_revision_for_publish(db, document)
     preview_asset = get_approved_preview_asset(db, document.id)
 
     run = PublishRun(
@@ -311,8 +338,10 @@ def publish_draft_for_document(
         dry_run=effective_dry_run,
         endpoint_url=endpoint or target.endpoint_url,
         request_payload_json=payload,
-        payload_version=PAYLOAD_VERSION_ARTICLE_V1,
+        payload_version=payload_format,
         force_used=force,
+        retry_parent_publish_run_id=retry_parent_publish_run_id,
+        retry_count=retry_count,
     )
     db.add(run)
     db.flush()
@@ -344,6 +373,10 @@ def publish_draft_for_document(
         run.response_body = result.response_body
         run.external_id = result.external_id
         run.draft_url = result.draft_url
+        run.remote_status = result.metadata.get("remote_status") or (
+            result.status if not result.dry_run else None
+        )
+        run.response_schema_version = result.metadata.get("response_schema_version")
         run.dry_run = result.dry_run
         run.status = (
             PublishRunStatus.DRY_RUN.value
@@ -372,8 +405,12 @@ def publish_draft_for_document(
             )
             mark_published_draft(db, document.id)
             pub_record = create_publication_from_publish_run(
-                db, run=run, external_id=result.external_id,
-                external_url=result.draft_url, dry_run=result.dry_run,
+                db,
+                run=run,
+                external_id=result.external_id,
+                external_url=result.draft_url,
+                dry_run=result.dry_run,
+                remote_status=run.remote_status,
             )
             db.commit()
             return PublishDraftResult(
@@ -439,6 +476,8 @@ def publish_draft_for_document(
     except (PublishTransportError, PublishServerError) as exc:
         run.status = PublishRunStatus.FAILED_RETRYABLE.value
         run.error_message = str(exc)
+        run.last_retry_error = str(exc)
+        run.next_retry_at = compute_next_retry_at(run.retry_count + 1)
         emit_pipeline_event(
             db,
             task.id,
@@ -455,10 +494,36 @@ def publish_draft_for_document(
             payload=payload,
         )
 
+    except PublishUnsupportedPayloadError as exc:
+        run.status = PublishRunStatus.FAILED_TERMINAL.value
+        run.error_message = str(exc)
+        emit_pipeline_event(
+            db,
+            task.id,
+            PipelineStage.FAILED_TERMINAL,
+            status="entered",
+            payload={"reason": "unsupported_payload"},
+        )
+        db.commit()
+        return PublishDraftResult(
+            success=False,
+            publish_run_id=run.id,
+            status=run.status,
+            error_message=str(exc),
+            payload=payload,
+            validation_error=True,
+        )
+
     except PublishError as exc:
         logger.warning("Publish failed document=%s: %s", document_id, exc)
-        run.status = PublishRunStatus.FAILED_RETRYABLE.value
+        failure_kind = classify_failure(status_code=run.response_status_code, error_message=str(exc))
+        if failure_kind in ("validation_failed", "unauthorized", "unsupported_payload", "terminal"):
+            run.status = PublishRunStatus.FAILED_TERMINAL.value
+        else:
+            run.status = PublishRunStatus.FAILED_RETRYABLE.value
+            run.next_retry_at = compute_next_retry_at(run.retry_count + 1)
         run.error_message = str(exc)
+        run.last_retry_error = str(exc)
         emit_pipeline_event(
             db,
             task.id,

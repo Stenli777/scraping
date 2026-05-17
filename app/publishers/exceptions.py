@@ -28,3 +28,8 @@ class PublishDuplicateError(PublishError):
     def __init__(self, message: str, *, existing_publish_run_id: int | None = None):
         super().__init__(message)
         self.existing_publish_run_id = existing_publish_run_id
+
+
+
+class PublishUnsupportedPayloadError(PublishError):
+    """Target does not support requested payload version ? terminal."""

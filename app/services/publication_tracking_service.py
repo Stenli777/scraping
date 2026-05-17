@@ -22,6 +22,7 @@ def create_publication_from_publish_run(
     external_url: str | None,
     dry_run: bool,
     publication_status: str = "draft",
+    remote_status: str | None = None,
 ) -> PublicationRecord | None:
     if not is_publication_tracking_enabled():
         return None
@@ -34,6 +35,10 @@ def create_publication_from_publish_run(
         select(PublicationRecord).where(PublicationRecord.publish_run_id == run.id)
     )
     if existing:
+        if remote_status or run.remote_status:
+            meta = dict(existing.metadata_json or {})
+            meta["remote_status"] = remote_status or run.remote_status
+            existing.metadata_json = meta
         return existing
 
     record = PublicationRecord(
@@ -45,7 +50,11 @@ def create_publication_from_publish_run(
         external_url=external_url,
         publication_status=publication_status,
         published_at=datetime.now(timezone.utc),
-        metadata_json={"payload_version": run.payload_version},
+        metadata_json={
+            "payload_version": run.payload_version,
+            "response_schema_version": run.response_schema_version,
+            "remote_status": remote_status or run.remote_status,
+        },
     )
     db.add(record)
     db.flush()
