@@ -18,15 +18,29 @@
 </div>
 
 <div class="panel" id="publish-readiness">
-  <h2>Publish readiness</h2>
+  <h2>Publish safety</h2>
+  {% set chk = publish_readiness.checks or {} %}
+  <p>
+    <span class="badge {% if publish_readiness.ready %}status-done{% else %}status-error{% endif %}">
+      {% if publish_readiness.ready %}Ready{% else %}Not ready{% endif %}
+    </span>
+    {% if chk.review_take is sameas true %}<span class="badge status-done">take</span>
+    {% elif chk.review_take is sameas false %}<span class="badge status-error">reject</span>
+    {% else %}<span class="badge">review?</span>{% endif %}
+    {% if chk.review_score is not none %}<span class="badge">score {{ chk.review_score }}</span>{% endif %}
+    {% if chk.duplicate_publish %}<span class="badge status-failed_retryable">duplicate</span>{% endif %}
+  </p>
   {% if publish_readiness.ready %}
-  <p class="ok-box">Ready to publish (draft)</p>
+  <p class="ok-box">Ready to publish (draft only)</p>
   {% else %}
-  <p class="warn-box">Not ready</p>
+  <p class="warn-box">Blocked</p>
   <p><strong>Missing:</strong> {{ publish_readiness.missing | join(', ') or '—' }}</p>
   {% endif %}
   {% if publish_readiness.warnings %}
   <p><strong>Warnings:</strong> {{ publish_readiness.warnings | join(', ') }}</p>
+  {% endif %}
+  {% if chk.force_required_for_duplicate %}
+  <p class="warn-box">Successful publish exists — use <strong>Publish again (force)</strong>.</p>
   {% endif %}
 </div>
 
@@ -91,25 +105,29 @@
     <label>Target
       <select name="publish_target_id">
         {% for t in publish_targets %}
-        <option value="{{ t.id }}">{{ t.name }} ({{ t.target_type }}{% if t.dry_run %}, dry-run{% endif %})</option>
+        <option value="{{ t.id }}">{{ t.name }} ({{ t.target_type }}{% if t.dry_run %}, target dry-run{% endif %}{% if not t.enabled %}, disabled{% endif %})</option>
         {% endfor %}
       </select>
     </label>
     <label><input type="checkbox" name="dry_run"> Force dry-run</label>
+    <label><input type="checkbox" name="force"> Force republish (bypass duplicate & review)</label>
     <button type="submit" class="btn primary">Publish draft</button>
   </form>
   {% if publish_runs %}
   <h3>Publish history</h3>
   <table class="table">
-    <thead><tr><th>ID</th><th>Status</th><th>Dry</th><th>Code</th><th>External ID</th><th>Time</th></tr></thead>
+    <thead><tr><th>ID</th><th>Target</th><th>Status</th><th>Dry</th><th>Force</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th></tr></thead>
     <tbody>
       {% for r in publish_runs %}
       <tr>
         <td>#{{ r.id }}</td>
+        <td>#{{ r.publish_target_id }}</td>
         <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
         <td>{{ 'yes' if r.dry_run else 'no' }}</td>
-        <td>{{ r.response_status_code or '—' }}</td>
+        <td>{{ 'yes' if r.force_used else 'no' }}</td>
         <td>{{ r.external_id or '—' }}</td>
+        <td>{% if r.draft_url %}<a href="{{ r.draft_url }}" target="_blank">open</a>{% else %}—{% endif %}</td>
+        <td class="url">{{ (r.error_message or '—')[:60] }}</td>
         <td>{{ r.created_at }}</td>
       </tr>
       {% endfor %}

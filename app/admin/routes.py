@@ -233,6 +233,7 @@ def admin_publish_draft(
     document_id: int,
     publish_target_id: int = Form(...),
     dry_run: str | None = Form(None),
+    force: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
     publish_draft_for_document(
@@ -240,8 +241,9 @@ def admin_publish_draft(
         document_id,
         publish_target_id=publish_target_id,
         dry_run=dry_run == "on",
+        force=force == "on",
     )
-    return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
+    return RedirectResponse(f"/admin/documents/{document_id}#publish", status_code=303)
 
 
 @router.get("/admin/publish-targets", response_class=HTMLResponse)
