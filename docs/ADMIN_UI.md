@@ -61,3 +61,13 @@ Base: **https://scrap.crmflow24.ru/admin**
 - `/admin/automation` — rules, enable/disable, manual run, heartbeat
 - `/admin/automation-runs` — audit log
 
+## Async automation lifecycle (Stage 4B)
+
+- `POST /api/automation/rules/{id}/run` creates `automation_run` with `status=queued` and returns immediately.
+- `scrap-scheduler` picks queued runs first, then enqueues due scheduled rules.
+- Run statuses: `queued`, `running`, `cancel_requested`, `cancelled`, `completed`, `failed`, `skipped`.
+- `progress_json` and structured `logs_json` events for operator visibility.
+- `POST /api/automation/runs/{id}/cancel` — queued→cancelled, running→cancel_requested.
+- Stale `running` (heartbeat timeout) → `failed` via scheduler recovery or `POST .../mark-failed`.
+- **Production default:** `ENABLE_SCHEDULER=false`, `ENABLE_AUTOMATION=false` (rules remain disabled in DB).
+

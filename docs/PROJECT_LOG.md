@@ -210,3 +210,10 @@
 - API automation + scheduler status
 - Smoke check_scheduler.py
 
+### 2026-05-17 — Stage 4B: async automation runs
+
+- Non-blocking manual run API (queued runs)
+- Scheduler processes queued runs with locks and progress
+- Cancel, mark-failed, run detail admin, extended scheduler status
+- Migration 013 lifecycle fields
+
