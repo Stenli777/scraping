@@ -1,36 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<p>Documents with review approved, rewrite + SEO present, quality missing or needs revision, no successful publish.</p>
-<table class="table">
-  <thead>
-    <tr>
-      <th>Document</th><th>Project</th><th>Review</th><th>Quality</th><th>Verdict</th><th>Publish</th><th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in items %}
-    <tr>
-      <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
-      <td>{{ item.project_slug or "—" }}</td>
-      <td>{{ item.review_score or "—" }} (take)</td>
-      <td>{{ item.quality_overall_score or "—" }}</td>
-      <td>{{ item.quality_verdict or "missing" }}</td>
-      <td>
-        {% if item.publish_ready %}<span class="badge status-done">ready</span>
-        {% else %}<span class="badge status-error">blocked</span>
-        <small>{{ item.publish_missing | join(", ") }}</small>{% endif %}
-      </td>
-      <td class="export-links">
-        <form method="post" action="/admin/documents/{{ item.document_id }}/run-quality" style="display:inline">
-          <button type="submit" class="btn">Run quality</button>
-        </form>
-        <a class="btn" href="/admin/documents/{{ item.document_id }}">Open</a>
-        <a class="btn" href="/admin/documents/{{ item.document_id }}#publish">Publish</a>
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="7">Queue empty</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% if not feature_flags.get('ENABLE_EDITORIAL_WORKFLOW') %}
+<p class="warn-box">Editorial workflow disabled (ENABLE_EDITORIAL_WORKFLOW=false).</p>
+{% else %}
+
+<h2>Needs review</h2>
+<p><small>generated, operator_review</small></p>
+{% set items = groups.needs_review %}
+{% include "_editorial_queue_table.html" %}
+
+<h2>Needs revision</h2>
+{% set items = groups.needs_revision %}
+{% include "_editorial_queue_table.html" %}
+
+<h2>Ready</h2>
+<p><small>approved, ready_to_publish</small></p>
+{% set items = groups.ready %}
+{% include "_editorial_queue_table.html" %}
+
+<h2>Rejected</h2>
+{% set items = groups.rejected %}
+{% include "_editorial_queue_table.html" %}
+
+{% endif %}
 {% endblock %}

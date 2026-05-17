@@ -1,0 +1,28 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>Doc</th><th>Project</th><th>Status</th><th>Rev</th><th>Review</th><th>QC</th><th>Publish</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
+      <td>{{ item.project_slug or "—" }}</td>
+      <td><code>{{ item.editorial_status }}</code></td>
+      <td>{{ item.revision_number }}{% if item.latest_revision_at %}<br><small>{{ item.latest_revision_at[:16] }}</small>{% endif %}</td>
+      <td>{{ item.review_score or "—" }}</td>
+      <td>{{ item.quality_overall_score or "—" }} {% if item.quality_verdict %}({{ item.quality_verdict }}){% endif %}</td>
+      <td>{% if item.publish_ready %}<span class="badge status-done">ready</span>{% else %}<span class="badge status-error">blocked</span>{% endif %}</td>
+      <td class="export-links">
+        <a class="btn" href="/admin/documents/{{ item.document_id }}">Open</a>
+        <form method="post" action="/admin/documents/{{ item.document_id }}/run-quality" style="display:inline">
+          <button type="submit" class="btn">QC</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8">—</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

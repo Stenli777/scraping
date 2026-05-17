@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.parsed_document import ParsedDocument
+from app.models.document_revision import DocumentRevision
 from app.models.publish_run import PublishRun
 from app.models.publish_target import PublishTarget
 from app.publishers.exceptions import PublishValidationError
@@ -57,12 +58,18 @@ def list_document_publish_runs(document_id: int, db: Session = Depends(get_db)):
         .limit(50)
         .all()
     )
-    return {
-        "document_id": document_id,
-        "runs": [
+    items = []
+    for r in runs:
+        rev_no = None
+        if r.document_revision_id:
+            rev = db.get(DocumentRevision, r.document_revision_id)
+            rev_no = rev.revision_number if rev else None
+        items.append(
             {
                 "id": r.id,
                 "publish_target_id": r.publish_target_id,
+                "document_revision_id": r.document_revision_id,
+                "revision_number": rev_no,
                 "status": r.status,
                 "dry_run": r.dry_run,
                 "force_used": r.force_used,
@@ -73,9 +80,8 @@ def list_document_publish_runs(document_id: int, db: Session = Depends(get_db)):
                 "error_message": r.error_message,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
-            for r in runs
-        ],
-    }
+        )
+    return {"document_id": document_id, "runs": items}
 
 
 @router.post("/api/documents/{document_id}/publish-draft")

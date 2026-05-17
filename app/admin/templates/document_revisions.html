@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="/admin/documents/{{ document.id }}">← Document #{{ document.id }}</a></p>
+<p><strong>Current revision:</strong> {{ document.current_revision_number }}</p>
+<p><strong>Editorial status:</strong> <code>{{ document.editorial_status }}</code></p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>#</th><th>Source</th><th>Ref</th><th>Editorial</th><th>Created</th><th>Publish runs</th><th>Preview</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rev in revisions %}
+    <tr>
+      <td>{{ rev.revision_number }}</td>
+      <td><code>{{ rev.source_type }}</code></td>
+      <td>{{ rev.source_reference_id or "—" }}</td>
+      <td><code>{{ rev.editorial_status }}</code></td>
+      <td>{{ rev.created_at }}</td>
+      <td>
+        {% set runs = rev_publish.get(rev.id, []) %}
+        {% for run in runs %}
+        <a href="/admin/publish-runs">#{{ run.id }}</a> ({{ run.status }}){% if not loop.last %}, {% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td><pre class="content" style="max-height:6em;overflow:auto">{{ (rev.rewrite_text or "")[:400] }}</pre></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No revisions</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="warn-box">Read-only — revisions are immutable.</p>
+{% endblock %}

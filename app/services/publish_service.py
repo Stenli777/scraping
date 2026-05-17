@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.core.enums import PublishRunStatus
 from app.core.feature_flags import (
     is_auto_publish_enabled,
+    is_editorial_workflow_enabled,
     is_publishing_enabled,
     is_quality_review_enabled,
 )
@@ -35,10 +36,13 @@ from app.publishers.payloads import PAYLOAD_VERSION_ARTICLE_V1, build_article_v1
 from app.publishers.registry import get_publisher
 from app.publishers.validators import (
     validate_article_v1_publish,
+    validate_editorial_for_publish,
     validate_quality_for_publish,
     validate_review_for_publish,
 )
+from app.services.editorial_service import mark_published_draft
 from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
+from app.services.revision_service import ensure_revision_for_publish
 from app.services.pipeline_event_service import emit_pipeline_event
 from app.services.project_profile_service import resolve_task_project
 
@@ -172,6 +176,13 @@ def _validate_preconditions(
     )
     quality_check.raise_if_invalid()
 
+    editorial_check = validate_editorial_for_publish(
+        editorial_enabled=is_editorial_workflow_enabled(),
+        document=document,
+        force=force,
+    )
+    editorial_check.raise_if_invalid()
+
     if not seo:
         raise PublishValidationError("Document has no seo_metadata")
     if not seo.slug:
@@ -281,11 +292,14 @@ def publish_draft_for_document(
         },
     )
 
+    revision = ensure_revision_for_publish(db, document)
+
     run = PublishRun(
         project_id=project.id,
         document_id=document.id,
         task_id=task.id,
         publish_target_id=target.id,
+        document_revision_id=revision.id,
         status=PublishRunStatus.PENDING.value,
         dry_run=effective_dry_run,
         endpoint_url=endpoint or target.endpoint_url,
@@ -341,12 +355,15 @@ def publish_draft_for_document(
                 status="completed",
                 payload={
                     "publish_run_id": run.id,
+                    "document_revision_id": revision.id,
+                    "revision_number": revision.revision_number,
                     "external_id": result.external_id,
                     "draft_url": result.draft_url,
                     "dry_run": result.dry_run,
                     "force": force,
                 },
             )
+            mark_published_draft(db, document.id)
             db.commit()
             return PublishDraftResult(
                 success=True,

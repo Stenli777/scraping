@@ -37,7 +37,11 @@ from app.services.seo_service import run_seo_for_document
 from app.services.admin_context_service import load_document_context, load_task_context
 from app.services.operations_service import get_dashboard_stats, get_failed_items, list_stale_running_tasks
 from app.services.pipeline_summary_service import build_pipeline_summary
-from app.services.editorial_service import list_editorial_queue
+from app.models.document_revision import DocumentRevision
+from app.services import editorial_service
+from app.services.editorial_queue_service import list_editorial_queue
+from app.services.revision_service import list_revisions
+from app.services.timeline_service import build_document_timeline
 from app.services.prompt_service import (
     activate_prompt_version,
     create_prompt_version,
@@ -193,6 +197,11 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
         .limit(20)
         .all()
     )
+    publish_revision_numbers: dict[int, int | None] = {}
+    for run in publish_runs:
+        if run.document_revision_id:
+            rev = db.get(DocumentRevision, run.document_revision_id)
+            publish_revision_numbers[run.id] = rev.revision_number if rev else None
     ctx = load_document_context(db, document)
     task = document.task
     pipeline_summary = (
@@ -200,6 +209,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     )
     publish_readiness = get_publish_readiness(db, document_id)
     quality_record = get_latest_quality_score(db, document_id)
+    timeline = build_document_timeline(db, document)
+    revision_count = document.current_revision_number or 0
     return templates.TemplateResponse(
         request,
         "document_detail.html",
@@ -212,8 +223,11 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "quality_record": quality_record,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
+            "publish_revision_numbers": publish_revision_numbers,
             "publish_readiness": publish_readiness,
             "pipeline_summary": pipeline_summary,
+            "timeline": timeline,
+            "revision_count": revision_count,
             "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Документ #{document_id}",
@@ -244,6 +258,69 @@ def admin_run_seo(document_id: int, db: Session = Depends(get_db)):
 def admin_run_quality(document_id: int, db: Session = Depends(get_db)):
     run_quality_for_document(db, document_id)
     return RedirectResponse(f"/admin/documents/{document_id}#quality", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/editorial/operator-review")
+def admin_editorial_operator_review(document_id: int, db: Session = Depends(get_db)):
+    editorial_service.move_to_operator_review(db, document_id)
+    db.commit()
+    return RedirectResponse(f"/admin/documents/{document_id}#editorial", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/editorial/needs-revision")
+def admin_editorial_needs_revision(document_id: int, db: Session = Depends(get_db)):
+    editorial_service.mark_needs_revision(db, document_id)
+    db.commit()
+    return RedirectResponse(f"/admin/documents/{document_id}#editorial", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/editorial/approve")
+def admin_editorial_approve(document_id: int, db: Session = Depends(get_db)):
+    editorial_service.approve_document(db, document_id)
+    db.commit()
+    return RedirectResponse(f"/admin/documents/{document_id}#editorial", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/editorial/reject")
+def admin_editorial_reject(document_id: int, db: Session = Depends(get_db)):
+    editorial_service.reject_document(db, document_id)
+    db.commit()
+    return RedirectResponse(f"/admin/documents/{document_id}#editorial", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/editorial/ready-to-publish")
+def admin_editorial_ready(document_id: int, db: Session = Depends(get_db)):
+    editorial_service.mark_ready_to_publish(db, document_id)
+    db.commit()
+    return RedirectResponse(f"/admin/documents/{document_id}#editorial", status_code=303)
+
+
+@router.get("/admin/documents/{document_id}/revisions", response_class=HTMLResponse)
+def admin_document_revisions(document_id: int, request: Request, db: Session = Depends(get_db)):
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        return RedirectResponse("/admin", status_code=302)
+    revisions = list_revisions(db, document_id)
+    rev_publish = {}
+    for rev in revisions:
+        runs = (
+            db.query(PublishRun)
+            .filter(PublishRun.document_revision_id == rev.id)
+            .order_by(PublishRun.id.desc())
+            .all()
+        )
+        rev_publish[rev.id] = runs
+    return templates.TemplateResponse(
+        request,
+        "document_revisions.html",
+        {
+            "request": request,
+            "document": document,
+            "revisions": revisions,
+            "rev_publish": rev_publish,
+            "title": f"Revisions — doc #{document_id}",
+        },
+    )
 
 
 @router.post("/admin/documents/{document_id}/publish-draft")
@@ -514,11 +591,16 @@ def admin_quality_scores(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/admin/editorial-queue", response_class=HTMLResponse)
 def admin_editorial_queue(request: Request, db: Session = Depends(get_db)):
-    items = list_editorial_queue(db)
+    groups = list_editorial_queue(db)
     return templates.TemplateResponse(
         request,
         "editorial_queue.html",
-        {"request": request, "items": items, "title": "Editorial Queue"},
+        {
+            "request": request,
+            "groups": groups,
+            "feature_flags": all_flags(),
+            "title": "Editorial Queue",
+        },
     )
 
 

@@ -31,6 +31,9 @@
     {% if chk.duplicate_publish %}<span class="badge status-failed_retryable">duplicate</span>{% endif %}
     {% if chk.quality_verdict %}<span class="badge">QC {{ chk.quality_verdict }}</span>{% elif chk.quality_review_enabled %}<span class="badge status-error">no QC</span>{% endif %}
     {% if chk.quality_overall_score is not none %}<span class="badge">qc {{ chk.quality_overall_score }}</span>{% endif %}
+    {% if chk.editorial_status %}<span class="badge">{{ chk.editorial_status }}</span>{% endif %}
+    {% if chk.approved_for_publish %}<span class="badge status-done">op OK</span>{% elif chk.editorial_workflow_enabled %}<span class="badge status-error">no op OK</span>{% endif %}
+    {% if chk.current_revision_number is not none %}<span class="badge">rev {{ chk.current_revision_number }}</span>{% endif %}
   </p>
   {% if publish_readiness.ready %}
   <p class="ok-box">Ready to publish (draft only)</p>
@@ -45,6 +48,47 @@
   <p class="warn-box">Successful publish exists — use <strong>Publish again (force)</strong>.</p>
   {% endif %}
 </div>
+
+{% if feature_flags.get('ENABLE_EDITORIAL_WORKFLOW') %}
+<div class="panel" id="editorial">
+  <h2>Editorial</h2>
+  <p><strong>Status:</strong> <code>{{ document.editorial_status }}</code> ·
+     <strong>Approved for publish:</strong> {{ document.approved_for_publish }} ·
+     <strong>Revision:</strong> {{ document.current_revision_number }}
+     · <a href="/admin/documents/{{ document.id }}/revisions">History</a></p>
+  {% if document.editorial_notes %}<p><strong>Notes:</strong> {{ document.editorial_notes }}</p>{% endif %}
+  <p class="export-links">
+    <form method="post" action="/admin/documents/{{ document.id }}/editorial/operator-review" style="display:inline">
+      <button type="submit" class="btn">Move to review</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/editorial/needs-revision" style="display:inline">
+      <button type="submit" class="btn">Needs revision</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/editorial/approve" style="display:inline">
+      <button type="submit" class="btn primary">Approve</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/editorial/reject" style="display:inline">
+      <button type="submit" class="btn">Reject</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/editorial/ready-to-publish" style="display:inline">
+      <button type="submit" class="btn">Ready to publish</button>
+    </form>
+  </p>
+</div>
+{% endif %}
+
+{% if timeline %}
+<div class="panel" id="timeline">
+  <h2>Timeline</h2>
+  <ul>
+    {% for ev in timeline %}
+    <li><strong>{{ ev.label }}</strong> — {{ ev.detail or "" }} <small>{{ ev.at or "" }}</small>
+      {% if ev.revision_number is defined and ev.revision_number %} (rev {{ ev.revision_number }}){% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
 
 <div class="meta grid-meta">
   <p><strong>URL:</strong> <a href="{{ document.source_url }}" target="_blank">{{ document.source_url }}</a></p>
@@ -143,17 +187,18 @@
       </select>
     </label>
     <label><input type="checkbox" name="dry_run"> Force dry-run</label>
-    <label><input type="checkbox" name="force"> Force republish (bypass duplicate, review & quality)</label>
+    <label><input type="checkbox" name="force"> Force republish (bypass duplicate, review, quality & editorial)</label>
     <button type="submit" class="btn primary">Publish draft</button>
   </form>
   {% if publish_runs %}
   <h3>Publish history</h3>
   <table class="table">
-    <thead><tr><th>ID</th><th>Target</th><th>Status</th><th>Dry</th><th>Force</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th></tr></thead>
+    <thead><tr><th>ID</th><th>Rev</th><th>Target</th><th>Status</th><th>Dry</th><th>Force</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th></tr></thead>
     <tbody>
       {% for r in publish_runs %}
       <tr>
         <td>#{{ r.id }}</td>
+        <td>{{ publish_revision_numbers.get(r.id, '—') }}</td>
         <td>#{{ r.publish_target_id }}</td>
         <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
         <td>{{ 'yes' if r.dry_run else 'no' }}</td>
