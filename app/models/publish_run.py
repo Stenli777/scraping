@@ -20,6 +20,11 @@ class PublishRun(Base):
         nullable=True,
         index=True,
     )
+    preview_media_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("media_assets.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     status: Mapped[str] = mapped_column(String(32))
     dry_run: Mapped[bool] = mapped_column(Boolean, default=False)
     endpoint_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
