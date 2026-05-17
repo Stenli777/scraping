@@ -78,3 +78,36 @@
 - CLIProxy rewriter
 - CRMFlow24 export webhook
 - Опционально: доработка habr raw_text noise
+
+## 2026-05-17 14:46 UTC — Stage 2A: multiproject foundation
+
+### Pre-check
+- pwd: /opt/scrap, branch master
+- scrap-api, scrap-worker: active
+- /health OK
+
+### Git
+- remote: git@github.com:Stenli777/scraping.git
+- tag: baseline-pre-multiproject @ faf47d8
+- commits: 13d8a43 chore hygiene, dd4af64 feat stage 2A
+- push: failed (deploy key read-only)
+
+### Delivered
+- app/llm/ abstraction (client, schemas, routing, registry)
+- tables: projects, source_directories, llm_runs, pipeline_events
+- migration 002 applied
+- pipeline_events on legacy status transitions
+- /health/ready (db, worker, cliproxyapi)
+- admin: Projects, LLM Runs, Pipeline Events, LLM Smoke
+- feature flags ENABLE_HERMES=false etc.
+- CLIProxy routing uses glm-4.5-air-free, gpt-oss-120b-free aliases
+
+### Verification
+- LLM smoke hermes-cheap: success, llm_run id=3
+- pipeline_events: emitted on task #7
+- project crmflow24 seeded id=1
+
+### Next
+- GitHub write access for push
+- Wire REWRITER_PROVIDER=cliproxy in pipeline when ready
+- Hermes orchestration (not runtime)
