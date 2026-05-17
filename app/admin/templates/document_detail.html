@@ -29,6 +29,8 @@
     {% else %}<span class="badge">review?</span>{% endif %}
     {% if chk.review_score is not none %}<span class="badge">score {{ chk.review_score }}</span>{% endif %}
     {% if chk.duplicate_publish %}<span class="badge status-failed_retryable">duplicate</span>{% endif %}
+    {% if chk.quality_verdict %}<span class="badge">QC {{ chk.quality_verdict }}</span>{% elif chk.quality_review_enabled %}<span class="badge status-error">no QC</span>{% endif %}
+    {% if chk.quality_overall_score is not none %}<span class="badge">qc {{ chk.quality_overall_score }}</span>{% endif %}
   </p>
   {% if publish_readiness.ready %}
   <p class="ok-box">Ready to publish (draft only)</p>
@@ -67,6 +69,9 @@
     <form method="post" action="/admin/documents/{{ document.id }}/run-seo" style="display:inline">
       <button type="submit" class="btn primary">Run SEO</button>
     </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/run-quality" style="display:inline">
+      <button type="submit" class="btn">Run quality</button>
+    </form>
   </p>
 </div>
 
@@ -77,6 +82,34 @@
   <p><strong>Take:</strong> {{ review_meta.get('take', '—') }}</p>
   <p><strong>Score:</strong> {{ review_meta.get('score', '—') }}</p>
   <p><strong>Reason:</strong> {{ review_meta.get('reason', '—') }}</p>
+</div>
+{% endif %}
+
+{% if quality_record or feature_flags.get('ENABLE_QUALITY_REVIEW') %}
+<div class="panel" id="quality">
+  <h2>Quality Review</h2>
+  {% if quality_record %}
+  <p><strong>Overall:</strong> {{ quality_record.overall_score }}</p>
+  <p><strong>Readability:</strong> {{ quality_record.readability_score or "—" }} ·
+     <strong>SEO:</strong> {{ quality_record.seo_score or "—" }} ·
+     <strong>Factual:</strong> {{ quality_record.factual_consistency_score or "—" }}</p>
+  <p><strong>Structure:</strong> {{ quality_record.structure_score or "—" }} ·
+     <strong>Usefulness:</strong> {{ quality_record.usefulness_score or "—" }} ·
+     <strong>Spamminess:</strong> {{ quality_record.spamminess_score or "—" }}</p>
+  <p><strong>Verdict:</strong> <span class="badge">{{ quality_record.verdict }}</span></p>
+  {% if quality_record.risks_json %}
+  <p><strong>Risks:</strong> {{ quality_record.risks_json | join("; ") }}</p>
+  {% endif %}
+  {% if quality_record.recommendations_json %}
+  <p><strong>Recommendations:</strong> {{ quality_record.recommendations_json | join("; ") }}</p>
+  {% endif %}
+  {% if quality_record.llm_run_id %}
+  <p><a href="/admin/llm-runs">LLM run #{{ quality_record.llm_run_id }}</a></p>
+  {% endif %}
+  <p><small>{{ quality_record.created_at }}</small></p>
+  {% else %}
+  <p class="warn-box">No quality score yet. Run quality review after rewrite + SEO.</p>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -110,7 +143,7 @@
       </select>
     </label>
     <label><input type="checkbox" name="dry_run"> Force dry-run</label>
-    <label><input type="checkbox" name="force"> Force republish (bypass duplicate & review)</label>
+    <label><input type="checkbox" name="force"> Force republish (bypass duplicate, review & quality)</label>
     <button type="submit" class="btn primary">Publish draft</button>
   </form>
   {% if publish_runs %}

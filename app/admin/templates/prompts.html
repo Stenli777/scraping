@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr><th>Key</th><th>Name</th><th>Task</th><th>Active</th><th>Source</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for p in prompts %}
+    <tr>
+      <td><code>{{ p.key }}</code></td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.task_kind }}</td>
+      <td><code>{{ p.active_version }}</code></td>
+      <td>{{ p.active_source }}</td>
+      <td><a href="/admin/prompts/{{ p.key }}">Open</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No prompt templates</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

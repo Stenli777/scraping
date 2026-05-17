@@ -11,7 +11,9 @@ from app.core.feature_flags import all_flags
 from app.db.session import get_db
 from app.llm.routing import list_aliases
 from app.llm.schemas import RewriteRequest
+from app.models.content_quality_score import ContentQualityScore
 from app.models.llm_run import LLMRun
+from app.models.prompt_template import PromptTemplate
 from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
@@ -35,7 +37,15 @@ from app.services.seo_service import run_seo_for_document
 from app.services.admin_context_service import load_document_context, load_task_context
 from app.services.operations_service import get_dashboard_stats, get_failed_items, list_stale_running_tasks
 from app.services.pipeline_summary_service import build_pipeline_summary
+from app.services.editorial_service import list_editorial_queue
+from app.services.prompt_service import (
+    activate_prompt_version,
+    create_prompt_version,
+    get_active_prompt,
+    list_prompt_versions,
+)
 from app.services.publish_readiness_service import get_publish_readiness
+from app.services.quality_service import get_latest_quality_score, run_quality_for_document
 from app.services.task_service import (
     create_task,
     get_task,
@@ -189,6 +199,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
         build_pipeline_summary(db, task, document) if task else None
     )
     publish_readiness = get_publish_readiness(db, document_id)
+    quality_record = get_latest_quality_score(db, document_id)
     return templates.TemplateResponse(
         request,
         "document_detail.html",
@@ -198,6 +209,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "review_meta": review_meta,
             "rewrite_meta": rewrite_meta,
             "seo_record": seo_record,
+            "quality_record": quality_record,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
             "publish_readiness": publish_readiness,
@@ -226,6 +238,12 @@ def admin_run_review(document_id: int, db: Session = Depends(get_db)):
 def admin_run_seo(document_id: int, db: Session = Depends(get_db)):
     run_seo_for_document(db, document_id)
     return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/run-quality")
+def admin_run_quality(document_id: int, db: Session = Depends(get_db)):
+    run_quality_for_document(db, document_id)
+    return RedirectResponse(f"/admin/documents/{document_id}#quality", status_code=303)
 
 
 @router.post("/admin/documents/{document_id}/publish-draft")
@@ -406,6 +424,102 @@ def admin_enqueue_discovered(discovered_url_id: int, db: Session = Depends(get_d
 def admin_ignore_discovered(discovered_url_id: int, db: Session = Depends(get_db)):
     ignore_discovered_url(db, discovered_url_id)
     return RedirectResponse("/admin/discovered-urls", status_code=303)
+
+
+@router.get("/admin/prompts", response_class=HTMLResponse)
+def admin_prompts(request: Request, db: Session = Depends(get_db)):
+    templates_list = db.query(PromptTemplate).order_by(PromptTemplate.key.asc()).all()
+    prompts = []
+    for t in templates_list:
+        active = get_active_prompt(db, t.key)
+        prompts.append(
+            {
+                "key": t.key,
+                "name": t.name,
+                "task_kind": t.task_kind,
+                "active_version": active.version,
+                "active_source": active.source,
+            }
+        )
+    return templates.TemplateResponse(
+        request,
+        "prompts.html",
+        {"request": request, "prompts": prompts, "title": "Prompts"},
+    )
+
+
+@router.get("/admin/prompts/{key}", response_class=HTMLResponse)
+def admin_prompt_detail(key: str, request: Request, db: Session = Depends(get_db)):
+    template = db.query(PromptTemplate).filter(PromptTemplate.key == key).first()
+    if not template:
+        return RedirectResponse("/admin/prompts", status_code=302)
+    active = get_active_prompt(db, key)
+    versions = list_prompt_versions(db, key)
+    return templates.TemplateResponse(
+        request,
+        "prompt_detail.html",
+        {
+            "request": request,
+            "template": template,
+            "active": active,
+            "versions": versions,
+            "title": f"Prompt {key}",
+        },
+    )
+
+
+@router.post("/admin/prompts/{key}/versions")
+def admin_create_prompt_version(
+    key: str,
+    version: str = Form(...),
+    content_md: str = Form(...),
+    notes: str | None = Form(None),
+    activate: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    create_prompt_version(
+        db,
+        key,
+        version=version,
+        content_md=content_md,
+        created_by="admin",
+        notes=notes,
+        activate=activate == "on",
+    )
+    return RedirectResponse(f"/admin/prompts/{key}", status_code=303)
+
+
+@router.post("/admin/prompts/{key}/versions/{version_id}/activate")
+def admin_activate_prompt_version(
+    key: str, version_id: int, db: Session = Depends(get_db)
+):
+    activate_prompt_version(db, key, version_id)
+    return RedirectResponse(f"/admin/prompts/{key}", status_code=303)
+
+
+@router.get("/admin/quality-scores", response_class=HTMLResponse)
+def admin_quality_scores(request: Request, db: Session = Depends(get_db)):
+    scores = (
+        db.query(ContentQualityScore)
+        .order_by(ContentQualityScore.id.desc())
+        .limit(100)
+        .all()
+    )
+    return templates.TemplateResponse(
+        request,
+        "quality_scores.html",
+        {"request": request, "scores": scores, "title": "Quality Scores"},
+    )
+
+
+@router.get("/admin/editorial-queue", response_class=HTMLResponse)
+def admin_editorial_queue(request: Request, db: Session = Depends(get_db)):
+    items = list_editorial_queue(db)
+    return templates.TemplateResponse(
+        request,
+        "editorial_queue.html",
+        {"request": request, "items": items, "title": "Editorial Queue"},
+    )
 
 
 @router.get("/admin/llm/smoke", response_class=HTMLResponse)

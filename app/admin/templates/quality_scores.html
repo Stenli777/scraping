@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th><th>Document</th><th>Overall</th><th>Verdict</th><th>Spam</th><th>LLM run</th><th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in scores %}
+    <tr>
+      <td>{{ s.id }}</td>
+      <td><a href="/admin/documents/{{ s.document_id }}">#{{ s.document_id }}</a></td>
+      <td>{{ s.overall_score }}</td>
+      <td><span class="badge">{{ s.verdict }}</span></td>
+      <td>{{ s.spamminess_score or "—" }}</td>
+      <td>{% if s.llm_run_id %}<a href="/admin/llm-runs">#{{ s.llm_run_id }}</a>{% else %}—{% endif %}</td>
+      <td>{{ s.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No quality scores yet</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

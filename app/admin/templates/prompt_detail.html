@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <p><strong>Key:</strong> <code>{{ template.key }}</code></p>
+  <p><strong>Name:</strong> {{ template.name }}</p>
+  <p><strong>Description:</strong> {{ template.description or "—" }}</p>
+  <p><strong>Task kind:</strong> {{ template.task_kind }}</p>
+  <p><strong>Enabled:</strong> {{ template.enabled }}</p>
+  <p><strong>Active version:</strong> <code>{{ active.version }}</code> ({{ active.source }})</p>
+</div>
+<div class="panel">
+  <h2>Versions</h2>
+  <table class="table">
+    <thead>
+      <tr><th>Version</th><th>Active</th><th>Created</th><th>By</th><th>Notes</th><th>Preview</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for v in versions %}
+      <tr>
+        <td><code>{{ v.version }}</code></td>
+        <td>{% if v.is_active %}yes{% else %}—{% endif %}</td>
+        <td>{{ v.created_at }}</td>
+        <td>{{ v.created_by or "—" }}</td>
+        <td>{{ v.notes or "—" }}</td>
+        <td><pre class="content" style="max-height:8em;overflow:auto">{{ (v.content_md or "")[:400] }}</pre></td>
+        <td>
+          {% if not v.is_active %}
+          <form method="post" action="/admin/prompts/{{ template.key }}/versions/{{ v.id }}/activate" style="display:inline">
+            <button type="submit" class="btn">Activate</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No versions</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="panel">
+  <h2>New version</h2>
+  <form method="post" action="/admin/prompts/{{ template.key }}/versions" class="form">
+    <label>Version <input name="version" required placeholder="v2"></label>
+    <label>Notes <input name="notes"></label>
+    <label>Content (JSON: system + user)
+      <textarea name="content_md" rows="12" required placeholder='{"system":"...","user":"..."}'></textarea>
+    </label>
+    <label><input type="checkbox" name="activate"> Activate immediately</label>
+    <button type="submit" class="btn primary">Create version</button>
+  </form>
+</div>
+{% endblock %}
