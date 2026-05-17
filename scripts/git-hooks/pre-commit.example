@@ -1,0 +1,23 @@
+#!/bin/sh
+# Manual install: cp scripts/git-hooks/pre-commit.example .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+if git diff --cached --name-only | grep -E '^\.env$|^\.env\.' | grep -v '.env.example'; then
+  echo "ERROR: refusing to commit .env files"
+  exit 1
+fi
+
+if git diff --cached --name-only | grep -E '^storage/|^logs/'; then
+  echo "ERROR: refusing to commit storage/logs paths"
+  exit 1
+fi
+
+for pat in deploy*.tar.gz deploy*.zip tmp_deploy tmp_; do
+  if git diff --cached --name-only | grep -q "$pat"; then
+    echo "ERROR: refusing deploy/tmp artifacts"
+    exit 1
+  fi
+done
+
+exit 0

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Manual install: cp scripts/git-hooks/pre-push.example .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+PYTHON="${ROOT}/.venv/bin/python"
+if [ -x "$PYTHON" ]; then
+  "$PYTHON" scripts/check_repo_safety.py || exit 1
+  "$PYTHON" scripts/check_git_integrity.py || exit 1
+fi
+exit 0
