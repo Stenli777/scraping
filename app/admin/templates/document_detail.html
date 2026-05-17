@@ -53,6 +53,43 @@
 </div>
 {% endif %}
 
+{% if publish_targets and feature_flags.get('ENABLE_PUBLISHING') %}
+<div class="panel">
+  <h2>Publish draft</h2>
+  <form method="post" action="/admin/documents/{{ document.id }}/publish-draft" class="form">
+    <label>Target
+      <select name="publish_target_id">
+        {% for t in publish_targets %}
+        <option value="{{ t.id }}">{{ t.name }} ({{ t.target_type }}{% if t.dry_run %}, dry-run{% endif %})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label><input type="checkbox" name="dry_run"> Force dry-run</label>
+    <button type="submit" class="btn primary">Publish draft</button>
+  </form>
+  {% if publish_runs %}
+  <h3>Publish history</h3>
+  <table class="table">
+    <thead><tr><th>ID</th><th>Status</th><th>Dry</th><th>Code</th><th>External ID</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for r in publish_runs %}
+      <tr>
+        <td>#{{ r.id }}</td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td>{{ 'yes' if r.dry_run else 'no' }}</td>
+        <td>{{ r.response_status_code or '—' }}</td>
+        <td>{{ r.external_id or '—' }}</td>
+        <td>{{ r.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% elif not feature_flags.get('ENABLE_PUBLISHING') %}
+<div class="warn-box">Publishing disabled (ENABLE_PUBLISHING=false)</div>
+{% endif %}
+
 {% if rewrite_meta %}
 <div class="panel">
   <h2>Rewrite</h2>

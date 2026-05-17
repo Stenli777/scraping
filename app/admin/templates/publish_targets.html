@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th><th>Project</th><th>Name</th><th>Type</th><th>Endpoint</th>
+      <th>Auth</th><th>Enabled</th><th>Dry-run</th><th>Status</th><th>Format</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in targets %}
+    <tr>
+      <td>{{ t.id }}</td>
+      <td>{{ t.project_id }}</td>
+      <td>{{ t.name }}</td>
+      <td><code>{{ t.target_type }}</code></td>
+      <td class="url">{{ t.endpoint_url or "—" }}</td>
+      <td>{{ t.auth_type }}{% if t.auth_token_env_name %} ({{ t.auth_token_env_name }}){% endif %}</td>
+      <td>{{ "yes" if t.enabled else "no" }}</td>
+      <td>{{ "yes" if t.dry_run else "no" }}</td>
+      <td>{{ t.default_status }}</td>
+      <td>{{ t.payload_format }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10">Publish targets не настроены</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

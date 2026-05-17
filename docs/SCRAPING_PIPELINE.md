@@ -46,6 +46,17 @@ REWRITER_PROVIDER=mock
 | `ENABLE_SEO_ENRICH` | true | SEO metadata после rewrite |
 | `ENABLE_PROJECT_PROFILES` | true | Профиль проекта в промптах |
 
+### Publish draft (manual only)
+
+После rewrite + SEO: `POST /api/documents/{id}/publish-draft` с payload `article_v1`.
+
+- `ENABLE_PUBLISHING=true`, `ENABLE_AUTO_PUBLISH=false`
+- Требуется `rewritten_text` + `seo_metadata` (включая slug)
+- Mock target: dry-run без HTTP
+- Webhook: POST на `endpoint_url`, auth из env по `auth_token_env_name`
+
+Отключить: `ENABLE_PUBLISHING=false`
+
 ### Manual review / SEO
 
 - `POST /api/documents/{id}/run-review` — без повторного fetch

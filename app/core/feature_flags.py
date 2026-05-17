@@ -28,6 +28,11 @@ def is_project_profiles_enabled() -> bool:
     return get_settings().enable_project_profiles
 
 
+@lru_cache
+def is_publishing_enabled() -> bool:
+    return get_settings().enable_publishing
+
+
 def all_flags() -> dict[str, bool]:
     return {
         "ENABLE_HERMES": is_hermes_enabled(),
@@ -35,4 +40,5 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_SEO_ENRICH": is_seo_enrich_enabled(),
         "ENABLE_LLM_REVIEW": is_llm_review_enabled(),
         "ENABLE_PROJECT_PROFILES": is_project_profiles_enabled(),
+        "ENABLE_PUBLISHING": is_publishing_enabled(),
     }

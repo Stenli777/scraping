@@ -42,9 +42,13 @@ class Settings(BaseSettings):
     enable_seo_enrich: bool = True
     enable_llm_review: bool = True
     enable_project_profiles: bool = True
+    enable_publishing: bool = True
 
     crmflow24_export_webhook_url: str = ""
     crmflow24_export_api_key: str = ""
+    crmflow24_publish_endpoint: str = ""
+    crmflow24_publish_token: str = ""
+    publish_default_timeout: int = 60
 
     log_level: str = "INFO"
     log_dir: str = "storage/logs"

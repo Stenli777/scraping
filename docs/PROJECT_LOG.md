@@ -96,3 +96,12 @@
 - **Prompts:** `review_article_v1`, `seo_enrich_v1`
 - **Pipeline:** optional review → rewrite → seo_enrich
 - **Admin:** `/admin/projects/{id}`, `/admin/review-queue`, SEO на document/task
+
+---
+
+## 2026-05-17 — Stage 2D: publish webhook foundation
+
+- **Миграция:** `004` — `publish_targets`, `publish_runs`, seed crmflow24 mock dry-run
+- **Publishers:** mock, webhook, payload `article_v1`
+- **API:** `POST publish-draft`, `GET publish-runs`, `GET publish-targets`
+- **Без auto-publish**; только manual draft

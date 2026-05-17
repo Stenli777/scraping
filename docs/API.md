@@ -15,6 +15,9 @@ Base: **https://scrap.crmflow24.ru**
 | POST | `/api/documents/{id}/rerun-rewrite` | Повторить rewrite по `clean_text` (без повторного fetch) |
 | POST | `/api/documents/{id}/run-review` | LLM review по `clean_text` → `review_results` |
 | POST | `/api/documents/{id}/run-seo` | SEO enrich по rewritten/clean → `seo_metadata` |
+| POST | `/api/documents/{id}/publish-draft` | Отправить draft на publish target `{ "publish_target_id", "dry_run" }` |
+| GET | `/api/documents/{id}/publish-runs` | История publish_runs для документа |
+| GET | `/api/publish-targets` | Список enabled publish targets |
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |

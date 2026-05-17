@@ -15,6 +15,8 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/projects` | Список проектов |
 | `/admin/projects/{id}` | Профиль проекта (read-only): instructions, topics, tone |
 | `/admin/review-queue` | Очередь review: take/reject, score, risks |
+| `/admin/publish-targets` | Publish targets (read-only) |
+| `/admin/publish-runs` | Аудит попыток публикации |
 
 На странице **задачи** и **документа**: блок Rewrite metadata — provider, model_alias, upstream_model, fallback_used, ссылка на llm_run; кнопка **Rerun rewrite**.
 

@@ -15,9 +15,13 @@ from app.models.llm_run import LLMRun
 from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
+from app.models.publish_run import PublishRun
+from app.models.publish_target import PublishTarget
 from app.models.review_result import ReviewResult
 from app.models.seo_metadata import SeoMetadata
 from app.services.llm_tasks import execute_rewrite
+from app.services.project_profile_service import resolve_task_project
+from app.services.publish_service import publish_draft_for_document
 from app.services.review_service import run_review_for_document
 from app.services.rewrite_service import rerun_rewrite_for_document
 from app.services.seo_service import run_seo_for_document
@@ -110,6 +114,24 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
         .order_by(SeoMetadata.id.desc())
         .first()
     )
+    publish_targets = []
+    publish_runs = []
+    if document.task:
+        project = resolve_task_project(db, document.task)
+        if project:
+            publish_targets = (
+                db.query(PublishTarget)
+                .filter(PublishTarget.project_id == project.id)
+                .order_by(PublishTarget.id.asc())
+                .all()
+            )
+    publish_runs = (
+        db.query(PublishRun)
+        .filter(PublishRun.document_id == document_id)
+        .order_by(PublishRun.id.desc())
+        .limit(20)
+        .all()
+    )
     return templates.TemplateResponse(
         request,
         "document_detail.html",
@@ -119,6 +141,9 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "review_meta": review_meta,
             "rewrite_meta": rewrite_meta,
             "seo_record": seo_record,
+            "publish_targets": publish_targets,
+            "publish_runs": publish_runs,
+            "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Документ #{document_id}",
         },
@@ -141,6 +166,42 @@ def admin_run_review(document_id: int, db: Session = Depends(get_db)):
 def admin_run_seo(document_id: int, db: Session = Depends(get_db)):
     run_seo_for_document(db, document_id)
     return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/publish-draft")
+def admin_publish_draft(
+    document_id: int,
+    publish_target_id: int = Form(...),
+    dry_run: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    publish_draft_for_document(
+        db,
+        document_id,
+        publish_target_id=publish_target_id,
+        dry_run=dry_run == "on",
+    )
+    return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
+
+
+@router.get("/admin/publish-targets", response_class=HTMLResponse)
+def admin_publish_targets(request: Request, db: Session = Depends(get_db)):
+    targets = db.query(PublishTarget).order_by(PublishTarget.id.asc()).all()
+    return templates.TemplateResponse(
+        request,
+        "publish_targets.html",
+        {"request": request, "targets": targets, "title": "Publish Targets"},
+    )
+
+
+@router.get("/admin/publish-runs", response_class=HTMLResponse)
+def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
+    runs = db.query(PublishRun).order_by(PublishRun.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "publish_runs.html",
+        {"request": request, "runs": runs, "title": "Publish Runs"},
+    )
 
 
 @router.get("/admin/settings", response_class=HTMLResponse)
