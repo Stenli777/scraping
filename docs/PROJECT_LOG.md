@@ -170,3 +170,15 @@
 - Admin: `/admin/hermes`, document Hermes actions
 - Contract: `POST {HERMES_BASE_URL}/v1/orchestrate`; fallback to CLIProxy when endpoint missing
 - Discovered Hermes health: `http://127.0.0.1:8000/health`
+
+## 2026-05-17 — Этап 3B: Media pipeline foundation
+
+- Таблицы `media_assets`, `media_jobs`; migration `010`
+- Placeholder provider (SVG preview), local storage `storage/media/YYYY/MM/DD/`
+- `media_prompt_service` — LLM prompts via `llm_runs` (optional)
+- Publish readiness: media warnings (`missing_preview_image`), не блокирует publish
+- `article_v1` payload: блок `media.preview`
+- Admin: `/admin/media`, `/admin/media-jobs`, блок Media на document detail
+- API: generate-preview, approve/reject, list media/jobs, file serve
+- Flags: `ENABLE_MEDIA_PIPELINE=true`, `ENABLE_MEDIA_GENERATION=false`, `MEDIA_PROVIDER=placeholder`
+

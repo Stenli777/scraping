@@ -41,3 +41,11 @@ Base: **https://scrap.crmflow24.ru/admin**
 **Editorial** блок: status, approve/reject/needs revision/ready; **Timeline** из pipeline + revisions + publish.
 
 Стили: `/static/admin.css`
+
+
+## Media
+
+- `/admin/media` — assets (status, type, path)
+- `/admin/media-jobs` — jobs audit
+- Document detail — блок Media: preview, approve/reject, generate placeholder
+

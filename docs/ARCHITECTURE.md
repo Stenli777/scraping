@@ -1021,3 +1021,16 @@ Admin should remain:
 - Hermes orchestrates reasoning.
 - LLMs remain replaceable.
 - Everything communicates through stable contracts.
+
+
+## Media pipeline (optional, Stage 3B)
+
+```text
+document → media_prompt (LLM, llm_runs) → media_job → provider → media_asset
+  → editorial approve → publish payload media.preview
+```
+
+- Не блокирует publish; readiness warning если нет approved preview
+- Storage: local only, `storage/media/`, не в Git
+- Provider abstraction: `placeholder` default; future AI providers
+

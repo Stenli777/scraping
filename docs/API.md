@@ -75,3 +75,18 @@ Rerun rewrite/SEO/quality создаёт новую запись в `document_re
 `publish_runs` содержит `document_revision_id` и `revision_number` в API ответе.
 
 OpenAPI: `/docs`
+
+
+## Media (optional)
+
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | `/api/documents/{id}/media` | Список media assets |
+| POST | `/api/documents/{id}/media/generate-preview` | Placeholder/AI preview job |
+| POST | `/api/media/{id}/approve` | Approve media |
+| POST | `/api/media/{id}/reject` | Reject media |
+| GET | `/api/media-jobs` | Audit jobs |
+| GET | `/api/media/assets/{id}/file` | Файл preview |
+
+Требует `ENABLE_MEDIA_PIPELINE=true`. Generation AI — `ENABLE_MEDIA_GENERATION=true` (не на этом этапе).
+

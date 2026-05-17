@@ -121,3 +121,17 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/test_2f_e2e.py --execute  # limit
 ```
 
 Не использует Hermes, не делает auto-publish.
+
+
+## Media storage
+
+- Path: `MEDIA_STORAGE_PATH` (default `/opt/scrap/storage/media`)
+- Structure: `YYYY/MM/DD/` unique filenames, immutable
+- Rollback: `ENABLE_MEDIA_PIPELINE=false` + restart API
+
+## Media flags
+
+- `ENABLE_MEDIA_PIPELINE` — master switch (API/admin)
+- `ENABLE_MEDIA_GENERATION` — real AI providers (off by default)
+- `MEDIA_PROVIDER=placeholder` — safe test provider
+

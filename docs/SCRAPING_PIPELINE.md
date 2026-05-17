@@ -136,3 +136,10 @@ rewrite → seo_enrich → [quality_review manual] → publish draft
 ## Backups
 
 `storage/backups/YYYY/MM/DD/<task_id>/` — raw.html, raw.txt, clean.md, rewritten.md, metadata.json
+
+
+### Media (Stage 3B)
+
+После rewrite/SEO — опционально manual preview generation. Не в worker loop.
+Readiness: `missing_preview_image` warning; publish allowed without media.
+
