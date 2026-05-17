@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.enums import ParserType, TaskStatus
 from app.models.scraping_task import ScrapingTask
 from app.models.source import Source
+from app.parsers.registry import resolve_parser_type
 from app.services.task_log_service import add_task_log
 
 
@@ -23,6 +24,7 @@ def get_or_create_source(db: Session, source_url: str, parser_type: str) -> Sour
 
 
 def create_task(db: Session, source_url: str, parser_type: str = ParserType.GENERIC_ARTICLE.value) -> ScrapingTask:
+    parser_type = resolve_parser_type(source_url, parser_type)
     source = get_or_create_source(db, source_url, parser_type)
     task = ScrapingTask(
         source_id=source.id,

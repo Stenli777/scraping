@@ -1,31 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="meta">
-  <p><strong>URL:</strong> {{ document.source_url }}</p>
+{% set meta = document.metadata_json or {} %}
+<div class="meta grid-meta">
+  <p><strong>URL:</strong> <a href="{{ document.source_url }}" target="_blank">{{ document.source_url }}</a></p>
+  <p><strong>Парсер:</strong> <code>{{ meta.get('parser_name', '—') }}</code></p>
+  <p><strong>Заголовок:</strong> {{ meta.get('extracted_title') or meta.get('title', '—') }}</p>
   <p><strong>Hash:</strong> <code>{{ document.content_hash }}</code></p>
   <p><strong>Версия:</strong> {{ document.version }}</p>
-  <p>
-    <a href="/api/documents/{{ document.id }}/export/json">Скачать JSON</a>
-    |
-    <a href="/api/documents/{{ document.id }}/export/markdown">Скачать Markdown</a>
+  <p><strong>Слов:</strong> {{ meta.get('word_count', '—') }}</p>
+  <p><strong>Создан:</strong> {{ document.created_at }}</p>
+  <p><strong>Обновлён:</strong> {{ document.updated_at }}</p>
+  <p class="export-links">
+    <a class="btn" href="/api/documents/{{ document.id }}/export/json">JSON</a>
+    <a class="btn" href="/api/documents/{{ document.id }}/export/markdown">Markdown</a>
+    <a class="btn" href="/admin/tasks/{{ document.task_id }}">Задача #{{ document.task_id }}</a>
   </p>
 </div>
-<div class="tabs">
-  <section>
-    <h2>Raw text</h2>
-    <pre class="content">{{ document.raw_text or "—" }}</pre>
-  </section>
-  <section>
-    <h2>Clean text</h2>
-    <pre class="content">{{ document.clean_text or "—" }}</pre>
-  </section>
-  <section>
-    <h2>Rewritten text</h2>
-    <pre class="content">{{ document.rewritten_text or "—" }}</pre>
-  </section>
+
+{% if meta.get('extraction_warnings') %}
+<div class="warn-box">
+  <strong>Предупреждения:</strong> {{ meta.get('extraction_warnings') | join(', ') }}
 </div>
-<details>
-  <summary>Raw HTML</summary>
-  <pre class="content html">{{ document.raw_html or "—" }}</pre>
+{% endif %}
+
+<section class="panel">
+  <h2>Clean text</h2>
+  <pre class="content">{{ document.clean_text or "—" }}</pre>
+</section>
+<section class="panel">
+  <h2>Rewritten text</h2>
+  <pre class="content">{{ document.rewritten_text or "—" }}</pre>
+</section>
+<section class="panel">
+  <h2>Raw text</h2>
+  <pre class="content">{{ document.raw_text or "—" }}</pre>
+</section>
+<details class="panel">
+  <summary>Metadata JSON</summary>
+  <pre class="content">{{ meta | tojson(indent=2) }}</pre>
+</details>
+<details class="panel">
+  <summary>Raw HTML (сокращённо)</summary>
+  <pre class="content html">{{ (document.raw_html or "—")[:8000] }}{% if document.raw_html and document.raw_html|length > 8000 %}…{% endif %}</pre>
 </details>
 {% endblock %}

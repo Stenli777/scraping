@@ -11,7 +11,7 @@ from app.models.parsed_document import ParsedDocument
 from app.models.scraping_task import ScrapingTask
 from app.models.source import Source
 from app.parsers.fetcher import fetch_url
-from app.parsers.registry import get_parser
+from app.parsers.registry import get_parser_for_url, resolve_parser_type
 from app.rewriters.registry import get_rewriter
 from app.services.backup_service import BackupService
 from app.services.hashing import content_hash
@@ -37,7 +37,9 @@ class PipelineService:
             html = fetch_url(task.source_url)
 
             self._set_status(task, TaskStatus.PARSING)
-            parser = get_parser(task.parser_type)
+            resolved_parser = resolve_parser_type(task.source_url, task.parser_type)
+            task.parser_type = resolved_parser
+            parser = get_parser_for_url(task.source_url, resolved_parser)
             parsed = parser.parse(task.source_url, html)
 
             self._set_status(task, TaskStatus.CLEANING)
@@ -50,6 +52,21 @@ class PipelineService:
                 )
             )
             if existing and existing.task_id != task.id:
+                if existing.source_url == task.source_url:
+                    add_task_log(
+                        self.db,
+                        task.id,
+                        "Duplicate content — document already exists for this URL",
+                        LogLevel.INFO,
+                        {"document_id": existing.id, "content_hash": doc_hash},
+                    )
+                    task.status = TaskStatus.DONE.value
+                    task.finished_at = datetime.now(timezone.utc)
+                    self.db.commit()
+                    logger.info(
+                        "Task %s skipped duplicate, existing document %s", task.id, existing.id
+                    )
+                    return
                 raise ValueError(
                     f"Duplicate content detected (document_id={existing.id}, hash={doc_hash})"
                 )

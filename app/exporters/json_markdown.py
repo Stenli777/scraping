@@ -4,17 +4,24 @@ from pathlib import Path
 from app.models.parsed_document import ParsedDocument
 
 
+def _title(document: ParsedDocument) -> str:
+    meta = document.metadata_json or {}
+    return meta.get("extracted_title") or meta.get("title") or "Документ"
+
+
 def document_to_json(document: ParsedDocument) -> str:
+    meta = document.metadata_json or {}
     payload = {
         "id": document.id,
         "task_id": document.task_id,
         "source_url": document.source_url,
+        "title": _title(document),
         "content_hash": document.content_hash,
         "version": document.version,
         "raw_text": document.raw_text,
         "clean_text": document.clean_text,
         "rewritten_text": document.rewritten_text,
-        "metadata": document.metadata_json,
+        "metadata_json": meta,
         "created_at": document.created_at.isoformat() if document.created_at else None,
         "updated_at": document.updated_at.isoformat() if document.updated_at else None,
     }
@@ -23,17 +30,27 @@ def document_to_json(document: ParsedDocument) -> str:
 
 def document_to_markdown(document: ParsedDocument) -> str:
     meta = document.metadata_json or {}
-    title = meta.get("title", "Документ")
+    title = _title(document)
     lines = [
         f"# {title}",
         "",
-        f"- URL: {document.source_url}",
-        f"- Hash: `{document.content_hash}`",
-        f"- Version: {document.version}",
+        f"**Источник:** {document.source_url}",
+        f"**Hash:** `{document.content_hash}`",
+        f"**Парсер:** {meta.get('parser_name', '—')}",
+        "",
+        "## Очищенный текст",
+        "",
+        document.clean_text or "",
         "",
         "## Переписанный текст",
         "",
-        document.rewritten_text or document.clean_text or "",
+        document.rewritten_text or "",
+        "",
+        "## Метаданные",
+        "",
+        "```json",
+        json.dumps(meta, ensure_ascii=False, indent=2),
+        "```",
     ]
     return "\n".join(lines)
 

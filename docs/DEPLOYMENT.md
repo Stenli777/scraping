@@ -1,41 +1,44 @@
 # Деплой
 
-## Перед изменениями
+## HTTPS
 
-```bash
-sudo cp /etc/nginx/sites-enabled/apicli.crmflow24.ru.conf /root/backup-nginx-$(date +%F)/
-# при наличии scrap config — тоже backup
-```
+Сертификат Let's Encrypt для `scrap.crmflow24.ru`:
+
+- Путь: `/etc/letsencrypt/live/scrap.crmflow24.ru/`
+- Срок: до **2026-08-15** (автообновление certbot)
+- Команда: `certbot --nginx -d scrap.crmflow24.ru --non-interactive --agree-tos --redirect`
+
+Backup nginx перед certbot: `/root/backup-nginx-2026-05-17-0934/scrap.crmflow24.ru.conf`
 
 ## systemd
 
 ```bash
-sudo cp /opt/scrap/deploy/systemd/scrap-api.service /etc/systemd/system/
-sudo cp /opt/scrap/deploy/systemd/scrap-worker.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable scrap-api scrap-worker
-sudo systemctl start scrap-api scrap-worker
+sudo systemctl restart scrap-api scrap-worker
+sudo systemctl status scrap-api scrap-worker
 ```
 
 ## nginx
 
 ```bash
-sudo cp /opt/scrap/deploy/nginx/scrap.crmflow24.ru.conf /etc/nginx/sites-available/
-sudo ln -sf /etc/nginx/sites-available/scrap.crmflow24.ru.conf /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-## HTTPS (Let's Encrypt)
-
-```bash
-sudo certbot --nginx -d scrap.crmflow24.ru
-```
-
-Не трогать конфиги `hermes.crmflow24.ru` и `/opt/cliproxyapi`.
+Не трогать `hermes.crmflow24.ru.conf`, `apicli.crmflow24.ru.conf`.
 
 ## Проверка
 
 ```bash
-curl -s http://127.0.0.1:8800/health
-curl -sI https://scrap.crmflow24.ru/health
+curl -s https://scrap.crmflow24.ru/health
+curl -s https://scrap.crmflow24.ru/admin
+```
+
+## Обновление кода
+
+```bash
+cd /opt/scrap
+# git pull или scp
+source .venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+systemctl restart scrap-api scrap-worker
 ```

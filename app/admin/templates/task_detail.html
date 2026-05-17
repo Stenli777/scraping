@@ -1,34 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="meta">
+<div class="meta grid-meta">
   <p><strong>URL:</strong> <a href="{{ task.source_url }}" target="_blank">{{ task.source_url }}</a></p>
   <p><strong>Статус:</strong> <span class="badge status-{{ task.status }}">{{ task.status }}</span></p>
-  <p><strong>Парсер:</strong> {{ task.parser_type }}</p>
+  <p><strong>Парсер:</strong> <code>{{ task.parser_type }}</code></p>
+  <p><strong>Создана:</strong> {{ task.created_at }}</p>
+  <p><strong>Обновлена:</strong> {{ task.updated_at }}</p>
+  {% if task.started_at %}<p><strong>Старт:</strong> {{ task.started_at }}</p>{% endif %}
+  {% if task.finished_at %}<p><strong>Финиш:</strong> {{ task.finished_at }}</p>{% endif %}
   {% if task.error_message %}
   <p class="error"><strong>Ошибка:</strong> {{ task.error_message }}</p>
   {% endif %}
 </div>
 {% if task.document %}
-<p>
-  <a href="/admin/documents/{{ task.document.id }}">Открыть документ #{{ task.document.id }}</a>
-  |
-  <a href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
-  |
-  <a href="/api/documents/{{ task.document.id }}/export/markdown">Markdown</a>
-</p>
+<div class="export-links">
+  <a class="btn" href="/admin/documents/{{ task.document.id }}">Документ #{{ task.document.id }}</a>
+  <a class="btn" href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
+  <a class="btn" href="/api/documents/{{ task.document.id }}/export/markdown">Markdown</a>
+</div>
 {% endif %}
-<h2>Логи</h2>
+
+<h2>Логи задачи</h2>
 <table class="table">
-  <thead><tr><th>Время</th><th>Уровень</th><th>Сообщение</th></tr></thead>
+  <thead><tr><th>Время</th><th>Уровень</th><th>Сообщение</th><th>Payload</th></tr></thead>
   <tbody>
     {% for log in logs %}
     <tr>
-      <td>{{ log.created_at }}</td>
-      <td>{{ log.level }}</td>
+      <td>{{ log.created_at.strftime('%H:%M:%S') if log.created_at else '—' }}</td>
+      <td><span class="badge level-{{ log.level }}">{{ log.level }}</span></td>
       <td>{{ log.message }}</td>
+      <td class="url">{% if log.payload_json %}<code>{{ log.payload_json }}</code>{% else %}—{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="3">Логов нет</td></tr>
+    <tr><td colspan="4">Логов нет</td></tr>
     {% endfor %}
   </tbody>
 </table>

@@ -14,8 +14,10 @@ class TaskStatus(str, Enum):
 
 class ParserType(str, Enum):
     GENERIC_ARTICLE = "generic_article"
-    BITRIX_ARTICLE = "bitrix_article"
+    SALTPRO_ARTICLE = "saltpro_article"
+    SOTBIT_ARTICLE = "sotbit_article"
     HABR_ARTICLE = "habr_article"
+    BITRIX_ARTICLE = "bitrix_article"  # alias → sotbit
 
 
 class LogLevel(str, Enum):
