@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead><tr><th>ID</th><th>Doc</th><th>Rev</th><th>Status</th><th>URL</th><th>Published</th><th>Score</th><th>Views</th><th>Trend</th></tr></thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>#{{ row.record.id }}</td>
+      <td><a href="/admin/documents/{{ row.record.document_id }}">#{{ row.record.document_id }}</a></td>
+      <td>{{ row.record.revision_id or '—' }}</td>
+      <td><span class="badge">{{ row.record.publication_status }}</span></td>
+      <td class="url">{% if row.record.external_url %}<a href="{{ row.record.external_url }}" target="_blank">link</a>{% else %}—{% endif %}</td>
+      <td>{{ row.record.published_at or '—' }}</td>
+      <td>{{ row.perf.performance_score if row.perf else '—' }}</td>
+      <td>{{ row.perf.latest_views if row.perf else '—' }}</td>
+      <td>{{ row.perf.trend if row.perf else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">No publication records yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

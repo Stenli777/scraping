@@ -12,6 +12,15 @@ from app.db.session import get_db
 from app.llm.routing import list_aliases
 from app.llm.schemas import RewriteRequest
 from app.models.content_quality_score import ContentQualityScore
+from app.models.publication_record import PublicationRecord
+from app.models.analytics_snapshot import AnalyticsSnapshot
+from app.models.content_performance import ContentPerformance
+from app.services.analytics_service import summarize_project_metrics
+from app.services.editorial_insights_service import (
+    content_aging_signals,
+    low_performing_content,
+    top_performing_content,
+)
 from app.models.llm_run import LLMRun
 from app.models.prompt_template import PromptTemplate
 from app.models.parsed_document import ParsedDocument
@@ -231,6 +240,27 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     hermes_critique = get_latest_hermes_result(db, document_id, "rewrite_critique")
     media_assets = list_document_media(db, document_id) if all_flags().get("ENABLE_MEDIA_PIPELINE") else []
     preview_media = next((a for a in media_assets if a.media_type == "preview"), None)
+    doc_publication = None
+    doc_performance = None
+    doc_analytics_snapshots = []
+    if all_flags().get("ENABLE_ANALYTICS"):
+        doc_publication = (
+            db.query(PublicationRecord)
+            .filter(PublicationRecord.document_id == document_id)
+            .order_by(PublicationRecord.id.desc())
+            .first()
+        )
+        if doc_publication:
+            doc_performance = db.query(ContentPerformance).filter(
+                ContentPerformance.publication_record_id == doc_publication.id
+            ).first()
+            doc_analytics_snapshots = (
+                db.query(AnalyticsSnapshot)
+                .filter(AnalyticsSnapshot.publication_record_id == doc_publication.id)
+                .order_by(AnalyticsSnapshot.snapshot_date.desc())
+                .limit(5)
+                .all()
+            )
     timeline = build_document_timeline(db, document)
     revision_count = document.current_revision_number or 0
     return templates.TemplateResponse(
@@ -247,6 +277,9 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "hermes_critique": hermes_critique,
             "media_assets": media_assets,
             "preview_media": preview_media,
+            "doc_publication": doc_publication,
+            "doc_performance": doc_performance,
+            "doc_analytics_snapshots": doc_analytics_snapshots,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
             "publish_revision_numbers": publish_revision_numbers,
@@ -626,6 +659,56 @@ def admin_quality_scores(request: Request, db: Session = Depends(get_db)):
         {"request": request, "scores": scores, "title": "Quality Scores"},
     )
 
+
+
+
+@router.get("/admin/publications", response_class=HTMLResponse)
+def admin_publications(request: Request, db: Session = Depends(get_db)):
+    if not all_flags().get("ENABLE_ANALYTICS"):
+        return RedirectResponse("/admin", status_code=302)
+    records = db.query(PublicationRecord).order_by(PublicationRecord.id.desc()).limit(100).all()
+    rows = []
+    for rec in records:
+        perf = db.query(ContentPerformance).filter(
+            ContentPerformance.publication_record_id == rec.id
+        ).first()
+        rows.append({"record": rec, "perf": perf})
+    return templates.TemplateResponse(
+        request,
+        "publications.html",
+        {"request": request, "rows": rows, "title": "Publications", "feature_flags": all_flags()},
+    )
+
+
+@router.get("/admin/analytics", response_class=HTMLResponse)
+def admin_analytics(request: Request, db: Session = Depends(get_db)):
+    from app.models.project import Project
+
+    projects = db.query(Project).all()
+    project_summaries = {p.id: summarize_project_metrics(db, p.id) for p in projects}
+    top_items = top_performing_content(db, limit=15)
+    low_items = low_performing_content(db, limit=15)
+    latest_snapshots = (
+        db.query(AnalyticsSnapshot)
+        .order_by(AnalyticsSnapshot.id.desc())
+        .limit(30)
+        .all()
+    )
+    aging = content_aging_signals(db, limit=15)
+    return templates.TemplateResponse(
+        request,
+        "analytics.html",
+        {
+            "request": request,
+            "project_summaries": project_summaries,
+            "top_items": top_items,
+            "low_items": low_items,
+            "latest_snapshots": latest_snapshots,
+            "aging": aging,
+            "feature_flags": all_flags(),
+            "title": "Analytics",
+        },
+    )
 
 
 @router.get("/admin/operations", response_class=HTMLResponse)
