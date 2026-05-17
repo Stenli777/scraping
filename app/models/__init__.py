@@ -2,6 +2,9 @@ from app.models.content_quality_score import ContentQualityScore
 from app.models.hermes_run import HermesRun
 from app.models.media_asset import MediaAsset
 from app.models.media_job import MediaJob
+from app.models.publication_record import PublicationRecord
+from app.models.analytics_snapshot import AnalyticsSnapshot
+from app.models.content_performance import ContentPerformance
 from app.models.discovered_url import DiscoveredUrl
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
@@ -46,4 +49,5 @@ __all__ = [
     "HermesRun",
     "MediaAsset",
     "MediaJob",
+    "PublicationRecord",
 ]
