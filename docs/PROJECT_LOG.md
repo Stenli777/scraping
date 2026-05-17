@@ -105,3 +105,11 @@
 - **Publishers:** mock, webhook, payload `article_v1`
 - **API:** `POST publish-draft`, `GET publish-runs`, `GET publish-targets`
 - **Без auto-publish**; только manual draft
+
+---
+
+## 2026-05-17 — Stage 2E: source discovery foundation
+
+- **Миграция:** `005` — extend `source_directories`, `discovered_urls`, seed crmflow24 blogs
+- **Services:** URL normalizer, sitemap + HTML discovery, manual enqueue
+- **Без:** auto enqueue, scheduler, headless crawler, distributed crawl

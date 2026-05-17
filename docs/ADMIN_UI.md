@@ -17,6 +17,9 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/review-queue` | Очередь review: take/reject, score, risks |
 | `/admin/publish-targets` | Publish targets (read-only) |
 | `/admin/publish-runs` | Аудит попыток публикации |
+| `/admin/source-directories` | Список discovery sources |
+| `/admin/source-directories/{id}` | Детали + Run discovery |
+| `/admin/discovered-urls` | Очередь URL: Enqueue / Ignore (по одному) |
 
 На странице **задачи** и **документа**: блок Rewrite metadata — provider, model_alias, upstream_model, fallback_used, ссылка на llm_run; кнопка **Rerun rewrite**.
 

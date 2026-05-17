@@ -46,6 +46,17 @@ REWRITER_PROVIDER=mock
 | `ENABLE_SEO_ENRICH` | true | SEO metadata после rewrite |
 | `ENABLE_PROJECT_PROFILES` | true | Профиль проекта в промптах |
 
+### Source discovery (controlled)
+
+```
+source_directory → discover → discovered_urls → manual enqueue → scraping pipeline
+```
+
+- `ENABLE_SOURCE_DISCOVERY=true`
+- Modes: `sitemap`, `html_links`, `mixed`
+- Limits: `max_urls_per_run`, same-host only, allow/block patterns
+- **No auto enqueue**, no scheduler, no headless browser
+
 ### Publish draft (manual only)
 
 После rewrite + SEO: `POST /api/documents/{id}/publish-draft` с payload `article_v1`.

@@ -1,38 +1,985 @@
-# Архитектура Scrap
+# ARCHITECTURE.md
 
-## Обзор
+# Scrap Platform — Architecture
 
-Scrap — отдельный сервис в `/opt/scrap`. Hermes (`/hermes`) не используется на текущем этапе.
+## 1. System Overview
 
+Scrap — production-oriented AI-powered scraping and content pipeline platform.
+
+**Primary goals:**
+
+- scrape content;
+- extract structured information;
+- clean noisy HTML;
+- orchestrate AI workflows;
+- rewrite/enrich content;
+- publish drafts to external projects;
+- support multi-project content operations.
+
+---
+
+## 2. Current Production Environment
+
+### Server
+
+```text
+Host: hermes
+Path: /opt/scrap
+Domain: https://scrap.crmflow24.ru
 ```
-Admin UI (Jinja) ──┐
-                   ├── FastAPI app ── API (/api/*)
-Worker (poll DB) ──┘         │
-                             ▼
-                    PipelineService
-         fetch → parse → clean → rewrite → save → backup
-                             │
-                    PostgreSQL + storage/backups
+
+### Existing Services
+
+| Service | Purpose |
+|---|---|
+| scrap-api | FastAPI backend |
+| scrap-worker | DB polling worker |
+| nginx | reverse proxy + HTTPS |
+| PostgreSQL | storage |
+| CLIProxyAPI | unified LLM gateway |
+| LM Studio | local inference |
+| Hermes | future orchestration layer |
+
+Hermes is already installed on the same server, but it is not part of Scrap runtime yet.
+
+Paths:
+
+- Scrap: `/opt/scrap`
+- Hermes: `/hermes`
+- CLIProxyAPI: `/opt/cliproxyapi`
+
+Rules:
+
+- Scrap may call CLIProxyAPI via API.
+- Scrap must not modify Hermes files.
+- Scrap must not modify CLIProxyAPI files.
+- Hermes integration is future-stage only.
+- Scrap must remain fully operational if Hermes is unavailable.
+- Hermes must be treated as optional orchestration infrastructure.
+- Any Hermes integration must be done through explicit API contracts and model routing policy.
+
+---
+
+## 3. Core Philosophy
+
+### IMPORTANT
+
+**Scrap is NOT:**
+
+- an AI monolith;
+- a fully autonomous system;
+- Hermes-dependent runtime;
+- tightly coupled to one LLM provider.
+
+**Scrap IS:**
+
+- modular;
+- task-oriented;
+- provider-agnostic;
+- multi-project ready;
+- API-driven;
+- AI-enhanced;
+- production-oriented.
+
+---
+
+## 4. High-Level Architecture
+
+```text
+                ┌────────────────────┐
+                │      Admin UI      │
+                │   Jinja2 / FastAPI │
+                └─────────┬──────────┘
+                          │
+                          ▼
+                ┌────────────────────┐
+                │      FastAPI       │
+                │       API          │
+                └─────────┬──────────┘
+                          │
+          ┌───────────────┼────────────────┐
+          │               │                │
+          ▼               ▼                ▼
+
+ ┌────────────────┐ ┌──────────────┐ ┌────────────────┐
+ │ Task Scheduler │ │ Project Core │ │ Publisher Core │
+ └──────┬─────────┘ └──────┬───────┘ └──────┬─────────┘
+        │                  │                 │
+        ▼                  ▼                 ▼
+
+ ┌─────────────────────────────────────────────────────┐
+ │                    Worker Layer                     │
+ └─────────────────────────────────────────────────────┘
+        │
+        ▼
+
+ ┌─────────────────────────────────────────────────────┐
+ │                  Pipeline Engine                    │
+ │                                                     │
+ │ fetch → parse → clean → review → rewrite → SEO     │
+ │ → validate → publish → backup                       │
+ └─────────────────────────────────────────────────────┘
+        │
+        ▼
+
+ ┌─────────────────────────────────────────────────────┐
+ │                AI Orchestration Layer               │
+ │                     (Hermes)                        │
+ └─────────────────────────────────────────────────────┘
+        │
+        ▼
+
+ ┌─────────────────────────────────────────────────────┐
+ │                CLIProxyAPI Gateway                  │
+ └─────────────────────────────────────────────────────┘
+        │
+        ▼
+
+ ┌─────────────────────────────────────────────────────┐
+ │                 LLM Providers Layer                 │
+ │                                                     │
+ │  LM Studio / OpenAI / OpenRouter / Local Models     │
+ └─────────────────────────────────────────────────────┘
 ```
 
-## Модули
+---
 
-| Каталог | Назначение |
-|---------|------------|
-| `app/api` | REST API |
-| `app/admin` | Веб-админка |
-| `app/core` | Конфиг, enums, логирование |
-| `app/db`, `app/models` | SQLAlchemy |
-| `app/parsers` | Scrapling + generic article |
-| `app/rewriters` | mock / CLIProxy / LM Studio |
-| `app/services` | pipeline, backup, tasks |
-| `app/workers` | DB-polling worker |
-| `app/exporters` | JSON/Markdown |
-| `storage/` | backups, runtime logs |
+## 5. Project Structure
 
-## Расширение
+```text
+/opt/scrap
+├── app/
+│   ├── admin/
+│   ├── api/
+│   ├── core/
+│   ├── db/
+│   ├── exporters/
+│   ├── llm/
+│   ├── models/
+│   ├── parsers/
+│   ├── publishers/
+│   ├── rewriters/
+│   ├── services/
+│   ├── tasks/
+│   ├── workflows/
+│   └── workers/
+│
+├── alembic/
+├── docs/
+├── scripts/
+├── storage/
+│   ├── backups/
+│   ├── logs/
+│   └── exports/
+│
+├── tests/
+├── .env
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
 
-- Новый парсер: `app/parsers/` + registry
-- Новый rewriter: `app/rewriters/` + `REWRITER_PROVIDER`
-- Очередь: заменить worker на ARQ/Celery без смены pipeline
-- Экспорт в crmflow24.ru: webhook в `services/export_crmflow.py` (этап 2)
+---
+
+## 6. Core Modules
+
+### 6.1 app/api
+
+**Responsibilities:**
+
+- REST API;
+- admin endpoints;
+- project management;
+- task creation;
+- status endpoints;
+- publish endpoints;
+- internal APIs.
+
+### 6.2 app/admin
+
+Simple Jinja2 admin.
+
+**Responsibilities:**
+
+- tasks dashboard;
+- documents dashboard;
+- projects;
+- sources;
+- review queue;
+- logs;
+- retry actions;
+- pipeline visibility.
+
+No frontend SPA required at MVP stage.
+
+### 6.3 app/parsers
+
+**Responsibilities:**
+
+- Scrapling fetch;
+- HTML extraction;
+- article extraction;
+- domain-specific parsers;
+- anti-noise cleanup.
+
+**Current:**
+
+- generic article parser;
+- saltpro parser;
+- sotbit parser;
+- habr parser.
+
+**Architecture:**
+
+- parser registry;
+- parser auto-routing;
+- fallback parser.
+
+### 6.4 app/rewriters
+
+**Responsibilities:**
+
+- rewrite orchestration;
+- prompt generation;
+- provider abstraction;
+- LLM communication.
+
+**Providers:**
+
+- mock
+- cliproxy
+- local
+- future providers
+
+MUST remain provider-agnostic.
+
+### 6.5 app/llm
+
+Dedicated AI abstraction layer.
+
+**Responsibilities:**
+
+- request schemas;
+- response schemas;
+- model routing;
+- retries;
+- token accounting;
+- quality scoring.
+
+NO business logic here.
+
+### 6.6 app/publishers
+
+**Responsibilities:**
+
+- external publication;
+- webhook publishing;
+- draft creation;
+- adapter system.
+
+**Architecture:**
+
+```text
+BasePublisher
+ ├── Crmflow24Publisher
+ ├── AggregatorPublisher
+ └── WebhookPublisher
+```
+
+### 6.7 app/workflows
+
+Future Hermes-compatible workflows.
+
+**Responsibilities:**
+
+- AI chains;
+- review chains;
+- rewrite chains;
+- orchestration schemas.
+
+### 6.8 app/workers
+
+**Responsibilities:**
+
+- task execution;
+- retries;
+- timeouts;
+- locking;
+- polling.
+
+**Current:**
+
+- DB polling worker.
+
+**Future:**
+
+- Redis/Celery/ARQ compatible.
+
+---
+
+## 7. Multi-Project Architecture
+
+### IMPORTANT
+
+System must support multiple independent projects.
+
+**Example:**
+
+- crmflow24.ru
+- future aggregators
+- SEO satellites
+- niche content portals
+
+### 7.1 Project Entity
+
+Each project stores:
+
+- name;
+- domain;
+- categories;
+- content rules;
+- SEO profile;
+- tone of voice;
+- rewrite profile;
+- publication config;
+- LLM instructions.
+
+### 7.2 Source Entity
+
+Each source stores:
+
+- source domain;
+- allowed directories;
+- crawl rules;
+- parser mapping;
+- rate limits;
+- trust score.
+
+## 7.3 Source Discovery Rules
+
+Crawler must support:
+
+- sitemap discovery;
+- category crawling;
+- pagination;
+- URL normalization;
+- robots-aware mode;
+- max depth;
+- crawl limits;
+- recrawl intervals;
+- blacklist rules;
+- duplicate URL prevention.
+
+---
+
+## 8. AI Pipeline Architecture
+
+### 8.1 Main Content Pipeline
+
+```text
+DISCOVER
+  ↓
+FETCH
+  ↓
+PARSE
+  ↓
+CLEAN
+  ↓
+DEDUPLICATE
+  ↓
+LLM REVIEW
+  ↓
+CONTENT PLAN
+  ↓
+REWRITE
+  ↓
+SEO ENRICH
+  ↓
+QUALITY REVIEW
+  ↓
+PUBLISH DRAFT
+  ↓
+BACKUP
+```
+
+## 8.2 Pipeline State Machine
+
+Every task/document must have explicit pipeline state.
+
+Example states:
+
+- discovered
+- queued
+- fetching
+- fetched
+- parsing
+- parsed
+- cleaning
+- cleaned
+- deduplicated
+- review_pending
+- review_rejected
+- rewrite_pending
+- rewriting
+- seo_enrich_pending
+- publishing
+- published_draft
+- failed_retryable
+- failed_terminal
+
+Rules:
+
+- all transitions must be explicit;
+- workers must be idempotent;
+- retries must not duplicate documents;
+- failed stages must preserve artifacts/logs;
+- each stage must store timestamps and duration.
+
+---
+
+## 9. LLM Review Layer
+
+### Goal
+
+Determine:
+
+- should content be used;
+- which project it belongs to;
+- what rewrite strategy should be applied.
+
+### Example Review Output
+
+```json
+{
+  "take": true,
+  "score": 87,
+  "reason": "Good CRM implementation article",
+  "content_type": "article",
+  "target_project": "crmflow24",
+  "recommended_angle": "Practical implementation guide"
+}
+```
+
+## 9.1 LLM Audit Logging
+
+Every LLM interaction must store:
+
+- task_id
+- project_id
+- model_alias
+- upstream_model
+- prompt_template
+- input_tokens
+- output_tokens
+- latency
+- finish_reason
+- fallback_used
+- success/failure
+- created_at
+
+This is required for:
+- debugging;
+- quality analysis;
+- routing optimization;
+- provider comparison;
+- cost monitoring.
+
+---
+
+## 10. Rewrite Strategy
+
+### IMPORTANT
+
+System should NOT perform naive synonym replacement.
+
+**Correct approach:**
+
+```text
+extract facts
+  ↓
+extract structure
+  ↓
+determine intent
+  ↓
+build new outline
+  ↓
+generate original article
+  ↓
+SEO enrich
+  ↓
+review quality
+```
+
+**Goal:**
+
+- original article inspired by source;
+- not copied article.
+
+## 10.1 Immutable Source and Derived Content Model
+
+Original scraped content must be treated as immutable source material.
+
+Model:
+
+```text
+source document
+  ↓
+derived project document
+```
+
+Rules:
+
+raw source content is never overwritten;
+every project-specific rewrite creates a derived document;
+one source document may produce multiple project documents;
+rewrites must reference the original source document;
+project documents may have independent status, SEO metadata and publish state.
+
+---
+
+## 11. SEO Enrichment Layer
+
+**Generated:**
+
+- SEO title;
+- meta description;
+- H1;
+- slug;
+- tags;
+- categories;
+- FAQ;
+- CTA blocks;
+- internal linking hints;
+- excerpts.
+
+## 11.1 Content Quality Layer
+
+Every rewritten article should receive quality scoring:
+
+- readability;
+- SEO quality;
+- uniqueness;
+- factual consistency;
+- spamminess;
+- structure quality;
+- commercial usefulness.
+
+Low-quality content must not auto-publish.
+
+---
+
+## 12. AI Orchestration (Hermes)
+
+### CURRENT STATUS
+
+Hermes is NOT runtime-critical.
+
+Hermes is future orchestration layer.
+
+### Hermes Responsibilities
+
+**ONLY:**
+
+- reasoning orchestration;
+- agent workflows;
+- AI chains;
+- review chains;
+- model routing.
+
+### Hermes MUST NOT
+
+- scrape websites;
+- replace workers;
+- replace queues;
+- replace FastAPI;
+- replace storage;
+- replace PostgreSQL.
+
+---
+
+## 13. CLIProxyAPI Integration
+
+### CRITICAL RULE
+
+ALL LLM calls go through CLIProxyAPI.
+
+**Workers MUST NOT call:**
+
+- LM Studio directly;
+- OpenAI directly;
+- providers directly.
+
+### Correct Flow
+
+```text
+Scrap
+  ↓
+CLIProxyAPI
+  ↓
+LM Studio / OpenAI / OpenRouter
+```
+
+### Benefits
+
+- unified API;
+- provider abstraction;
+- centralized auth;
+- fallback support;
+- model routing;
+- easier migration.
+
+## 13.1 Hermes Integration Boundary
+
+На текущем этапе Hermes НЕ подключается в runtime.
+
+Scrap должен сначала получить стабильный LLM abstraction layer через CLIProxyAPI.
+
+Hermes можно подключать только после появления:
+- typed LLM contracts;
+- workflow schemas;
+- task statuses;
+- llm_runs audit log;
+- stable retry/error handling.
+
+Первый Hermes-compatible слой:
+- `app/workflows/`
+- workflow definitions в YAML/JSON;
+- request/response contracts;
+- без прямого вызова Hermes из парсеров или worker core.
+
+Запрещено:
+- вызывать Hermes из fetch/parse/clean stages;
+- делать Hermes обязательной зависимостью запуска scrap-api;
+- ломать pipeline, если Hermes недоступен;
+- блокировать scraping pipeline, если Hermes недоступен.
+
+---
+
+## 14. Model Routing
+
+### Cheap Models
+
+**Tasks:**
+
+- classification;
+- extraction;
+- scoring;
+- metadata generation;
+- dedupe.
+
+**Examples:**
+
+- qwen3-coder-next
+
+### Expensive Models
+
+**Tasks:**
+
+- rewrite;
+- SEO optimization;
+- final polish;
+- editorial review.
+
+**Examples:**
+
+- hermes-4-70b
+
+## 14.1 Explicit Model Routing Policy
+
+Hermes and Scrap MUST NOT rely on provider default model selection.
+
+Every AI task must explicitly define:
+- task kind;
+- agent role;
+- required model alias;
+- fallback model alias;
+- max tokens;
+- temperature;
+- timeout;
+- expected output schema.
+
+CLIProxyAPI may expose one OpenAI-compatible endpoint, but model selection must be explicit through model aliases.
+
+### Generic task aliases
+
+- `local/classifier-fast`
+- `local/extractor-fast`
+- `local/rewrite-main`
+- `local/seo-main`
+- `local/qc-reviewer`
+- `local/code-agent`
+- `cloud/rewrite-fallback`
+
+### Hermes-compatible aliases
+
+- `hermes-default`
+- `hermes-cheap`
+- `hermes-code`
+- `hermes-smart`
+- `hermes-long`
+- `hermes-long-smart`
+
+Example task routing:
+
+| Task | Agent role | Primary model | Fallback |
+|---|---|---|---|
+| classify_source | classifier | local/classifier-fast | local/rewrite-main |
+| extract_facts | extractor | local/extractor-fast | local/rewrite-main |
+| rewrite_article | writer | local/rewrite-main | cloud/rewrite-fallback |
+| seo_enrich | seo_specialist | local/seo-main | local/rewrite-main |
+| quality_review | critic | local/qc-reviewer | cloud/rewrite-fallback |
+| code_generation | coder | local/code-agent | cloud/code-fallback |
+| architecture_reasoning | architect | local/reasoning-main | cloud/reasoning-fallback |
+
+Rules:
+- no task may call CLIProxyAPI without explicit `model`;
+- no Hermes agent may use provider default model;
+- all model aliases must be configured in one registry;
+- task results must store `model_used`;
+- fallback events must be logged.
+- Hermes must call CLIProxyAPI only through `/v1/*` Model API;
+- Hermes must not use CLIProxyAPI Management API;
+- Hermes config must not contain direct `api.openai.com`, `api.deepseek.com`, or other provider chat endpoints;
+- DeepSeek aliases must not be smoke-tested with tiny `max_tokens`; use at least `512`;
+- Scrap must remain operational if Hermes is unavailable.
+
+## 14.2 Prompt Management
+
+Prompts must not be hardcoded inside workers.
+
+System must support:
+- prompt templates;
+- prompt versions;
+- project-specific overrides;
+- role-based prompts;
+- rollback to previous prompt versions.
+
+Prompt changes must be auditable.
+
+---
+
+## 15. Queue Strategy
+
+### Current
+
+DB polling.
+
+### Future
+
+Potential migration:
+
+- Redis;
+- ARQ;
+- Celery;
+- Dramatiq.
+
+Architecture must remain compatible.
+
+---
+
+## 16. Reliability Strategy
+
+### MUST HAVE
+
+- retries;
+- timeouts;
+- idempotency;
+- task locking;
+- dedupe;
+- content hashing;
+- safe rollback;
+- backup integrity.
+
+---
+
+## 17. Deduplication Strategy
+
+### Current
+
+- content_hash.
+
+### Future
+
+- normalized_url;
+- canonical_url;
+- title similarity;
+- semantic dedupe;
+- embedding similarity.
+
+---
+
+## 18. Backups
+
+### Storage
+
+`storage/backups/YYYY/MM/DD/<task_id>/`
+
+**Store:**
+
+- raw HTML;
+- raw text;
+- cleaned markdown;
+- rewritten markdown;
+- metadata;
+- logs;
+- future screenshots.
+
+---
+
+## 19. Git Strategy
+
+**Repository:**
+
+`git@github.com:Stenli777/scraping.git`
+
+**Git root:**
+
+`/opt/scrap/.git`
+
+### Rules
+
+Every stage:
+
+- clean git status;
+- isolated commits;
+- rollback safety;
+- no secrets in git.
+
+### MUST IGNORE
+
+- `.env`
+- `storage/`
+- `logs/`
+- `*.db`
+- `*.sqlite3`
+
+---
+
+## 20. Deployment Strategy
+
+### Production
+
+**Current:**
+
+- systemd services;
+- nginx reverse proxy;
+- Let's Encrypt HTTPS.
+
+### Services
+
+- scrap-api
+- scrap-worker
+
+## 20.1 Feature Flags
+
+Runtime feature flags must be supported through environment variables.
+
+Examples:
+
+```env
+ENABLE_HERMES=false
+ENABLE_AUTO_PUBLISH=false
+ENABLE_SEO_ENRICH=true
+ENABLE_LLM_REVIEW=true
+ENABLE_SOURCE_DISCOVERY=true
+DISCOVERY_DEFAULT_MAX_URLS=50
+DISCOVERY_DEFAULT_TIMEOUT=30
+```
+
+### Source discovery (Stage 2E)
+
+Controlled URL discovery from `source_directories` → `discovered_urls` → manual enqueue → existing scraping pipeline.
+
+- Modes: `sitemap`, `html_links`, `mixed`, `manual`
+- Safety: `max_urls_per_run`, same-host only, allow/block patterns, crawl delay, no headless browser
+- **No** auto enqueue, scheduler, or deep crawl
+
+### Production-safe defaults
+
+- Hermes disabled;
+- auto publish disabled;
+- destructive operations disabled;
+- mock rewrite disabled unless explicitly configured.
+
+## 20.2 Environment Strategy
+
+Supported environments:
+
+- local;
+- development;
+- staging;
+- production.
+
+Production-safe defaults:
+- auto publish disabled;
+- destructive operations disabled;
+- debug logs disabled;
+- secrets loaded only from environment;
+- `.env` files must never be committed.
+
+---
+
+## 21. Admin Philosophy
+
+Admin should remain:
+
+- simple;
+- lightweight;
+- operational;
+- debugging-friendly.
+
+**NOT:**
+
+- enterprise frontend;
+- SPA-heavy;
+- microfrontend system.
+
+---
+
+## 22. MVP Boundaries
+
+### INCLUDED
+
+- scraping;
+- extraction;
+- rewrite;
+- SEO enrich;
+- review queue;
+- draft publishing;
+- multi-project support;
+- CLIProxyAPI integration;
+- Git-safe development.
+
+### EXCLUDED (for now)
+
+- image generation;
+- auto publishing;
+- vector DB;
+- RAG memory;
+- autonomous browsing agents;
+- advanced analytics;
+- Kubernetes;
+- distributed workers.
+
+---
+
+## 23. Long-Term Scaling Vision
+
+**Target:**
+
+- reusable content factory;
+- reusable AI workflows;
+- reusable publishing infrastructure;
+- launch multiple projects rapidly;
+- AI-assisted SEO operations.
+
+---
+
+## 24. Golden Rule
+
+- FastAPI controls the platform.
+- Workers execute operations.
+- CLIProxyAPI abstracts inference.
+- Hermes orchestrates reasoning.
+- LLMs remain replaceable.
+- Everything communicates through stable contracts.

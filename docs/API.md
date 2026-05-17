@@ -18,6 +18,11 @@ Base: **https://scrap.crmflow24.ru**
 | POST | `/api/documents/{id}/publish-draft` | Отправить draft на publish target `{ "publish_target_id", "dry_run" }` |
 | GET | `/api/documents/{id}/publish-runs` | История publish_runs для документа |
 | GET | `/api/publish-targets` | Список enabled publish targets |
+| GET | `/api/source-directories` | Список source directories |
+| POST | `/api/source-directories/{id}/discover` | Controlled discovery `{ "max_urls", "dry_run" }` |
+| GET | `/api/discovered-urls` | Очередь URL (filters: project_id, source_directory_id, status) |
+| POST | `/api/discovered-urls/{id}/enqueue` | Создать scraping task (manual) |
+| POST | `/api/discovered-urls/{id}/ignore` | Игнорировать URL |
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |
