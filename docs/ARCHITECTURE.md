@@ -902,6 +902,14 @@ Controlled URL discovery from `source_directories` → `discovered_urls` → man
 - Failed-items view; safe skip/stale reset
 - See `docs/OPERATIONS.md`
 
+### Production publishing (Stage 2G)
+
+- `article_v1` payload with `payload_version`
+- Validators + project review thresholds
+- Idempotent publish (duplicate → 409 unless `force=true`)
+- WebhookPublisher → crmflow24 via env `CRMFLOW24_PUBLISH_*`
+- Tokens only in env, never in DB/logs
+
 ### Production-safe defaults
 
 - Hermes disabled;

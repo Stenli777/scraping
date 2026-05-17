@@ -35,6 +35,29 @@ API: `GET /api/documents/{id}/publish-readiness`
 - `ENABLE_PUBLISHING=true`
 - enabled publish target для проекта
 - status только `draft`
+- review take/score (project thresholds, default score ≥ 60)
+- duplicate successful publish (нужен `force=true` для повтора)
+
+Ответ включает `checks`: `review_take`, `review_score`, `seo_exists`, `duplicate_publish`, и т.д.
+
+## Production publish (crmflow24)
+
+1. Заполнить в `.env` (не коммитить):
+   - `CRMFLOW24_PUBLISH_ENDPOINT` — URL draft API
+   - `CRMFLOW24_PUBLISH_TOKEN` — bearer token
+2. Target `crmflow24-draft-webhook` (migration 006): `target_type=webhook`, `auth_token_env_name=CRMFLOW24_PUBLISH_TOKEN`
+3. Пока endpoint пуст — target остаётся в **dry-run** (безопасно)
+4. `POST /api/documents/{id}/publish-draft` body: `{"publish_target_id": N, "dry_run": false, "force": false}`
+
+**Idempotency:** повторный успешный publish блокируется (HTTP 409). `force=true` — только вручную.
+
+**Rollback publish:**
+
+```env
+ENABLE_PUBLISHING=false
+```
+
+или очистить `CRMFLOW24_PUBLISH_ENDPOINT` и перезапустить сервисы.
 
 ## Failed items
 

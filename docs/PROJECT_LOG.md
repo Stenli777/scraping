@@ -122,3 +122,12 @@
 - `/admin/failed-items`, publish readiness checker
 - `docs/OPERATIONS.md`, `scripts/test_2f_e2e.py`
 - Safe task skip / stale reset (non-destructive)
+
+---
+
+## 2026-05-17 — Stage 2G: crmflow24 publishing integration
+
+- Migration 006: publish thresholds on projects, publish_run audit fields
+- Payload `payload_version: article_v1`, validators, idempotency, force publish
+- WebhookPublisher hardening (retry, redacted logs, draft_url parsing)
+- crmflow24-draft-webhook target (env-driven endpoint, dry-run until ready)
