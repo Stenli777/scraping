@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -858,29 +858,57 @@ def admin_llm_smoke_run(
         },
     )
 
-# --- Stage 4A automation admin ---
+
+# --- Stage 4B automation admin ---
 from app.core.feature_flags import is_automation_enabled, is_scheduler_enabled
 from app.models.automation_rule import AutomationRule
-from app.models.automation_run import AutomationRun
-from app.scheduler.heartbeat import get_heartbeat_status
+from app.models.automation_run import AutomationRun, AutomationRunStatus
+from app.scheduler.status import build_scheduler_status
 from app.scheduler.rules import next_run_preview
-from app.services.automation_service import AutomationError, execute_automation_rule, set_rule_enabled
+from app.services.automation_service import (
+    AutomationError,
+    cancel_automation_run,
+    enqueue_automation_run,
+    get_rule_rate_usage,
+    mark_run_failed,
+    set_rule_enabled,
+)
 
 
 @router.get("/admin/automation", response_class=HTMLResponse)
 def admin_automation(request: Request, db: Session = Depends(get_db)):
+    from types import SimpleNamespace
+
     rules = list(db.scalars(select(AutomationRule).order_by(AutomationRule.id.asc())).all())
-    last_runs = {}
+    enriched = []
     for rule in rules:
-        last_runs[rule.id] = db.scalar(
+        active_runs = db.scalar(
+            select(func.count())
+            .select_from(AutomationRun)
+            .where(
+                AutomationRun.automation_rule_id == rule.id,
+                AutomationRun.status.in_(
+                    [
+                        AutomationRunStatus.QUEUED,
+                        AutomationRunStatus.RUNNING,
+                        AutomationRunStatus.CANCEL_REQUESTED,
+                    ]
+                ),
+            )
+        ) or 0
+        last_fail = db.scalar(
+            select(AutomationRun)
+            .where(
+                AutomationRun.automation_rule_id == rule.id,
+                AutomationRun.status == AutomationRunStatus.FAILED,
+            )
+            .order_by(AutomationRun.id.desc())
+        )
+        last_run = db.scalar(
             select(AutomationRun)
             .where(AutomationRun.automation_rule_id == rule.id)
             .order_by(AutomationRun.id.desc())
         )
-    from types import SimpleNamespace
-
-    enriched = []
-    for rule in rules:
         enriched.append(
             SimpleNamespace(
                 id=rule.id,
@@ -892,10 +920,12 @@ def admin_automation(request: Request, db: Session = Depends(get_db)):
                 rate_limit_per_hour=rule.rate_limit_per_hour,
                 max_daily_runs=rule.max_daily_runs,
                 next_run_preview=next_run_preview(rule, db),
-                last_run=last_runs.get(rule.id),
+                rate_usage=get_rule_rate_usage(db, rule),
+                active_runs=active_runs,
+                last_run=last_run,
+                last_failure=last_fail,
             )
         )
-    hb = get_heartbeat_status(db)
     return templates.TemplateResponse(
         request,
         "automation.html",
@@ -903,9 +933,9 @@ def admin_automation(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "title": "Automation",
             "rules": enriched,
+            "scheduler_status": build_scheduler_status(db),
             "scheduler_enabled": is_scheduler_enabled(),
             "automation_enabled": is_automation_enabled(),
-            "heartbeat": hb,
         },
     )
 
@@ -924,6 +954,25 @@ def admin_automation_runs(request: Request, db: Session = Depends(get_db), limit
             "title": "Automation Runs",
             "runs": runs,
             "rule_names": rule_names,
+            "scheduler_status": build_scheduler_status(db),
+        },
+    )
+
+
+@router.get("/admin/automation-runs/{run_id}", response_class=HTMLResponse)
+def admin_automation_run_detail(run_id: int, request: Request, db: Session = Depends(get_db)):
+    run = db.get(AutomationRun, run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    rule = db.get(AutomationRule, run.automation_rule_id)
+    return templates.TemplateResponse(
+        request,
+        "automation_run_detail.html",
+        {
+            "request": request,
+            "title": f"Run #{run_id}",
+            "run": run,
+            "rule": rule,
         },
     )
 
@@ -931,10 +980,10 @@ def admin_automation_runs(request: Request, db: Session = Depends(get_db), limit
 @router.post("/admin/automation/rules/{rule_id}/run")
 def admin_automation_run(rule_id: int, db: Session = Depends(get_db)):
     try:
-        execute_automation_rule(db, rule_id, trigger="manual")
-    except (AutomationError, Exception):
-        pass
-    return RedirectResponse("/admin/automation-runs", status_code=303)
+        run = enqueue_automation_run(db, rule_id, trigger="manual", requested_by="admin")
+        return RedirectResponse(f"/admin/automation-runs/{run.id}", status_code=303)
+    except AutomationError:
+        return RedirectResponse("/admin/automation-runs", status_code=303)
 
 
 @router.post("/admin/automation/rules/{rule_id}/enable")
@@ -953,3 +1002,21 @@ def admin_automation_disable(rule_id: int, db: Session = Depends(get_db)):
     except AutomationError:
         pass
     return RedirectResponse("/admin/automation", status_code=303)
+
+
+@router.post("/admin/automation-runs/{run_id}/cancel")
+def admin_automation_cancel(run_id: int, db: Session = Depends(get_db)):
+    try:
+        cancel_automation_run(db, run_id)
+    except AutomationError:
+        pass
+    return RedirectResponse(f"/admin/automation-runs/{run_id}", status_code=303)
+
+
+@router.post("/admin/automation-runs/{run_id}/mark-failed")
+def admin_automation_mark_failed(run_id: int, db: Session = Depends(get_db)):
+    try:
+        mark_run_failed(db, run_id, reason="marked failed from admin", force=True)
+    except AutomationError:
+        pass
+    return RedirectResponse(f"/admin/automation-runs/{run_id}", status_code=303)

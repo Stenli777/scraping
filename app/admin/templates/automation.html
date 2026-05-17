@@ -1,18 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="panel">
-  <h2>Scheduler</h2>
-  <p><strong>Scheduler enabled:</strong> {{ scheduler_enabled }}</p>
-  <p><strong>Automation enabled:</strong> {{ automation_enabled }}</p>
-  <p><strong>Heartbeat:</strong> <code>{{ heartbeat | tojson }}</code></p>
+<div class="panel warn-box">
+  <strong>Scheduler:</strong> {{ 'ON' if scheduler_enabled else 'OFF' }} |
+  <strong>Automation:</strong> {{ 'ON' if automation_enabled else 'OFF' }}
+  {% if not scheduler_enabled %}
+  <p>Queued runs will <strong>not</strong> be processed until ENABLE_SCHEDULER=true.</p>
+  {% endif %}
 </div>
 <div class="panel">
-  <h2>Automation rules</h2>
+  <h2>Scheduler status</h2>
+  <pre class="content">{{ scheduler_status | tojson(indent=2) }}</pre>
+</div>
+<div class="panel">
+  <h2>Rules</h2>
   <table class="table">
     <thead>
       <tr>
-        <th>ID</th><th>Name</th><th>Type</th><th>Enabled</th><th>Trigger</th>
-        <th>Limits</th><th>Next run</th><th>Last run</th><th>Actions</th>
+        <th>ID</th><th>Name</th><th>Type</th><th>On</th><th>Usage</th>
+        <th>Active</th><th>Last / Fail</th><th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -22,22 +27,22 @@
         <td>{{ r.name }}</td>
         <td><code>{{ r.automation_type }}</code></td>
         <td>{{ 'yes' if r.enabled else 'no' }}</td>
-        <td>{{ r.trigger_type }}<br><small>{{ r.schedule_cron or '' }}</small></td>
-        <td>{{ r.rate_limit_per_hour }}/h, {{ r.max_daily_runs }}/day</td>
-        <td>{{ r.next_run_preview }}</td>
-        <td>{% if r.last_run %}{{ r.last_run.status }} #{{ r.last_run.id }}{% else %}—{% endif %}</td>
         <td>
-          <form method="post" action="/admin/automation/rules/{{ r.id }}/run" style="display:inline">
-            <button type="submit">Run</button>
-          </form>
+          {{ r.rate_usage.hourly_used }}/{{ r.rate_usage.hourly_limit }}h,
+          {{ r.rate_usage.daily_used }}/{{ r.rate_usage.daily_limit }}d<br>
+          <small>{{ r.rate_usage.next_allowed }}</small>
+        </td>
+        <td>{{ r.active_runs }}</td>
+        <td>
+          {% if r.last_run %}<a href="/admin/automation-runs/{{ r.last_run.id }}">#{{ r.last_run.id }} {{ r.last_run.status }}</a>{% else %}—{% endif %}
+          {% if r.last_failure %}<br><span class="error">fail #{{ r.last_failure.id }}</span>{% endif %}
+        </td>
+        <td>
+          <form method="post" action="/admin/automation/rules/{{ r.id }}/run" style="display:inline"><button>Run</button></form>
           {% if r.enabled %}
-          <form method="post" action="/admin/automation/rules/{{ r.id }}/disable" style="display:inline">
-            <button type="submit">Disable</button>
-          </form>
+          <form method="post" action="/admin/automation/rules/{{ r.id }}/disable" style="display:inline"><button>Off</button></form>
           {% else %}
-          <form method="post" action="/admin/automation/rules/{{ r.id }}/enable" style="display:inline">
-            <button type="submit">Enable</button>
-          </form>
+          <form method="post" action="/admin/automation/rules/{{ r.id }}/enable" style="display:inline"><button>On</button></form>
           {% endif %}
         </td>
       </tr>

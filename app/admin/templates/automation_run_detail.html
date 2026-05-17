@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Run #{{ run.id }}</h2>
+  <p><strong>Rule:</strong> {{ rule.name if rule else run.automation_rule_id }}</p>
+  <p><strong>Status:</strong> {{ run.status }}</p>
+  <p><strong>Requested:</strong> {{ run.requested_by }} at {{ run.requested_at }}</p>
+  <p><strong>Started:</strong> {{ run.started_at }} | <strong>Completed:</strong> {{ run.completed_at }}</p>
+  <p><strong>Heartbeat:</strong> {{ run.heartbeat_at }}</p>
+  {% if run.error_message %}<p class="error">{{ run.error_message }}</p>{% endif %}
+  {% if run.status in ('queued', 'running', 'cancel_requested') %}
+  <form method="post" action="/admin/automation-runs/{{ run.id }}/cancel"><button>Cancel</button></form>
+  {% endif %}
+  {% if run.status in ('running', 'cancel_requested') %}
+  <form method="post" action="/admin/automation-runs/{{ run.id }}/mark-failed"><button>Mark failed (stale)</button></form>
+  {% endif %}
+</div>
+<div class="panel">
+  <h3>Progress</h3>
+  <pre class="content">{{ run.progress_json | tojson(indent=2) }}</pre>
+</div>
+<div class="panel">
+  <h3>Logs</h3>
+  <pre class="content">{{ run.logs_json | tojson(indent=2) }}</pre>
+</div>
+<div class="panel">
+  <h3>Affected entities</h3>
+  <pre class="content">{{ run.affected_entities_json | tojson(indent=2) }}</pre>
+</div>
+{% endblock %}

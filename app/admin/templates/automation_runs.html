@@ -1,26 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="panel">
-  <h2>Automation runs (audit)</h2>
+  <p>Scheduler: {{ scheduler_status.scheduler_enabled }} | Queued: {{ scheduler_status.queued_runs }} | Running: {{ scheduler_status.running_runs }}</p>
+</div>
+<div class="panel">
+  <h2>Automation runs</h2>
   <table class="table">
     <thead>
       <tr>
-        <th>ID</th><th>Rule</th><th>Status</th><th>Started</th><th>Completed</th>
-        <th>Tasks</th><th>Docs</th><th>Discoveries</th><th>Error</th>
+        <th>ID</th><th>Rule</th><th>Status</th><th>Progress</th><th>Started</th><th>Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for run in runs %}
       <tr>
-        <td>{{ run.id }}</td>
+        <td><a href="/admin/automation-runs/{{ run.id }}">{{ run.id }}</a></td>
         <td>{{ rule_names.get(run.automation_rule_id, run.automation_rule_id) }}</td>
         <td><span class="badge status-{{ run.status }}">{{ run.status }}</span></td>
-        <td>{{ run.started_at }}</td>
-        <td>{{ run.completed_at }}</td>
-        <td>{{ run.created_tasks }}</td>
-        <td>{{ run.created_documents }}</td>
-        <td>{{ run.created_discoveries }}</td>
-        <td>{{ run.error_message or '' }}</td>
+        <td><code>{{ run.progress_json | tojson if run.progress_json else '' }}</code></td>
+        <td>{{ run.started_at or run.requested_at }}</td>
+        <td>
+          {% if run.status in ('queued', 'running', 'cancel_requested') %}
+          <form method="post" action="/admin/automation-runs/{{ run.id }}/cancel" style="display:inline"><button>Cancel</button></form>
+          {% endif %}
+          {% if run.status in ('running', 'cancel_requested') %}
+          <form method="post" action="/admin/automation-runs/{{ run.id }}/mark-failed" style="display:inline"><button>Mark failed</button></form>
+          {% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
