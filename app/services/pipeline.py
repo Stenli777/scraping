@@ -13,7 +13,10 @@ from app.parsers.registry import get_parser_for_url, resolve_parser_type
 from app.services.backup_service import BackupService
 from app.services.hashing import content_hash
 from app.services.pipeline_event_service import emit_pipeline_event, map_legacy_task_status_to_stage
+from app.services.project_profile_service import resolve_task_project
+from app.services.review_service import run_review_stage
 from app.services.rewrite_service import run_rewrite_stage
+from app.services.seo_service import run_seo_stage
 from app.services.task_log_service import add_task_log
 
 logger = logging.getLogger(__name__)
@@ -31,8 +34,16 @@ class PipelineService:
 
         parsed = None
         doc_hash = None
+        review_result = None
+        rewrite_result = None
+        seo_result = None
 
         try:
+            project = resolve_task_project(self.db, task)
+            if project and not task.project_id:
+                task.project_id = project.id
+                self.db.commit()
+
             task.started_at = datetime.now(timezone.utc)
             self._set_status(task, TaskStatus.FETCHING)
             add_task_log(self.db, task.id, "Fetching URL", LogLevel.INFO, {"url": task.source_url})
@@ -65,13 +76,34 @@ class PipelineService:
                     task.status = TaskStatus.DONE.value
                     task.finished_at = datetime.now(timezone.utc)
                     self.db.commit()
-                    logger.info(
-                        "Task %s skipped duplicate, existing document %s", task.id, existing.id
-                    )
                     return
                 raise ValueError(
                     f"Duplicate content detected (document_id={existing.id}, hash={doc_hash})"
                 )
+
+            self._set_status(task, TaskStatus.REVIEWING)
+            review_result = run_review_stage(
+                self.db, task, clean_text=parsed.clean_text, parsed_metadata=parsed.metadata
+            )
+            if review_result.success and not review_result.skipped:
+                parsed.metadata["review"] = {
+                    "take": review_result.take,
+                    "score": review_result.score,
+                    "reason": review_result.reason,
+                    "content_type": review_result.content_type,
+                    "recommended_angle": review_result.recommended_angle,
+                    "llm_run_id": review_result.llm_run_id,
+                    "review_result_id": review_result.review_result_id,
+                }
+            elif not review_result.success and not review_result.skipped:
+                add_task_log(
+                    self.db,
+                    task.id,
+                    "Review failed — continuing pipeline",
+                    LogLevel.WARNING,
+                    {"error": review_result.error_message},
+                )
+                parsed.metadata["review_error"] = review_result.error_message
 
             self._set_status(task, TaskStatus.REWRITING)
             rewrite_result = run_rewrite_stage(
@@ -99,7 +131,6 @@ class PipelineService:
                     {
                         "error": rewrite_result.error_message,
                         "warnings": rewrite_result.warnings,
-                        "provider": rewrite_result.provider,
                     },
                 )
                 task.error_message = rewrite_result.error_message
@@ -107,6 +138,35 @@ class PipelineService:
             self._set_status(task, TaskStatus.SAVING)
             document = self._upsert_document(task, parsed, doc_hash, rewritten)
             self._create_version(document)
+
+            self._set_status(task, TaskStatus.SEO_ENRICHING)
+            seo_content = rewritten or parsed.clean_text
+            seo_result = run_seo_stage(
+                self.db,
+                task,
+                content=seo_content,
+                parsed_metadata=parsed.metadata,
+                document_id=document.id,
+            )
+            if seo_result.success and not seo_result.skipped:
+                parsed.metadata["seo"] = {
+                    "seo_metadata_id": seo_result.seo_metadata_id,
+                    "seo_title": seo_result.seo_title,
+                    "slug": seo_result.slug,
+                    "llm_run_id": seo_result.llm_run_id,
+                }
+                document.metadata_json = parsed.metadata
+            elif not seo_result.success and not seo_result.skipped:
+                add_task_log(
+                    self.db,
+                    task.id,
+                    "SEO enrich failed — document saved without SEO",
+                    LogLevel.WARNING,
+                    {"error": seo_result.error_message},
+                )
+                parsed.metadata["seo_error"] = seo_result.error_message
+                document.metadata_json = parsed.metadata
+
             backup_dir = self.backup.save_task_backup(
                 task.id,
                 raw_html=parsed.raw_html,
@@ -124,8 +184,25 @@ class PipelineService:
                 {"backup_dir": str(backup_dir)},
             )
 
-            if rewrite_result.success:
+            stage_failed = (
+                (rewrite_result and not rewrite_result.success)
+                or (review_result and not review_result.success and not review_result.skipped)
+                or (seo_result and not seo_result.success and not seo_result.skipped)
+            )
+
+            if rewrite_result.success and not stage_failed:
                 self._set_status(task, TaskStatus.DONE)
+            elif rewrite_result.success and stage_failed:
+                task.status = TaskStatus.FAILED_RETRYABLE.value
+                emit_pipeline_event(
+                    self.db,
+                    task.id,
+                    map_legacy_task_status_to_stage(TaskStatus.FAILED_RETRYABLE.value),
+                    status="entered",
+                    payload={"reason": "optional_stage_failed"},
+                )
+                self.db.commit()
+                add_task_log(self.db, task.id, "Task failed_retryable (optional stage)", LogLevel.WARNING)
             else:
                 task.status = TaskStatus.FAILED_RETRYABLE.value
                 emit_pipeline_event(

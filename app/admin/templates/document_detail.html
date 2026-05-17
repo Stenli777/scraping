@@ -17,10 +17,41 @@
     <a class="btn" href="/api/documents/{{ document.id }}/export/markdown">Markdown</a>
     <a class="btn" href="/admin/tasks/{{ document.task_id }}">Задача #{{ document.task_id }}</a>
     <form method="post" action="/admin/documents/{{ document.id }}/rerun-rewrite" style="display:inline">
-      <button type="submit" class="btn primary">Rerun rewrite</button>
+      <button type="submit" class="btn">Rerun rewrite</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/run-review" style="display:inline">
+      <button type="submit" class="btn">Run review</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/run-seo" style="display:inline">
+      <button type="submit" class="btn primary">Run SEO</button>
     </form>
   </p>
 </div>
+
+{% set review_meta = review_meta or meta.get('review') or {} %}
+{% if review_meta %}
+<div class="panel">
+  <h2>Review</h2>
+  <p><strong>Take:</strong> {{ review_meta.get('take', '—') }}</p>
+  <p><strong>Score:</strong> {{ review_meta.get('score', '—') }}</p>
+  <p><strong>Reason:</strong> {{ review_meta.get('reason', '—') }}</p>
+</div>
+{% endif %}
+
+{% if seo_record %}
+<div class="panel">
+  <h2>SEO metadata</h2>
+  <p><strong>Title:</strong> {{ seo_record.seo_title or "—" }}</p>
+  <p><strong>Description:</strong> {{ seo_record.seo_description or "—" }}</p>
+  <p><strong>H1:</strong> {{ seo_record.h1 or "—" }}</p>
+  <p><strong>Slug:</strong> <code>{{ seo_record.slug or "—" }}</code></p>
+  <p><strong>Category:</strong> {{ seo_record.suggested_category or "—" }}</p>
+  <p><strong>Tags:</strong> {{ (seo_record.tags_json or []) | join(", ") or "—" }}</p>
+  {% if seo_record.faq_json %}
+  <details><summary>FAQ</summary><pre class="content">{{ seo_record.faq_json | tojson(indent=2) }}</pre></details>
+  {% endif %}
+</div>
+{% endif %}
 
 {% if rewrite_meta %}
 <div class="panel">

@@ -13,6 +13,7 @@ from app.models.scraping_task import ScrapingTask
 from app.rewriters.mock_rewriter import MockRewriter
 from app.services.llm_tasks import execute_rewrite
 from app.services.pipeline_event_service import emit_pipeline_event
+from app.services.project_profile_service import build_rewrite_context, resolve_task_project
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,11 @@ def run_rewrite_stage(
         )
 
     if provider == "cliproxy":
+        project = resolve_task_project(db, task)
+        if project and not task.project_id:
+            task.project_id = project.id
+            meta["project_id"] = project.id
+        profile_ctx = build_rewrite_context(project)
         model_alias = meta.get("model_alias") or settings.rewrite_model_alias
         request = RewriteRequest(
             task_id=task.id,
@@ -78,10 +84,10 @@ def run_rewrite_stage(
             title=meta.get("title") or meta.get("extracted_title"),
             content=clean_text,
             model_alias=model_alias,
-            language=meta.get("language", "ru"),
+            language=meta.get("language", project.default_language if project else "ru"),
             metadata=meta,
         )
-        response = execute_rewrite(db, request)
+        response = execute_rewrite(db, request, profile_context=profile_ctx)
         return _stage_result_from_response(db, task, response, provider="cliproxy")
 
     raise ValueError(f"Unknown rewriter provider: {provider}. Use mock or cliproxy.")

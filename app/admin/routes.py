@@ -15,8 +15,12 @@ from app.models.llm_run import LLMRun
 from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
+from app.models.review_result import ReviewResult
+from app.models.seo_metadata import SeoMetadata
 from app.services.llm_tasks import execute_rewrite
+from app.services.review_service import run_review_for_document
 from app.services.rewrite_service import rerun_rewrite_for_document
+from app.services.seo_service import run_seo_for_document
 from app.services.task_service import create_task, get_task, list_tasks
 
 router = APIRouter(tags=["admin"])
@@ -62,9 +66,20 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
     if not task:
         return RedirectResponse("/admin", status_code=302)
     logs = sorted(task.logs, key=lambda x: x.created_at)
+    meta = {}
+    review_meta = {}
     rewrite_meta = {}
-    if task.document and task.document.metadata_json:
-        rewrite_meta = task.document.metadata_json.get("rewrite") or {}
+    seo_record = None
+    if task.document:
+        meta = task.document.metadata_json or {}
+        review_meta = meta.get("review") or {}
+        rewrite_meta = meta.get("rewrite") or {}
+        seo_record = (
+            db.query(SeoMetadata)
+            .filter(SeoMetadata.document_id == task.document.id)
+            .order_by(SeoMetadata.id.desc())
+            .first()
+        )
     return templates.TemplateResponse(
         request,
         "task_detail.html",
@@ -72,7 +87,9 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
             "request": request,
             "task": task,
             "logs": logs,
+            "review_meta": review_meta,
             "rewrite_meta": rewrite_meta,
+            "seo_record": seo_record,
             "settings": get_settings(),
             "title": f"Задача #{task_id}",
         },
@@ -85,14 +102,23 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     if not document:
         return RedirectResponse("/admin", status_code=302)
     meta = document.metadata_json or {}
+    review_meta = meta.get("review") or {}
     rewrite_meta = meta.get("rewrite") or {}
+    seo_record = (
+        db.query(SeoMetadata)
+        .filter(SeoMetadata.document_id == document_id)
+        .order_by(SeoMetadata.id.desc())
+        .first()
+    )
     return templates.TemplateResponse(
         request,
         "document_detail.html",
         {
             "request": request,
             "document": document,
+            "review_meta": review_meta,
             "rewrite_meta": rewrite_meta,
+            "seo_record": seo_record,
             "settings": get_settings(),
             "title": f"Документ #{document_id}",
         },
@@ -102,6 +128,18 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
 @router.post("/admin/documents/{document_id}/rerun-rewrite")
 def admin_rerun_rewrite(document_id: int, db: Session = Depends(get_db)):
     rerun_rewrite_for_document(db, document_id)
+    return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/run-review")
+def admin_run_review(document_id: int, db: Session = Depends(get_db)):
+    run_review_for_document(db, document_id)
+    return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/run-seo")
+def admin_run_seo(document_id: int, db: Session = Depends(get_db)):
+    run_seo_for_document(db, document_id)
     return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
 
 
@@ -127,6 +165,28 @@ def admin_projects(request: Request, db: Session = Depends(get_db)):
         request,
         "projects.html",
         {"request": request, "projects": projects, "title": "Projects"},
+    )
+
+
+@router.get("/admin/projects/{project_id}", response_class=HTMLResponse)
+def admin_project_detail(project_id: int, request: Request, db: Session = Depends(get_db)):
+    project = db.get(Project, project_id)
+    if not project:
+        return RedirectResponse("/admin/projects", status_code=302)
+    return templates.TemplateResponse(
+        request,
+        "project_detail.html",
+        {"request": request, "project": project, "title": f"Project {project.slug}"},
+    )
+
+
+@router.get("/admin/review-queue", response_class=HTMLResponse)
+def admin_review_queue(request: Request, db: Session = Depends(get_db)):
+    reviews = db.query(ReviewResult).order_by(ReviewResult.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "review_queue.html",
+        {"request": request, "reviews": reviews, "title": "Review Queue"},
     )
 
 

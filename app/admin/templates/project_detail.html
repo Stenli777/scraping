@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="meta grid-meta">
+  <p><strong>Slug:</strong> <code>{{ project.slug }}</code></p>
+  <p><strong>Name:</strong> {{ project.name }}</p>
+  <p><strong>Domain:</strong> {{ project.domain or "—" }}</p>
+  <p><strong>Enabled:</strong> {{ "yes" if project.enabled else "no" }}</p>
+  <p><strong>Language:</strong> {{ project.default_language }}</p>
+  <p><strong>Tone:</strong> {{ project.tone_of_voice or "—" }}</p>
+  <p><strong>Audience:</strong> {{ project.target_audience or "—" }}</p>
+</div>
+
+<section class="panel">
+  <h2>Allowed topics</h2>
+  <pre class="content">{{ (project.allowed_topics_json or []) | tojson(indent=2) }}</pre>
+</section>
+<section class="panel">
+  <h2>Blocked topics</h2>
+  <pre class="content">{{ (project.blocked_topics_json or []) | tojson(indent=2) }}</pre>
+</section>
+<section class="panel">
+  <h2>Content rules</h2>
+  <pre class="content">{{ project.content_rules_md or "—" }}</pre>
+</section>
+<section class="panel">
+  <h2>Rewrite instructions</h2>
+  <pre class="content">{{ project.rewrite_instructions_md or "—" }}</pre>
+</section>
+<section class="panel">
+  <h2>Review instructions</h2>
+  <pre class="content">{{ project.review_instructions_md or "—" }}</pre>
+</section>
+<section class="panel">
+  <h2>SEO instructions</h2>
+  <pre class="content">{{ project.seo_instructions_md or "—" }}</pre>
+</section>
+<p><a class="btn" href="/admin/projects">← Projects</a></p>
+{% endblock %}

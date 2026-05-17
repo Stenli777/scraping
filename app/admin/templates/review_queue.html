@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th><th>Task</th><th>Doc</th><th>Project</th>
+      <th>Take</th><th>Score</th><th>Type</th><th>Angle</th>
+      <th>Risks</th><th>LLM run</th><th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in reviews %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{% if r.task_id %}<a href="/admin/tasks/{{ r.task_id }}">#{{ r.task_id }}</a>{% else %}—{% endif %}</td>
+      <td>{% if r.document_id %}<a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a>{% else %}—{% endif %}</td>
+      <td>{{ r.project_id or "—" }}</td>
+      <td>{% if r.take %}<span class="badge status-done">take</span>{% else %}<span class="badge status-error">reject</span>{% endif %}</td>
+      <td>{{ r.score or "—" }}</td>
+      <td>{{ r.content_type or "—" }}</td>
+      <td class="url">{{ r.recommended_angle or "—" }}</td>
+      <td class="url">{{ (r.risks_json or []) | join(", ") or "—" }}</td>
+      <td>{% if r.llm_run_id %}<a href="/admin/llm-runs">#{{ r.llm_run_id }}</a>{% else %}—{% endif %}</td>
+      <td>{{ r.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="11">Записей review пока нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

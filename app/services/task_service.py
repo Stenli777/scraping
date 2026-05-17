@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.enums import ParserType, TaskStatus
+from app.models.project import Project
 from app.models.scraping_task import ScrapingTask
 from app.models.source import Source
 from app.parsers.registry import resolve_parser_type
@@ -23,11 +24,19 @@ def get_or_create_source(db: Session, source_url: str, parser_type: str) -> Sour
     return source
 
 
+def _default_project_id(db: Session) -> int | None:
+    project = db.scalar(
+        select(Project).where(Project.slug == "crmflow24", Project.enabled.is_(True))
+    )
+    return project.id if project else None
+
+
 def create_task(db: Session, source_url: str, parser_type: str = ParserType.GENERIC_ARTICLE.value) -> ScrapingTask:
     parser_type = resolve_parser_type(source_url, parser_type)
     source = get_or_create_source(db, source_url, parser_type)
     task = ScrapingTask(
         source_id=source.id,
+        project_id=_default_project_id(db),
         source_url=source_url,
         parser_type=parser_type,
         status=TaskStatus.QUEUED.value,

@@ -13,6 +13,21 @@
   <p class="error"><strong>Ошибка:</strong> {{ task.error_message }}</p>
   {% endif %}
 </div>
+{% if review_meta %}
+<div class="panel">
+  <h2>Review</h2>
+  <p><strong>Take:</strong> {{ review_meta.get('take', '—') }} | <strong>Score:</strong> {{ review_meta.get('score', '—') }}</p>
+  <p><strong>Reason:</strong> {{ review_meta.get('reason', '—') }}</p>
+  <p><a href="/admin/review-queue">Review queue</a></p>
+</div>
+{% endif %}
+{% if seo_record %}
+<div class="panel">
+  <h2>SEO</h2>
+  <p><strong>Title:</strong> {{ seo_record.seo_title or "—" }}</p>
+  <p><strong>Slug:</strong> <code>{{ seo_record.slug or "—" }}</code></p>
+</div>
+{% endif %}
 {% if rewrite_meta %}
 <div class="panel">
   <h2>Rewrite metadata</h2>
@@ -31,6 +46,12 @@
   <a class="btn" href="/admin/documents/{{ task.document.id }}">Документ #{{ task.document.id }}</a>
   <form method="post" action="/admin/documents/{{ task.document.id }}/rerun-rewrite" style="display:inline">
     <button type="submit" class="btn">Rerun rewrite</button>
+  </form>
+  <form method="post" action="/admin/documents/{{ task.document.id }}/run-review" style="display:inline">
+    <button type="submit" class="btn">Run review</button>
+  </form>
+  <form method="post" action="/admin/documents/{{ task.document.id }}/run-seo" style="display:inline">
+    <button type="submit" class="btn">Run SEO</button>
   </form>
   <a class="btn" href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
   <a class="btn" href="/api/documents/{{ task.document.id }}/export/markdown">Markdown</a>
