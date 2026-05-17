@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 {% set meta = document.metadata_json or {} %}
+{% set rewrite_meta = rewrite_meta or meta.get('rewrite') or {} %}
 <div class="meta grid-meta">
   <p><strong>URL:</strong> <a href="{{ document.source_url }}" target="_blank">{{ document.source_url }}</a></p>
   <p><strong>Парсер:</strong> <code>{{ meta.get('parser_name', '—') }}</code></p>
+  <p><strong>Rewriter (env):</strong> <code>{{ settings.rewriter_provider }}</code></p>
   <p><strong>Заголовок:</strong> {{ meta.get('extracted_title') or meta.get('title', '—') }}</p>
   <p><strong>Hash:</strong> <code>{{ document.content_hash }}</code></p>
   <p><strong>Версия:</strong> {{ document.version }}</p>
@@ -14,8 +16,27 @@
     <a class="btn" href="/api/documents/{{ document.id }}/export/json">JSON</a>
     <a class="btn" href="/api/documents/{{ document.id }}/export/markdown">Markdown</a>
     <a class="btn" href="/admin/tasks/{{ document.task_id }}">Задача #{{ document.task_id }}</a>
+    <form method="post" action="/admin/documents/{{ document.id }}/rerun-rewrite" style="display:inline">
+      <button type="submit" class="btn primary">Rerun rewrite</button>
+    </form>
   </p>
 </div>
+
+{% if rewrite_meta %}
+<div class="panel">
+  <h2>Rewrite</h2>
+  <p><strong>Provider:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
+  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
+  <p><strong>Upstream model:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
+  <p><strong>Fallback used:</strong> {{ 'yes' if rewrite_meta.get('fallback_used') else 'no' }}</p>
+  {% if rewrite_meta.get('llm_run_id') %}
+  <p><strong>LLM run:</strong> <a href="/admin/llm-runs">#{{ rewrite_meta.llm_run_id }}</a></p>
+  {% endif %}
+  {% if meta.get('rewrite_error') %}
+  <p class="error"><strong>Rewrite error:</strong> {{ meta.rewrite_error }}</p>
+  {% endif %}
+</div>
+{% endif %}
 
 {% if meta.get('extraction_warnings') %}
 <div class="warn-box">

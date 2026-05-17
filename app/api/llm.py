@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.db.session import get_db
 from app.llm.routing import list_aliases
 from app.llm.schemas import RewriteRequest
@@ -29,8 +30,25 @@ def api_llm_smoke(payload: SmokeTestRequest, db: Session = Depends(get_db)):
     )
     response = execute_rewrite(db, request)
     return {
+        "success": response.success,
         "status": response.status,
         "rewritten_text": response.rewritten_text,
+        "rewritten_title": response.rewritten_title,
+        "model_alias": response.model_alias,
+        "upstream_model": response.upstream_model,
+        "fallback_used": response.fallback_used,
         "warnings": response.warnings,
+        "error_message": response.error_message,
         "metadata": response.metadata,
+    }
+
+
+@router.get("/rewrite-config")
+def api_rewrite_config():
+    s = get_settings()
+    return {
+        "rewriter_provider": s.rewriter_provider,
+        "rewrite_model_alias": s.rewrite_model_alias,
+        "review_model_alias": s.review_model_alias,
+        "seo_model_alias": s.seo_model_alias,
     }

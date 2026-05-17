@@ -4,6 +4,7 @@
   <p><strong>URL:</strong> <a href="{{ task.source_url }}" target="_blank">{{ task.source_url }}</a></p>
   <p><strong>Статус:</strong> <span class="badge status-{{ task.status }}">{{ task.status }}</span></p>
   <p><strong>Парсер:</strong> <code>{{ task.parser_type }}</code></p>
+  <p><strong>Rewriter (env):</strong> <code>{{ settings.rewriter_provider }}</code></p>
   <p><strong>Создана:</strong> {{ task.created_at }}</p>
   <p><strong>Обновлена:</strong> {{ task.updated_at }}</p>
   {% if task.started_at %}<p><strong>Старт:</strong> {{ task.started_at }}</p>{% endif %}
@@ -12,9 +13,25 @@
   <p class="error"><strong>Ошибка:</strong> {{ task.error_message }}</p>
   {% endif %}
 </div>
+{% if rewrite_meta %}
+<div class="panel">
+  <h2>Rewrite metadata</h2>
+  <p><strong>Provider:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
+  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
+  <p><strong>Upstream:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
+  <p><strong>Fallback:</strong> {{ 'yes' if rewrite_meta.get('fallback_used') else 'no' }}</p>
+  <p><strong>Success:</strong> {{ rewrite_meta.get('success', '—') }}</p>
+  {% if rewrite_meta.get('llm_run_id') %}
+  <p><a href="/admin/llm-runs">LLM run #{{ rewrite_meta.llm_run_id }}</a></p>
+  {% endif %}
+</div>
+{% endif %}
 {% if task.document %}
 <div class="export-links">
   <a class="btn" href="/admin/documents/{{ task.document.id }}">Документ #{{ task.document.id }}</a>
+  <form method="post" action="/admin/documents/{{ task.document.id }}/rerun-rewrite" style="display:inline">
+    <button type="submit" class="btn">Rerun rewrite</button>
+  </form>
   <a class="btn" href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
   <a class="btn" href="/api/documents/{{ task.document.id }}/export/markdown">Markdown</a>
 </div>

@@ -16,6 +16,7 @@ from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
 from app.services.llm_tasks import execute_rewrite
+from app.services.rewrite_service import rerun_rewrite_for_document
 from app.services.task_service import create_task, get_task, list_tasks
 
 router = APIRouter(tags=["admin"])
@@ -61,10 +62,20 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
     if not task:
         return RedirectResponse("/admin", status_code=302)
     logs = sorted(task.logs, key=lambda x: x.created_at)
+    rewrite_meta = {}
+    if task.document and task.document.metadata_json:
+        rewrite_meta = task.document.metadata_json.get("rewrite") or {}
     return templates.TemplateResponse(
         request,
         "task_detail.html",
-        {"request": request, "task": task, "logs": logs, "title": f"Задача #{task_id}"},
+        {
+            "request": request,
+            "task": task,
+            "logs": logs,
+            "rewrite_meta": rewrite_meta,
+            "settings": get_settings(),
+            "title": f"Задача #{task_id}",
+        },
     )
 
 
@@ -73,11 +84,25 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     document = db.get(ParsedDocument, document_id)
     if not document:
         return RedirectResponse("/admin", status_code=302)
+    meta = document.metadata_json or {}
+    rewrite_meta = meta.get("rewrite") or {}
     return templates.TemplateResponse(
         request,
         "document_detail.html",
-        {"request": request, "document": document, "title": f"Документ #{document_id}"},
+        {
+            "request": request,
+            "document": document,
+            "rewrite_meta": rewrite_meta,
+            "settings": get_settings(),
+            "title": f"Документ #{document_id}",
+        },
     )
+
+
+@router.post("/admin/documents/{document_id}/rerun-rewrite")
+def admin_rerun_rewrite(document_id: int, db: Session = Depends(get_db)):
+    rerun_rewrite_for_document(db, document_id)
+    return RedirectResponse(f"/admin/documents/{document_id}", status_code=303)
 
 
 @router.get("/admin/settings", response_class=HTMLResponse)
