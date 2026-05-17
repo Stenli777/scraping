@@ -15,7 +15,8 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/projects` | Список проектов |
 | `/admin/projects/{id}` | Профиль проекта (read-only): instructions, topics, tone |
 | `/admin/review-queue` | Очередь review: take/reject, score, risks |
-| `/admin/editorial-queue` | Документы: review ok, rewrite+SEO, quality missing/needs_revision, не опубликованы |
+| `/admin/editorial-queue` | Группы: Needs review / Needs revision / Ready / Rejected |
+| `/admin/documents/{id}/revisions` | Read-only история revision snapshots |
 | `/admin/prompts` | Prompt templates (read + activate version) |
 | `/admin/prompts/{key}` | История версий, preview, create version |
 | `/admin/quality-scores` | Последние content quality scores |
@@ -34,6 +35,8 @@ Base: **https://scrap.crmflow24.ru/admin**
 
 **Quality Review** на document detail: scores, verdict, risks, recommendations, кнопка **Run quality**.
 
-**Publish safety** показывает QC verdict/score; force republish обходит review и quality.
+**Publish safety** показывает QC verdict/score; force republish обходит review, quality и editorial.
+
+**Editorial** блок: status, approve/reject/needs revision/ready; **Timeline** из pipeline + revisions + publish.
 
 Стили: `/static/admin.css`

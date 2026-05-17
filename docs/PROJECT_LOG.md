@@ -145,3 +145,15 @@
 - Admin: `/admin/prompts`, `/admin/quality-scores`, `/admin/editorial-queue`, quality block on document detail
 - Env: `ENABLE_QUALITY_REVIEW`, `QUALITY_MODEL_ALIAS`, `MIN_QUALITY_SCORE_FOR_PUBLISH`
 - Pipeline stage `quality_review` defined; automatic stage not enabled in worker (manual-first)
+
+---
+
+## 2026-05-17 — Stage 2I: editorial states + revisions + operator approval
+
+- Migration 008: editorial fields on `parsed_documents`, `document_revisions`, `publish_runs.document_revision_id`
+- `revision_service` immutable snapshots on rewrite/SEO/quality rerun
+- `editorial_service` state machine (approve/reject/needs_revision/operator_review/ready_to_publish)
+- Publish gated by `approved_for_publish` + editorial status; `force=true` bypass
+- Admin: editorial controls, timeline, `/admin/documents/{id}/revisions`, grouped editorial queue
+- API: `/api/documents/{id}/editorial/*`, `GET /api/documents/{id}/revisions`
+- `ENABLE_EDITORIAL_WORKFLOW` feature flag

@@ -31,6 +31,12 @@ Base: **https://scrap.crmflow24.ru**
 | POST | `/api/prompts/{key}/versions/{id}/activate` | Активировать версию |
 | POST | `/api/documents/{id}/run-quality` | Quality review (rewritten + SEO) → `content_quality_scores` |
 | GET | `/api/documents/{id}/quality-scores` | История quality scores |
+| POST | `/api/documents/{id}/editorial/approve` | Operator approve → `approved`, `approved_for_publish=true` |
+| POST | `/api/documents/{id}/editorial/reject` | Reject document |
+| POST | `/api/documents/{id}/editorial/needs-revision` | Mark needs revision |
+| POST | `/api/documents/{id}/editorial/operator-review` | Move to operator review |
+| POST | `/api/documents/{id}/editorial/ready-to-publish` | Mark ready to publish (after approve) |
+| GET | `/api/documents/{id}/revisions` | Immutable revision history |
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |
@@ -54,6 +60,14 @@ Base: **https://scrap.crmflow24.ru**
 
 При `ENABLE_QUALITY_REVIEW=true` в `missing` могут быть: `quality_score`, `quality_not_approved`, `quality_score_below_threshold`, `quality_spam_too_high`.
 
-`force=true` на publish-draft обходит quality (и review/duplicate) — в `publish_runs.force_used=true`.
+`force=true` на publish-draft обходит quality, editorial (и review/duplicate) — в `publish_runs.force_used=true`.
+
+## Editorial workflow
+
+При `ENABLE_EDITORIAL_WORKFLOW=true` publish требует `editorial_status` ∈ `approved|ready_to_publish` и `approved_for_publish=true`.
+
+Rerun rewrite/SEO/quality создаёт новую запись в `document_revisions` (immutable).
+
+`publish_runs` содержит `document_revision_id` и `revision_number` в API ответе.
 
 OpenAPI: `/docs`
