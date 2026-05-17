@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     scheduler_interval_seconds: int = 60
     automation_max_concurrent_runs: int = 1
     automation_global_hourly_limit: int = 50
+    automation_run_stale_seconds: int = 600
+    automation_run_lock_seconds: int = 1800
 
     log_level: str = "INFO"
     log_dir: str = "storage/logs"

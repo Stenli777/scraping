@@ -2,12 +2,13 @@
 
 import logging
 import time
+import traceback
 
 from app.core.config import get_settings
 from app.core.feature_flags import is_scheduler_enabled
 from app.core.logging_config import setup_logging
 from app.db.session import SessionLocal
-from app.scheduler.locks import acquire_lock, release_lock
+from app.scheduler.locks import acquire_lock, release_lock, set_state
 from app.scheduler.heartbeat import update_heartbeat
 from app.scheduler.services import tick_automation
 
@@ -18,7 +19,7 @@ class SchedulerEngine:
     def run_forever(self) -> None:
         settings = get_settings()
         logger.info(
-            "Scheduler started (interval=%ss, automation=%s)",
+            "Scheduler started (interval=%ss, enabled=%s)",
             settings.scheduler_interval_seconds,
             is_scheduler_enabled(),
         )
@@ -39,8 +40,17 @@ class SchedulerEngine:
             try:
                 update_heartbeat(db)
                 result = tick_automation(db)
-                if result.get("started"):
-                    logger.info("Automation tick: %s", result)
+                if not result.get("skipped"):
+                    logger.debug("Automation tick: %s", result)
+                set_state(db, "scheduler_last_error", "")
+                db.commit()
+            except Exception as exc:
+                logger.exception("Scheduler tick error")
+                try:
+                    set_state(db, "scheduler_last_error", f"{type(exc).__name__}: {exc}"[:500])
+                    db.commit()
+                except Exception:
+                    pass
             finally:
                 release_lock(db)
 

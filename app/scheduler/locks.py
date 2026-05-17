@@ -6,7 +6,10 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.models.automation_run import AutomationRun, AutomationRunStatus
 from app.models.scheduler_state import SchedulerState
+from app.services.automation_service import log_event
 
 LOCK_KEY = "scheduler_lock"
 HEARTBEAT_KEY = "scheduler_heartbeat"
@@ -75,21 +78,39 @@ def heartbeat_age_seconds(db: Session) -> float | None:
 
 
 def recover_stale_runs(db: Session) -> int:
-    from app.models.automation_run import AutomationRun
-
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=2)
+    """Mark runs stale by heartbeat_at — no auto-restart."""
+    settings = get_settings()
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=settings.automation_run_stale_seconds)
     stale = list(
         db.scalars(
             select(AutomationRun).where(
-                AutomationRun.status == "running",
+                AutomationRun.status.in_(
+                    [AutomationRunStatus.RUNNING, AutomationRunStatus.CANCEL_REQUESTED]
+                ),
+                AutomationRun.heartbeat_at.isnot(None),
+                AutomationRun.heartbeat_at < cutoff,
+            )
+        ).all()
+    )
+    # fallback: started_at for runs without heartbeat
+    stale_no_hb = list(
+        db.scalars(
+            select(AutomationRun).where(
+                AutomationRun.status == AutomationRunStatus.RUNNING,
+                AutomationRun.heartbeat_at.is_(None),
+                AutomationRun.started_at.isnot(None),
                 AutomationRun.started_at < cutoff,
             )
         ).all()
     )
-    for run in stale:
-        run.status = "failed"
-        run.error_message = "stale run recovered by scheduler"
+    all_stale = {r.id: r for r in stale + stale_no_hb}.values()
+    for run in all_stale:
+        run.status = AutomationRunStatus.FAILED
+        run.error_message = "stale run recovered by scheduler (heartbeat timeout)"
         run.completed_at = datetime.now(timezone.utc)
-    if stale:
+        run.locked_by = None
+        run.lock_expires_at = None
+        log_event(run, "error", run.error_message)
+    if all_stale:
         db.commit()
-    return len(stale)
+    return len(all_stale)
