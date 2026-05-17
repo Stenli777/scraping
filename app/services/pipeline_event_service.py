@@ -39,6 +39,7 @@ def map_legacy_task_status_to_stage(status: str) -> str:
         "rewriting": PipelineStage.REWRITING.value,
         "saving": PipelineStage.PUBLISHING.value,
         "done": PipelineStage.PUBLISHED_DRAFT.value,
+        "failed_retryable": PipelineStage.FAILED_RETRYABLE.value,
         "error": PipelineStage.FAILED_RETRYABLE.value,
     }
     return mapping.get(status, status)

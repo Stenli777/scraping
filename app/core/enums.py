@@ -9,6 +9,7 @@ class TaskStatus(str, Enum):
     REWRITING = "rewriting"
     SAVING = "saving"
     DONE = "done"
+    FAILED_RETRYABLE = "failed_retryable"
     ERROR = "error"
 
 

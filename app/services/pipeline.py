@@ -6,16 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.core.enums import LogLevel, TaskStatus
 from app.models.document_version import DocumentVersion
-from app.models.export import Export
 from app.models.parsed_document import ParsedDocument
 from app.models.scraping_task import ScrapingTask
-from app.models.source import Source
 from app.parsers.fetcher import fetch_url
 from app.parsers.registry import get_parser_for_url, resolve_parser_type
-from app.rewriters.registry import get_rewriter
 from app.services.backup_service import BackupService
 from app.services.hashing import content_hash
 from app.services.pipeline_event_service import emit_pipeline_event, map_legacy_task_status_to_stage
+from app.services.rewrite_service import run_rewrite_stage
 from app.services.task_log_service import add_task_log
 
 logger = logging.getLogger(__name__)
@@ -30,6 +28,9 @@ class PipelineService:
         task = self.db.get(ScrapingTask, task_id)
         if not task:
             raise ValueError(f"Task {task_id} not found")
+
+        parsed = None
+        doc_hash = None
 
         try:
             task.started_at = datetime.now(timezone.utc)
@@ -73,9 +74,35 @@ class PipelineService:
                 )
 
             self._set_status(task, TaskStatus.REWRITING)
-            parsed.metadata["task_id"] = task.id
-            rewriter = get_rewriter(self.db)
-            rewritten = rewriter.rewrite(parsed.clean_text, parsed.metadata)
+            rewrite_result = run_rewrite_stage(
+                self.db, task, clean_text=parsed.clean_text, parsed_metadata=parsed.metadata
+            )
+
+            parsed.metadata["rewrite"] = {
+                "provider": rewrite_result.provider,
+                "model_alias": rewrite_result.model_alias,
+                "upstream_model": rewrite_result.upstream_model,
+                "fallback_used": rewrite_result.fallback_used,
+                "success": rewrite_result.success,
+            }
+            if rewrite_result.llm_run_id:
+                parsed.metadata["rewrite"]["llm_run_id"] = rewrite_result.llm_run_id
+
+            rewritten = rewrite_result.rewritten_text if rewrite_result.success else ""
+
+            if not rewrite_result.success:
+                add_task_log(
+                    self.db,
+                    task.id,
+                    "Rewrite failed — saving clean_text only",
+                    LogLevel.WARNING,
+                    {
+                        "error": rewrite_result.error_message,
+                        "warnings": rewrite_result.warnings,
+                        "provider": rewrite_result.provider,
+                    },
+                )
+                task.error_message = rewrite_result.error_message
 
             self._set_status(task, TaskStatus.SAVING)
             document = self._upsert_document(task, parsed, doc_hash, rewritten)
@@ -85,7 +112,7 @@ class PipelineService:
                 raw_html=parsed.raw_html,
                 raw_text=parsed.raw_text,
                 clean_text=parsed.clean_text,
-                rewritten_text=rewritten,
+                rewritten_text=rewritten or None,
                 metadata=parsed.metadata,
                 finished_at=datetime.now(timezone.utc),
             )
@@ -97,20 +124,50 @@ class PipelineService:
                 {"backup_dir": str(backup_dir)},
             )
 
-            self._set_status(task, TaskStatus.DONE)
+            if rewrite_result.success:
+                self._set_status(task, TaskStatus.DONE)
+            else:
+                task.status = TaskStatus.FAILED_RETRYABLE.value
+                emit_pipeline_event(
+                    self.db,
+                    task.id,
+                    map_legacy_task_status_to_stage(TaskStatus.FAILED_RETRYABLE.value),
+                    status="entered",
+                    payload={"reason": "rewrite_failed"},
+                )
+                self.db.commit()
+                add_task_log(self.db, task.id, "Task failed_retryable (rewrite)", LogLevel.WARNING)
+
             task.finished_at = datetime.now(timezone.utc)
             self.db.commit()
-            logger.info("Task %s completed", task.id)
+            logger.info("Task %s completed status=%s", task.id, task.status)
         except Exception as exc:
             logger.exception("Task %s failed", task_id)
             self.db.rollback()
             task = self.db.get(ScrapingTask, task_id)
             if task:
-                task.status = TaskStatus.ERROR.value
-                task.error_message = str(exc)
-                task.finished_at = datetime.now(timezone.utc)
-                add_task_log(self.db, task.id, str(exc), LogLevel.ERROR)
-                self.db.commit()
+                if parsed and doc_hash:
+                    try:
+                        document = self._upsert_document(task, parsed, doc_hash, "")
+                        parsed.metadata["partial_save"] = True
+                        document.metadata_json = parsed.metadata
+                        self.db.commit()
+                    except Exception:
+                        self.db.rollback()
+                task = self.db.get(ScrapingTask, task_id)
+                if task:
+                    task.status = TaskStatus.ERROR.value
+                    task.error_message = str(exc)
+                    task.finished_at = datetime.now(timezone.utc)
+                    add_task_log(self.db, task.id, str(exc), LogLevel.ERROR)
+                    emit_pipeline_event(
+                        self.db,
+                        task.id,
+                        map_legacy_task_status_to_stage(TaskStatus.ERROR.value),
+                        status="failed",
+                        payload={"error": str(exc)},
+                    )
+                    self.db.commit()
 
     def _set_status(self, task: ScrapingTask, status: TaskStatus) -> None:
         task.status = status.value
@@ -135,7 +192,9 @@ class PipelineService:
         if document:
             document.version += 1
         else:
-            document = ParsedDocument(task_id=task.id, source_url=task.source_url, content_hash=doc_hash)
+            document = ParsedDocument(
+                task_id=task.id, source_url=task.source_url, content_hash=doc_hash
+            )
             self.db.add(document)
 
         document.source_url = task.source_url
@@ -143,7 +202,7 @@ class PipelineService:
         document.raw_html = parsed.raw_html
         document.raw_text = parsed.raw_text
         document.clean_text = parsed.clean_text
-        document.rewritten_text = rewritten
+        document.rewritten_text = rewritten or None
         document.metadata_json = parsed.metadata
         self.db.flush()
         return document

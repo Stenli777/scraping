@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     cliproxyapi_default_timeout: int = 120
     cliproxyapi_max_retries: int = 2
     rewriter_provider: str = "mock"
+    rewrite_model_alias: str = "local/rewrite-main"
+    review_model_alias: str = "local/classifier-fast"
+    seo_model_alias: str = "local/seo-main"
 
     enable_hermes: bool = False
     enable_auto_publish: bool = False
