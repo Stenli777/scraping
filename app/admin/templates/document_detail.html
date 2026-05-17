@@ -2,6 +2,34 @@
 {% block content %}
 {% set meta = document.metadata_json or {} %}
 {% set rewrite_meta = rewrite_meta or meta.get('rewrite') or {} %}
+{% if pipeline_summary %}{% include "_pipeline_summary.html" %}{% endif %}
+
+<div class="panel entity-links">
+  <h2>Links</h2>
+  <p>
+    <a href="/admin/tasks/{{ document.task_id }}">Task #{{ document.task_id }}</a>
+    {% if project %} · <a href="/admin/projects/{{ project.id }}">Project {{ project.slug }}</a>{% endif %}
+    {% if discovered_url %} · <a href="/admin/discovered-urls">Discovered URL #{{ discovered_url.id }}</a>{% endif %}
+    {% if review_record %} · <a href="/admin/review-queue">Review #{{ review_record.id }}</a>{% endif %}
+    · <a href="/admin/pipeline-events">Pipeline</a>
+    · <a href="/admin/llm-runs">LLM runs</a>
+    · <a href="/admin/publish-runs">Publish runs</a>
+  </p>
+</div>
+
+<div class="panel" id="publish-readiness">
+  <h2>Publish readiness</h2>
+  {% if publish_readiness.ready %}
+  <p class="ok-box">Ready to publish (draft)</p>
+  {% else %}
+  <p class="warn-box">Not ready</p>
+  <p><strong>Missing:</strong> {{ publish_readiness.missing | join(', ') or '—' }}</p>
+  {% endif %}
+  {% if publish_readiness.warnings %}
+  <p><strong>Warnings:</strong> {{ publish_readiness.warnings | join(', ') }}</p>
+  {% endif %}
+</div>
+
 <div class="meta grid-meta">
   <p><strong>URL:</strong> <a href="{{ document.source_url }}" target="_blank">{{ document.source_url }}</a></p>
   <p><strong>Парсер:</strong> <code>{{ meta.get('parser_name', '—') }}</code></p>
@@ -54,8 +82,11 @@
 {% endif %}
 
 {% if publish_targets and feature_flags.get('ENABLE_PUBLISHING') %}
-<div class="panel">
+<div class="panel" id="publish">
   <h2>Publish draft</h2>
+  {% if not publish_readiness.ready %}
+  <p class="warn-box">Publish blocked until readiness checks pass.</p>
+  {% endif %}
   <form method="post" action="/admin/documents/{{ document.id }}/publish-draft" class="form">
     <label>Target
       <select name="publish_target_id">
