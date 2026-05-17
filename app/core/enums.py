@@ -63,3 +63,9 @@ class DiscoveryMode(str, Enum):
     HTML_LINKS = "html_links"
     MIXED = "mixed"
     MANUAL = "manual"
+
+
+class QualityVerdict(str, Enum):
+    APPROVED = "approved"
+    NEEDS_REVISION = "needs_revision"
+    REJECTED = "rejected"
