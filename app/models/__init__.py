@@ -1,3 +1,4 @@
+from app.models.discovered_url import DiscoveredUrl
 from app.models.document_version import DocumentVersion
 from app.models.export import Export
 from app.models.llm_run import LLMRun
@@ -28,4 +29,5 @@ __all__ = [
     "SeoMetadata",
     "PublishTarget",
     "PublishRun",
+    "DiscoveredUrl",
 ]

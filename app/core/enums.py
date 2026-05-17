@@ -20,7 +20,7 @@ class ParserType(str, Enum):
     SALTPRO_ARTICLE = "saltpro_article"
     SOTBIT_ARTICLE = "sotbit_article"
     HABR_ARTICLE = "habr_article"
-    BITRIX_ARTICLE = "bitrix_article"  # alias → sotbit
+    BITRIX_ARTICLE = "bitrix_article"
 
 
 class LogLevel(str, Enum):
@@ -41,3 +41,25 @@ class PublishRunStatus(str, Enum):
     SUCCESS = "success"
     FAILED_RETRYABLE = "failed_retryable"
     FAILED_TERMINAL = "failed_terminal"
+
+
+class DiscoveredUrlStatus(str, Enum):
+    DISCOVERED = "discovered"
+    DUPLICATE = "duplicate"
+    IGNORED = "ignored"
+    ENQUEUED = "enqueued"
+    FAILED = "failed"
+    BLOCKED = "blocked"
+
+
+class DiscoverySource(str, Enum):
+    SITEMAP = "sitemap"
+    HTML_LINK = "html_link"
+    MANUAL = "manual"
+
+
+class DiscoveryMode(str, Enum):
+    SITEMAP = "sitemap"
+    HTML_LINKS = "html_links"
+    MIXED = "mixed"
+    MANUAL = "manual"
