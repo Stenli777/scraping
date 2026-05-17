@@ -45,6 +45,7 @@ REWRITER_PROVIDER=mock
 | `ENABLE_LLM_REVIEW` | true | Стадия review после clean |
 | `ENABLE_SEO_ENRICH` | true | SEO metadata после rewrite |
 | `ENABLE_QUALITY_REVIEW` | true | Блокирует publish без approved quality score (manual run) |
+| `ENABLE_EDITORIAL_WORKFLOW` | true | Требует operator approval (`approved_for_publish`) перед publish |
 | `ENABLE_PROJECT_PROFILES` | true | Профиль проекта в промптах |
 
 ### Source discovery (controlled)

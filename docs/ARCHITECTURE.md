@@ -902,6 +902,13 @@ Controlled URL discovery from `source_directories` → `discovered_urls` → man
 - Failed-items view; safe skip/stale reset
 - See `docs/OPERATIONS.md`
 
+### Editorial workflow + revisions (Stage 2I)
+
+- `editorial_status` on documents; operator approval separate from LLM quality verdict
+- `document_revisions` immutable snapshots (rewrite/seo/quality/publish)
+- `publish_runs.document_revision_id` audit trail
+- `ENABLE_EDITORIAL_WORKFLOW` feature flag
+
 ### Prompt management + editorial QC (Stage 2H)
 
 - Tables: `prompt_templates`, `prompt_versions`, `project_prompt_overrides`, `content_quality_scores`

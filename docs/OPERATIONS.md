@@ -89,7 +89,14 @@ ENABLE_PUBLISHING=false
 ENABLE_SOURCE_DISCOVERY=false
 ENABLE_LLM_REVIEW=false
 ENABLE_SEO_ENRICH=false
+ENABLE_QUALITY_REVIEW=false
 ```
+
+**Rollback prompt version:** Admin → `/admin/prompts/{key}` → Activate предыдущую версию (или SQL: снять `is_active` у новой, включить у старой).
+
+**Rollback quality gating:** `ENABLE_QUALITY_REVIEW=false` — publish не блокируется по quality; manual endpoint вернёт 503.
+
+**Rollback editorial gating:** `ENABLE_EDITORIAL_WORKFLOW=false` — publish readiness без operator approval; editorial API вернёт 400.
 
 После изменений: `sudo systemctl restart scrap-api scrap-worker`
 
