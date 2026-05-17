@@ -6,6 +6,7 @@ from app.db.session import get_db
 from app.exporters.json_markdown import document_to_json, document_to_markdown
 from app.models.parsed_document import ParsedDocument
 from app.schemas.documents import DocumentRead
+from app.services.publish_readiness_service import get_publish_readiness
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -16,6 +17,14 @@ def api_get_document(document_id: int, db: Session = Depends(get_db)):
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return document
+
+
+@router.get("/{document_id}/publish-readiness")
+def api_publish_readiness(document_id: int, db: Session = Depends(get_db)):
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return get_publish_readiness(db, document_id)
 
 
 @router.get("/{document_id}/export/json")

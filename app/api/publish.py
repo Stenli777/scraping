@@ -7,6 +7,7 @@ from app.models.parsed_document import ParsedDocument
 from app.models.publish_run import PublishRun
 from app.models.publish_target import PublishTarget
 from app.publishers.exceptions import PublishValidationError
+from app.services.publish_readiness_service import get_publish_readiness
 from app.services.publish_service import publish_draft_for_document
 
 router = APIRouter(tags=["publish"])
@@ -82,6 +83,13 @@ def api_publish_draft(
     document = db.get(ParsedDocument, document_id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    readiness = get_publish_readiness(db, document_id)
+    if not readiness["ready"]:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "Document not ready to publish", **readiness},
+        )
 
     payload = body or PublishDraftRequest()
     try:
