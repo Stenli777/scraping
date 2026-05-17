@@ -1,40 +1,58 @@
-"""Shared smoke check utilities."""
+"""Publish pipeline smoke checks (targets, health, mock receiver, v2 validation)."""
+
 import json
 import os
 import sys
-import urllib.error
-import urllib.request
 
-BASE = os.environ.get("SCRAP_SMOKE_BASE", "http://127.0.0.1:8800")
+from scripts.smoke._common import BASE, check, get_json
+
 ROOT = os.environ.get("SCRAP_ROOT", "/opt/scrap")
 
 
-def check(name: str, ok: bool, detail: str = "") -> int:
-    status = "PASS" if ok else "FAIL"
-    line = f"[{status}] {name}"
-    if detail:
-        line += f" — {detail}"
-    print(line)
-    return 0 if ok else 1
-
-
-def get_json(path: str, timeout: int = 15) -> tuple[bool, dict | None, str]:
-    try:
-        req = urllib.request.Request(BASE + path)
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return True, json.loads(resp.read().decode()), ""
-    except urllib.error.HTTPError as exc:
-        try:
-            body = json.loads(exc.read().decode())
-        except Exception:
-            body = {}
-        return False, body, f"HTTP {exc.code}"
-    except Exception as exc:
-        return False, None, str(exc)
-
 def main() -> int:
+    failures = 0
+
     ok, data, err = get_json("/api/publish-targets")
-    return check("publish_targets", ok, err or "")
+    failures += check("publish_targets", ok, err or "")
+
+    ok, health, err = get_json("/api/publish-targets/health")
+    failures += check("publish_targets_health", ok, err or "")
+    if ok and health:
+        failures += check(
+            "publish_targets_health_payload",
+            "targets" in health,
+            str(health.get("healthy")),
+        )
+
+    ok, mock_list, err = get_json("/api/mock-crmflow24/articles")
+    failures += check("mock_crmflow24_list", ok, err or "")
+    if ok and mock_list:
+        failures += check(
+            "mock_crmflow24_testing_flag",
+            mock_list.get("testing_only") is True,
+            "testing_only missing",
+        )
+
+    # minimal article_v2 validation via mock import (invalid payload -> 400)
+    import urllib.error
+    import urllib.request
+
+    bad_payload = {"payload_version": "article_v2", "title": ""}
+    req = urllib.request.Request(
+        BASE + "/api/mock-crmflow24/articles/import",
+        data=json.dumps(bad_payload).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+        failures += check("mock_v2_validation_rejects", False, "expected 400")
+    except urllib.error.HTTPError as exc:
+        failures += check("mock_v2_validation_rejects", exc.code == 400, f"HTTP {exc.code}")
+    except Exception as exc:
+        failures += check("mock_v2_validation_rejects", False, str(exc))
+
+    return failures
 
 
 if __name__ == "__main__":

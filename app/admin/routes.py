@@ -41,6 +41,8 @@ from app.services.discovery_service import (
     run_discovery,
 )
 from app.services.publish_service import publish_draft_for_document
+from app.services.publish_target_health_service import check_all_publish_targets_health
+from app.services.publish_retry_service import get_retry_chain, is_retryable_publish_run
 from app.services.review_service import run_review_for_document
 from app.services.rewrite_service import rerun_rewrite_for_document
 from app.services.seo_service import run_seo_for_document
@@ -416,20 +418,29 @@ def admin_publish_draft(
 @router.get("/admin/publish-targets", response_class=HTMLResponse)
 def admin_publish_targets(request: Request, db: Session = Depends(get_db)):
     targets = db.query(PublishTarget).order_by(PublishTarget.id.asc()).all()
+    health = check_all_publish_targets_health(db)
     return templates.TemplateResponse(
         request,
         "publish_targets.html",
-        {"request": request, "targets": targets, "title": "Publish Targets"},
+        {"request": request, "targets": targets, "health": health, "title": "Publish Targets"},
     )
 
 
 @router.get("/admin/publish-runs", response_class=HTMLResponse)
 def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
     runs = db.query(PublishRun).order_by(PublishRun.id.desc()).limit(100).all()
+    retryable = {r.id: is_retryable_publish_run(r) for r in runs}
+    chains = {r.id: get_retry_chain(db, r.id) for r in runs[:30]}
     return templates.TemplateResponse(
         request,
         "publish_runs.html",
-        {"request": request, "runs": runs, "title": "Publish Runs"},
+        {
+            "request": request,
+            "runs": runs,
+            "retryable": retryable,
+            "chains": chains,
+            "title": "Publish Runs",
+        },
     )
 
 

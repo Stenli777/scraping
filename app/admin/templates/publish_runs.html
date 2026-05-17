@@ -1,30 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="panel">
+  <h2>Publish runs</h2>
+  <p class="warn-box">Draft-only publish audit. Retry chains link parent ? child runs.</p>
+
 <table class="table">
   <thead>
     <tr>
-      <th>ID</th><th>Doc</th><th>Task</th><th>Project</th><th>Target</th>
-      <th>Status</th><th>Dry</th><th>HTTP</th><th>External ID</th><th>Error</th><th>Time</th>
+      <th>ID</th><th>Doc</th><th>Target</th><th>Payload</th><th>Status</th>
+      <th>Retry</th><th>Remote</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th>
     </tr>
   </thead>
   <tbody>
     {% for r in runs %}
     <tr>
-      <td>{{ r.id }}</td>
+      <td>
+        <a href="/admin/documents/{{ r.document_id }}#publish">#{{ r.id }}</a>
+        {% if r.retry_parent_publish_run_id %}<br><small>parent #{{ r.retry_parent_publish_run_id }}</small>{% endif %}
+      </td>
       <td><a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a></td>
-      <td>{% if r.task_id %}<a href="/admin/tasks/{{ r.task_id }}">#{{ r.task_id }}</a>{% else %}—{% endif %}</td>
-      <td>{{ r.project_id or "—" }}</td>
       <td>{{ r.publish_target_id }}</td>
+      <td><code>{{ r.payload_version }}</code>{% if r.response_schema_version %}<br><small>{{ r.response_schema_version }}</small>{% endif %}</td>
       <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
-      <td>{{ "yes" if r.dry_run else "no" }}</td>
-      <td>{{ r.response_status_code or "—" }}</td>
-      <td>{{ r.external_id or "—" }}</td>
-      <td class="url">{{ r.error_message or "—" }}</td>
+      <td>
+        {% if retryable.get(r.id) %}<span class="badge status-failed_retryable">retryable</span>{% else %}<span class="badge">terminal</span>{% endif %}
+        {% if r.retry_count %}<br><small>count {{ r.retry_count }}</small>{% endif %}
+      </td>
+      <td>{{ r.remote_status or "?" }}</td>
+      <td>{{ r.external_id or "?" }}</td>
+      <td>{% if r.draft_url %}<a href="{{ r.draft_url }}" target="_blank">open</a>{% else %}?{% endif %}</td>
+      <td class="url">{{ (r.error_message or "?")[:80] }}</td>
       <td>{{ r.created_at }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="11">Publish runs пока нет</td></tr>
+    <tr><td colspan="11">Publish runs ???? ???</td></tr>
     {% endfor %}
   </tbody>
 </table>
+
 {% endblock %}

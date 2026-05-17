@@ -1,5 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
+{% if health %}
+<div class="panel">
+  <h2>Target health</h2>
+  <p>
+    <span class="badge {% if health.healthy %}status-done{% else %}status-error{% endif %}">
+      {% if health.healthy %}All healthy{% else %}Issues detected{% endif %}
+    </span>
+  </p>
+  <table class="table">
+    <thead><tr><th>Target</th><th>OK</th><th>Payload</th><th>Auth</th><th>Reachable</th><th>Detail</th></tr></thead>
+    <tbody>
+      {% for c in health.targets %}
+      <tr>
+        <td>{{ c.name }} (#{{ c.target_id }})</td>
+        <td>{{ "yes" if c.healthy else "no" }}</td>
+        <td>{{ c.payload_format }}{% if not c.payload_supported %} (unsupported){% endif %}</td>
+        <td>{{ "yes" if c.auth_configured else "no" }}</td>
+        <td>{{ "yes" if c.reachable else "no" }}</td>
+        <td class="url">{{ c.reach_detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% endif %}
 <table class="table">
   <thead>
     <tr>
@@ -14,7 +39,7 @@
       <td>{{ t.project_id }}</td>
       <td>{{ t.name }}</td>
       <td><code>{{ t.target_type }}</code></td>
-      <td class="url">{{ t.endpoint_url or "—" }}</td>
+      <td class="url">{{ t.endpoint_url or "?" }}</td>
       <td>{{ t.auth_type }}{% if t.auth_token_env_name %} ({{ t.auth_token_env_name }}){% endif %}</td>
       <td>{{ "yes" if t.enabled else "no" }}</td>
       <td>{{ "yes" if t.dry_run else "no" }}</td>
@@ -22,7 +47,7 @@
       <td>{{ t.payload_format }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="10">Publish targets не настроены</td></tr>
+    <tr><td colspan="10">Publish targets ?? ?????????</td></tr>
     {% endfor %}
   </tbody>
 </table>
