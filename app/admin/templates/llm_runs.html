@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th><th>Task</th><th>Project</th><th>Alias</th><th>Model</th>
+      <th>Tokens</th><th>ms</th><th>OK</th><th>Fallback</th><th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in runs %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.task_id or "—" }}</td>
+      <td>{{ r.project_id or "—" }}</td>
+      <td><code>{{ r.model_alias }}</code></td>
+      <td>{{ r.upstream_model }}</td>
+      <td>{{ r.input_tokens or 0 }}/{{ r.output_tokens or 0 }}</td>
+      <td>{{ r.latency_ms or "—" }}</td>
+      <td>{% if r.success %}✓{% else %}✗{% endif %}</td>
+      <td>{{ "yes" if r.fallback_used else "no" }}</td>
+      <td>{{ r.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10">Записей llm_runs пока нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

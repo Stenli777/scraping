@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<p>Заглушка настроек. Секреты задаются только в <code>.env</code> на сервере.</p>
+<p>Секреты только в <code>.env</code> на сервере.</p>
 <ul class="settings-list">
   <li><strong>REWRITER_PROVIDER:</strong> {{ settings.rewriter_provider }}</li>
-  <li><strong>CLIPROXYAPI_BASE_URL:</strong> {{ settings.cliproxyapi_base_url or "не задан" }}</li>
-  <li><strong>LM_STUDIO_BASE_URL:</strong> {{ settings.lm_studio_base_url }}</li>
-  <li><strong>DATABASE_URL:</strong> (скрыт)</li>
+  <li><strong>CLIPROXYAPI_BASE_URL:</strong> {{ "задан" if settings.cliproxyapi_base_url else "не задан" }}</li>
+  <li><strong>CLIPROXYAPI_DEFAULT_TIMEOUT:</strong> {{ settings.cliproxyapi_default_timeout }}</li>
+</ul>
+<h2>Feature flags</h2>
+<ul class="settings-list">
+  {% for k, v in feature_flags.items() %}
+  <li><strong>{{ k }}:</strong> {{ v }}</li>
+  {% endfor %}
 </ul>
 {% endblock %}

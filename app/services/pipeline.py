@@ -15,6 +15,7 @@ from app.parsers.registry import get_parser_for_url, resolve_parser_type
 from app.rewriters.registry import get_rewriter
 from app.services.backup_service import BackupService
 from app.services.hashing import content_hash
+from app.services.pipeline_event_service import emit_pipeline_event, map_legacy_task_status_to_stage
 from app.services.task_log_service import add_task_log
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,8 @@ class PipelineService:
                 )
 
             self._set_status(task, TaskStatus.REWRITING)
-            rewriter = get_rewriter()
+            parsed.metadata["task_id"] = task.id
+            rewriter = get_rewriter(self.db)
             rewritten = rewriter.rewrite(parsed.clean_text, parsed.metadata)
 
             self._set_status(task, TaskStatus.SAVING)
@@ -112,6 +114,13 @@ class PipelineService:
 
     def _set_status(self, task: ScrapingTask, status: TaskStatus) -> None:
         task.status = status.value
+        emit_pipeline_event(
+            self.db,
+            task.id,
+            map_legacy_task_status_to_stage(status.value),
+            status="entered",
+            payload={"legacy_status": status.value},
+        )
         self.db.commit()
         add_task_log(self.db, task.id, f"Status -> {status.value}", LogLevel.DEBUG)
 

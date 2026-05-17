@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>Task</th><th>Stage</th><th>Status</th><th>Payload</th><th>Time</th></tr>
+  </thead>
+  <tbody>
+    {% for e in events %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td><a href="/admin/tasks/{{ e.task_id }}">#{{ e.task_id }}</a></td>
+      <td><code>{{ e.stage }}</code></td>
+      <td>{{ e.status }}</td>
+      <td class="url"><code>{{ e.payload_json }}</code></td>
+      <td>{{ e.created_at.strftime('%H:%M:%S') if e.created_at else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Событий пока нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

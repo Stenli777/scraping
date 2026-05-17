@@ -53,7 +53,7 @@ body {
 }
 .btn.primary { background: var(--accent); color: white; }
 .form label { display: block; margin-bottom: 1rem; }
-.form input, .form select {
+.form input, .form select, .form textarea {
   display: block;
   width: 100%;
   margin-top: 0.35rem;

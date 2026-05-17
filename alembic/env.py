@@ -8,9 +8,13 @@ from app.db.base import Base
 from app.models import (  # noqa: F401 — register models
     DocumentVersion,
     Export,
+    LLMRun,
     ParsedDocument,
+    PipelineEvent,
+    Project,
     ScrapingTask,
     Source,
+    SourceDirectory,
     TaskLog,
 )
 

@@ -1,36 +1,38 @@
 import logging
 
-import httpx
+from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
+from app.llm.schemas import RewriteRequest
 from app.rewriters.base import BaseRewriter
+from app.services.llm_tasks import execute_rewrite
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_REWRITE_ALIAS = "local/rewrite-main"
+
 
 class CLIProxyRewriter(BaseRewriter):
-    """OpenAI-compatible rewrite via CLIProxyAPI (stage 2+)."""
+    """Rewrite via LLM layer + CLIProxyAPI."""
 
     provider_name = "cliproxy"
 
-    def rewrite(self, text: str, metadata: dict | None = None) -> str:
-        settings = get_settings()
-        if not settings.cliproxyapi_base_url or not settings.cliproxyapi_api_key:
-            raise RuntimeError("CLIProxyAPI is not configured")
+    def __init__(self, db: Session | None = None, model_alias: str = DEFAULT_REWRITE_ALIAS):
+        self.db = db
+        self.model_alias = model_alias
 
-        prompt = (
-            "Перепиши текст статьи для публикации на сайте. "
-            "Сохрани смысл, улучши структуру, без выдуманных фактов.\n\n"
-            f"{text}"
+    def rewrite(self, text: str, metadata: dict | None = None) -> str:
+        if not self.db:
+            raise RuntimeError("CLIProxyRewriter requires DB session for llm_runs audit")
+
+        meta = metadata or {}
+        request = RewriteRequest(
+            task_id=meta.get("task_id"),
+            project_id=meta.get("project_id"),
+            content=text,
+            model_alias=meta.get("model_alias") or self.model_alias,
+            metadata=meta,
         )
-        url = f"{settings.cliproxyapi_base_url.rstrip('/')}/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {settings.cliproxyapi_api_key}"}
-        payload = {
-            "model": "gpt-4o-mini",
-            "messages": [{"role": "user", "content": prompt}],
-        }
-        with httpx.Client(timeout=120) as client:
-            response = client.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-        return data["choices"][0]["message"]["content"]
+        response = execute_rewrite(self.db, request)
+        if response.status != "ok":
+            raise RuntimeError("; ".join(response.warnings) or "Rewrite failed")
+        return response.rewritten_text

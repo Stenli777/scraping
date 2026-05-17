@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="/admin/llm/smoke" class="form">
+  <label>
+    Model alias (обязательно)
+    <select name="model_alias" required>
+      {% for a in aliases %}
+      <option value="{{ a }}" {% if model_alias == a %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Тестовый prompt
+    <textarea name="content" rows="4" required>{{ content or "Напиши одно предложение: Scrap LLM smoke test OK." }}</textarea>
+  </label>
+  <button type="submit" class="btn primary">Запустить smoke test</button>
+</form>
+
+{% if result %}
+<section class="panel">
+  <h2>Результат</h2>
+  <p><strong>Status:</strong> {{ result.status }}</p>
+  {% if result.warnings %}
+  <p class="error"><strong>Warnings:</strong> {{ result.warnings | join(", ") }}</p>
+  {% endif %}
+  <pre class="content">{{ result.rewritten_text or result.content or "—" }}</pre>
+  <p><a href="/admin/llm-runs">Смотреть llm_runs →</a></p>
+</section>
+{% endif %}
+{% endblock %}

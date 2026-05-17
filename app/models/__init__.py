@@ -1,8 +1,12 @@
 from app.models.document_version import DocumentVersion
 from app.models.export import Export
+from app.models.llm_run import LLMRun
 from app.models.parsed_document import ParsedDocument
+from app.models.pipeline_event import PipelineEvent
+from app.models.project import Project
 from app.models.scraping_task import ScrapingTask
 from app.models.source import Source
+from app.models.source_directory import SourceDirectory
 from app.models.task_log import TaskLog
 
 __all__ = [
@@ -12,4 +16,8 @@ __all__ = [
     "DocumentVersion",
     "TaskLog",
     "Export",
+    "Project",
+    "SourceDirectory",
+    "LLMRun",
+    "PipelineEvent",
 ]

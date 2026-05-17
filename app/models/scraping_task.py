@@ -18,6 +18,7 @@ class ScrapingTask(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     source_id: Mapped[int | None] = mapped_column(ForeignKey("sources.id"), nullable=True)
+    project_id: Mapped[int | None] = mapped_column(ForeignKey("projects.id"), nullable=True)
     source_url: Mapped[str] = mapped_column(String(2048), index=True)
     status: Mapped[str] = mapped_column(String(32), default=TaskStatus.QUEUED, index=True)
     parser_type: Mapped[str] = mapped_column(String(64), default="generic_article")

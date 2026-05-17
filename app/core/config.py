@@ -30,8 +30,14 @@ class Settings(BaseSettings):
 
     cliproxyapi_base_url: str = ""
     cliproxyapi_api_key: str = ""
-    lm_studio_base_url: str = "http://127.0.0.1:1234/v1"
+    cliproxyapi_default_timeout: int = 120
+    cliproxyapi_max_retries: int = 2
     rewriter_provider: str = "mock"
+
+    enable_hermes: bool = False
+    enable_auto_publish: bool = False
+    enable_seo_enrich: bool = True
+    enable_llm_review: bool = True
 
     crmflow24_export_webhook_url: str = ""
     crmflow24_export_api_key: str = ""
