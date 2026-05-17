@@ -9,6 +9,23 @@ def is_hermes_enabled() -> bool:
 
 
 @lru_cache
+def is_hermes_reasoning_enabled() -> bool:
+    return get_settings().enable_hermes and get_settings().enable_hermes_reasoning
+
+
+@lru_cache
+def is_hermes_campaigns_enabled() -> bool:
+    return get_settings().enable_hermes and get_settings().enable_hermes_campaigns
+
+
+@lru_cache
+def is_hermes_research_enabled() -> bool:
+    return get_settings().enable_hermes and (
+        get_settings().enable_hermes_research or get_settings().enable_hermes_reasoning
+    )
+
+
+@lru_cache
 def is_auto_publish_enabled() -> bool:
     return get_settings().enable_auto_publish
 
@@ -51,6 +68,9 @@ def is_editorial_workflow_enabled() -> bool:
 def all_flags() -> dict[str, bool]:
     return {
         "ENABLE_HERMES": is_hermes_enabled(),
+        "ENABLE_HERMES_REASONING": is_hermes_reasoning_enabled(),
+        "ENABLE_HERMES_CAMPAIGNS": is_hermes_campaigns_enabled(),
+        "ENABLE_HERMES_RESEARCH": is_hermes_research_enabled(),
         "ENABLE_AUTO_PUBLISH": is_auto_publish_enabled(),
         "ENABLE_SEO_ENRICH": is_seo_enrich_enabled(),
         "ENABLE_LLM_REVIEW": is_llm_review_enabled(),

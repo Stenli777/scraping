@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     seo_model_alias: str = "local/seo-main"
 
     enable_hermes: bool = False
+    hermes_base_url: str = ""
+    hermes_orchestrate_url: str = ""
+    hermes_api_key: str = ""
+    hermes_timeout: int = 120
+    hermes_max_retries: int = 1
+    hermes_default_agent: str = "hermes-smart"
+    hermes_allow_cliproxy_fallback: bool = True
+    enable_hermes_reasoning: bool = False
+    enable_hermes_campaigns: bool = False
+    enable_hermes_research: bool = False
     enable_auto_publish: bool = False
     enable_seo_enrich: bool = True
     enable_llm_review: bool = True
