@@ -50,6 +50,14 @@ from app.services.prompt_service import (
 )
 from app.services.publish_readiness_service import get_publish_readiness
 from app.services.quality_service import get_latest_quality_score, run_quality_for_document
+from app.hermes.health import check_hermes_health
+from app.hermes.routing import list_hermes_aliases
+from app.models.hermes_run import HermesRun
+from app.services.hermes_service import (
+    get_latest_hermes_result,
+    run_research_summary,
+    run_rewrite_critique,
+)
 from app.services.task_service import (
     create_task,
     get_task,
@@ -209,6 +217,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     )
     publish_readiness = get_publish_readiness(db, document_id)
     quality_record = get_latest_quality_score(db, document_id)
+    hermes_research = get_latest_hermes_result(db, document_id, "research_summary")
+    hermes_critique = get_latest_hermes_result(db, document_id, "rewrite_critique")
     timeline = build_document_timeline(db, document)
     revision_count = document.current_revision_number or 0
     return templates.TemplateResponse(
@@ -221,6 +231,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "rewrite_meta": rewrite_meta,
             "seo_record": seo_record,
             "quality_record": quality_record,
+            "hermes_research": hermes_research,
+            "hermes_critique": hermes_critique,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
             "publish_revision_numbers": publish_revision_numbers,
@@ -258,6 +270,18 @@ def admin_run_seo(document_id: int, db: Session = Depends(get_db)):
 def admin_run_quality(document_id: int, db: Session = Depends(get_db)):
     run_quality_for_document(db, document_id)
     return RedirectResponse(f"/admin/documents/{document_id}#quality", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/hermes/research")
+def admin_hermes_research(document_id: int, db: Session = Depends(get_db)):
+    run_research_summary(db, document_id)
+    return RedirectResponse(f"/admin/documents/{document_id}#hermes", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/hermes/critique")
+def admin_hermes_critique(document_id: int, db: Session = Depends(get_db)):
+    run_rewrite_critique(db, document_id)
+    return RedirectResponse(f"/admin/documents/{document_id}#hermes", status_code=303)
 
 
 @router.post("/admin/documents/{document_id}/editorial/operator-review")
@@ -586,6 +610,25 @@ def admin_quality_scores(request: Request, db: Session = Depends(get_db)):
         request,
         "quality_scores.html",
         {"request": request, "scores": scores, "title": "Quality Scores"},
+    )
+
+
+@router.get("/admin/hermes", response_class=HTMLResponse)
+def admin_hermes(request: Request, db: Session = Depends(get_db)):
+    health = check_hermes_health() if all_flags().get("ENABLE_HERMES") else None
+    runs = db.query(HermesRun).order_by(HermesRun.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "hermes.html",
+        {
+            "request": request,
+            "health": health,
+            "aliases": list_hermes_aliases(),
+            "runs": runs,
+            "feature_flags": all_flags(),
+            "settings": get_settings(),
+            "title": "Hermes",
+        },
     )
 
 

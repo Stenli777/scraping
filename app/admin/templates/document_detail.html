@@ -116,6 +116,14 @@
     <form method="post" action="/admin/documents/{{ document.id }}/run-quality" style="display:inline">
       <button type="submit" class="btn">Run quality</button>
     </form>
+    {% if feature_flags.get('ENABLE_HERMES') %}
+    <form method="post" action="/admin/documents/{{ document.id }}/hermes/research" style="display:inline">
+      <button type="submit" class="btn">Hermes research</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/hermes/critique" style="display:inline">
+      <button type="submit" class="btn">Hermes critique</button>
+    </form>
+    {% endif %}
   </p>
 </div>
 
@@ -153,6 +161,36 @@
   <p><small>{{ quality_record.created_at }}</small></p>
   {% else %}
   <p class="warn-box">No quality score yet. Run quality review after rewrite + SEO.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if feature_flags.get('ENABLE_HERMES') %}
+<div class="panel" id="hermes">
+  <h2>Hermes (optional)</h2>
+  <p class="export-links">
+    <form method="post" action="/admin/documents/{{ document.id }}/hermes/research" style="display:inline">
+      <button type="submit" class="btn">Run Hermes research</button>
+    </form>
+    <form method="post" action="/admin/documents/{{ document.id }}/hermes/critique" style="display:inline">
+      <button type="submit" class="btn">Run Hermes critique</button>
+    </form>
+    <a class="btn" href="/admin/hermes">All runs</a>
+  </p>
+  {% if hermes_research %}
+  <h3>Latest research</h3>
+  <p>Run #{{ hermes_research.id }} · agent {{ hermes_research.agent_used or '—' }} · model {{ hermes_research.model_used or '—' }}
+     {% if hermes_research.fallback_used %}<span class="badge">fallback</span>{% endif %}</p>
+  <pre class="content">{{ (hermes_research.response_payload_json or {}) | tojson(indent=2) }}</pre>
+  {% endif %}
+  {% if hermes_critique %}
+  <h3>Latest critique</h3>
+  <p>Run #{{ hermes_critique.id }} · agent {{ hermes_critique.agent_used or '—' }} · model {{ hermes_critique.model_used or '—' }}
+     {% if hermes_critique.fallback_used %}<span class="badge">fallback</span>{% endif %}</p>
+  <pre class="content">{{ (hermes_critique.response_payload_json or {}) | tojson(indent=2) }}</pre>
+  {% endif %}
+  {% if not hermes_research and not hermes_critique %}
+  <p class="warn-box">No Hermes runs for this document yet.</p>
   {% endif %}
 </div>
 {% endif %}

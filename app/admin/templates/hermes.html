@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <p><strong>ENABLE_HERMES:</strong> {{ feature_flags.get('ENABLE_HERMES') }}</p>
+  <p><strong>Health:</strong>
+    {% if health %}
+    {% if health.available %}<span class="badge status-done">{{ health.status }}</span>
+    {% else %}<span class="badge status-error">{{ health.status }} — {{ health.detail or 'unavailable' }}</span>{% endif %}
+    {% if health.latency_ms %} ({{ health.latency_ms }} ms){% endif %}
+    {% else %}<span class="badge">n/a</span>{% endif %}
+  </p>
+  {% if health and health.service %}<p><strong>Service:</strong> {{ health.service }} v{{ health.version or '?' }}</p>{% endif %}
+  <p><a href="/api/hermes/health" target="_blank">API health JSON</a></p>
+</div>
+
+<h2>Agent aliases</h2>
+<ul>
+  {% for a in aliases %}
+  <li><code>{{ a.alias }}</code> — {{ a.description }}</li>
+  {% endfor %}
+</ul>
+
+<h2>Recent runs</h2>
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>Kind</th><th>Doc</th><th>OK</th><th>Fallback</th><th>Agent</th><th>Model</th><th>ms</th><th>Error</th><th>Time</th></tr>
+  </thead>
+  <tbody>
+    {% for r in runs %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.task_kind }}</td>
+      <td>{% if r.document_id %}<a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a>{% else %}—{% endif %}</td>
+      <td>{{ r.success }}</td>
+      <td>{{ r.fallback_used }}</td>
+      <td>{{ r.agent_used or r.agent_requested or '—' }}</td>
+      <td>{{ r.model_used or '—' }}</td>
+      <td>{{ r.latency_ms or '—' }}</td>
+      <td>{{ (r.error_message or '')[:80] }}</td>
+      <td>{{ r.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10">No hermes_runs yet</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
