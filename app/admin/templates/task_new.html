@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="/admin/tasks/new" class="form">
+  <label>
+    URL статьи
+    <input type="url" name="source_url" required placeholder="https://example.com/article">
+  </label>
+  <label>
+    Тип парсера
+    <select name="parser_type">
+      {% for p in parser_types %}
+      <option value="{{ p }}">{{ p }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="btn primary">Создать задачу</button>
+</form>
+{% endblock %}

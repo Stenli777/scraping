@@ -1,0 +1,15 @@
+---
+description: Scraping pipeline stages
+globs: app/parsers/**/*,app/services/pipeline.py,app/workers/**/*
+alwaysApply: false
+---
+
+# Pipeline
+
+Статусы: `queued` → `fetching` → `parsing` → `cleaning` → `rewriting` → `saving` → `done`|`error`.
+
+- Fetch: `app/parsers/fetcher.py` (Scrapling → httpx fallback).
+- Parse: `generic_article` по умолчанию; domain-specific — отдельные классы.
+- Дедуп: `content_hash` + `source_url`.
+- Backup после успеха: `storage/backups/YYYY/MM/DD/<task_id>/`.
+- Версии: `document_versions` при каждом успешном save.

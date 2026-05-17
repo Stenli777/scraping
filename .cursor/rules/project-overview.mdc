@@ -1,0 +1,14 @@
+---
+description: Scrap project context and boundaries
+alwaysApply: true
+---
+
+# Scrap — обзор проекта
+
+- Проект расположен на сервере в **`/opt/scrap`**.
+- Домен: `scrap.crmflow24.ru`.
+- **Не трогать** `/hermes`, Hermes Agent, `/opt/cliproxyapi` без явной команды пользователя.
+- Scrap и Hermes — **разные** проекты; не смешивать код, env, systemd, nginx.
+- Назначение: scraping → parse → clean → rewrite → save → export → (позже) crmflow24.ru.
+- Основной парсер-фреймворк: [Scrapling](https://github.com/D4Vinci/Scrapling).
+- После каждого значимого этапа — запись в `docs/PROJECT_LOG.md`.

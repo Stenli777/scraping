@@ -1,0 +1,15 @@
+[Unit]
+Description=Scrap API and Admin
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/scrap
+EnvironmentFile=/opt/scrap/.env
+ExecStart=/opt/scrap/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8800
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,57 @@
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    app_name: str = "scrap"
+    app_env: str = "development"
+    app_debug: bool = True
+    app_host: str = "127.0.0.1"
+    app_port: int = 8800
+    app_secret_key: str = "change-me"
+
+    database_url: str = "postgresql+psycopg2://scrap:scrap@127.0.0.1:5432/scrap"
+
+    worker_poll_interval_seconds: int = 2
+    worker_batch_size: int = 5
+
+    http_timeout_seconds: int = 60
+    http_user_agent: str = "Mozilla/5.0 (compatible; ScrapBot/0.1)"
+
+    cliproxyapi_base_url: str = ""
+    cliproxyapi_api_key: str = ""
+    lm_studio_base_url: str = "http://127.0.0.1:1234/v1"
+    rewriter_provider: str = "mock"
+
+    crmflow24_export_webhook_url: str = ""
+    crmflow24_export_api_key: str = ""
+
+    log_level: str = "INFO"
+    log_dir: str = "storage/logs"
+
+    @property
+    def storage_root(self) -> Path:
+        return PROJECT_ROOT / "storage"
+
+    @property
+    def backups_root(self) -> Path:
+        return self.storage_root / "backups"
+
+    @property
+    def logs_path(self) -> Path:
+        return PROJECT_ROOT / self.log_dir
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

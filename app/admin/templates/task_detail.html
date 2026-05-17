@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="meta">
+  <p><strong>URL:</strong> <a href="{{ task.source_url }}" target="_blank">{{ task.source_url }}</a></p>
+  <p><strong>Статус:</strong> <span class="badge status-{{ task.status }}">{{ task.status }}</span></p>
+  <p><strong>Парсер:</strong> {{ task.parser_type }}</p>
+  {% if task.error_message %}
+  <p class="error"><strong>Ошибка:</strong> {{ task.error_message }}</p>
+  {% endif %}
+</div>
+{% if task.document %}
+<p>
+  <a href="/admin/documents/{{ task.document.id }}">Открыть документ #{{ task.document.id }}</a>
+  |
+  <a href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
+  |
+  <a href="/api/documents/{{ task.document.id }}/export/markdown">Markdown</a>
+</p>
+{% endif %}
+<h2>Логи</h2>
+<table class="table">
+  <thead><tr><th>Время</th><th>Уровень</th><th>Сообщение</th></tr></thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.created_at }}</td>
+      <td>{{ log.level }}</td>
+      <td>{{ log.message }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">Логов нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="meta">
+  <p><strong>URL:</strong> {{ document.source_url }}</p>
+  <p><strong>Hash:</strong> <code>{{ document.content_hash }}</code></p>
+  <p><strong>Версия:</strong> {{ document.version }}</p>
+  <p>
+    <a href="/api/documents/{{ document.id }}/export/json">Скачать JSON</a>
+    |
+    <a href="/api/documents/{{ document.id }}/export/markdown">Скачать Markdown</a>
+  </p>
+</div>
+<div class="tabs">
+  <section>
+    <h2>Raw text</h2>
+    <pre class="content">{{ document.raw_text or "—" }}</pre>
+  </section>
+  <section>
+    <h2>Clean text</h2>
+    <pre class="content">{{ document.clean_text or "—" }}</pre>
+  </section>
+  <section>
+    <h2>Rewritten text</h2>
+    <pre class="content">{{ document.rewritten_text or "—" }}</pre>
+  </section>
+</div>
+<details>
+  <summary>Raw HTML</summary>
+  <pre class="content html">{{ document.raw_html or "—" }}</pre>
+</details>
+{% endblock %}

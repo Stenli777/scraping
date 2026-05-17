@@ -1,0 +1,13 @@
+---
+description: Deployment rules
+globs: deploy/**/*
+alwaysApply: false
+---
+
+# Деплой
+
+- Конфиги: `deploy/systemd/`, `deploy/nginx/`.
+- Инструкции: `docs/DEPLOYMENT.md`.
+- Перед `nginx -t` / reload — backup существующих конфигов в `/root/backup-nginx-*`.
+- Не изменять `hermes.crmflow24.ru.conf` и сервисы Hermes.
+- После деплоя: `curl /health`, запись в `PROJECT_LOG.md`.

@@ -1,0 +1,12 @@
+---
+description: Logging and docs requirements
+alwaysApply: true
+---
+
+# Логирование и документация
+
+- Runtime: `storage/logs/app.log` (без секретов).
+- Cursor/ops журнал: `docs/PROJECT_LOG.md` после каждого этапа.
+- Архитектурные изменения: `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`.
+- API изменения: `docs/API.md`.
+- DB изменения: миграция Alembic + `docs/DATABASE.md`.

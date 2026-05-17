@@ -1,0 +1,12 @@
+---
+description: Admin UI conventions
+globs: app/admin/**/*
+alwaysApply: false
+---
+
+# Admin UI
+
+- Jinja2 templates в `app/admin/templates/`.
+- Стили: `app/admin/static/admin.css`.
+- Не хранить секреты в шаблонах; settings page — только имена переменных.
+- Новые страницы: route в `app/admin/routes.py` + template + ссылка в `base.html` nav.

@@ -1,0 +1,34 @@
+# Environment
+.env
+.env.local
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Runtime storage (keep structure via .gitkeep)
+storage/backups/**/*
+!storage/backups/.gitkeep
+storage/logs/**/*
+!storage/logs/.gitkeep
+
+# DB / dumps
+*.sql
+*.dump
+
+# OS
+.DS_Store
+Thumbs.db

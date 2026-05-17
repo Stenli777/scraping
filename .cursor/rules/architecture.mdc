@@ -1,0 +1,14 @@
+---
+description: Architecture conventions for Scrap
+globs: app/**/*
+alwaysApply: false
+---
+
+# Архитектура
+
+- Бизнес-логика pipeline — только в `app/services/pipeline.py`.
+- Парсеры: `app/parsers/` + `registry.py`.
+- Рерайтеры: `app/rewriters/` + `registry.py` (strategy pattern).
+- API тонкий; без дублирования pipeline в routes.
+- Worker только ставит задачи в работу через `PipelineService`.
+- Новые ADR — в `docs/DECISIONS.md`.

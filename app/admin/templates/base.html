@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — Scrap</title>
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="/admin" class="brand">Scrap Admin</a>
+    <nav>
+      <a href="/admin">Dashboard</a>
+      <a href="/admin/tasks/new">Добавить URL</a>
+      <a href="/admin/settings">Настройки</a>
+      <a href="/health" target="_blank">Health</a>
+      <a href="/docs" target="_blank">API Docs</a>
+    </nav>
+  </header>
+  <main class="container">
+    <h1>{{ title }}</h1>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

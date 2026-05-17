@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<p>Заглушка настроек. Секреты задаются только в <code>.env</code> на сервере.</p>
+<ul class="settings-list">
+  <li><strong>REWRITER_PROVIDER:</strong> {{ settings.rewriter_provider }}</li>
+  <li><strong>CLIPROXYAPI_BASE_URL:</strong> {{ settings.cliproxyapi_base_url or "не задан" }}</li>
+  <li><strong>LM_STUDIO_BASE_URL:</strong> {{ settings.lm_studio_base_url }}</li>
+  <li><strong>DATABASE_URL:</strong> (скрыт)</li>
+</ul>
+{% endblock %}
