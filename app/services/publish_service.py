@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any
 
 from sqlalchemy import select
@@ -20,13 +21,18 @@ from app.models.review_result import ReviewResult
 from app.models.seo_metadata import SeoMetadata
 from app.publishers.exceptions import (
     PublishClientError,
+    PublishDuplicateError,
     PublishError,
     PublishServerError,
     PublishTransportError,
     PublishValidationError,
 )
-from app.publishers.payloads import build_article_v1_payload
+from app.publishers.payloads import PAYLOAD_VERSION_ARTICLE_V1, build_article_v1_payload
 from app.publishers.registry import get_publisher
+from app.publishers.validators import (
+    validate_article_v1_publish,
+    validate_review_for_publish,
+)
 from app.services.pipeline_event_service import emit_pipeline_event
 from app.services.project_profile_service import resolve_task_project
 
@@ -40,9 +46,12 @@ class PublishDraftResult:
     status: str = ""
     dry_run: bool = False
     external_id: str | None = None
+    draft_url: str | None = None
     error_message: str | None = None
     payload: dict[str, Any] = field(default_factory=dict)
     validation_error: bool = False
+    duplicate: bool = False
+    existing_publish_run_id: int | None = None
 
 
 def _latest_seo(db: Session, document_id: int) -> SeoMetadata | None:
@@ -61,13 +70,44 @@ def _latest_review(db: Session, document_id: int) -> ReviewResult | None:
     )
 
 
+def resolve_target_endpoint(target: PublishTarget) -> tuple[str, bool]:
+    """Effective endpoint and whether HTTP should be skipped (dry-run)."""
+    settings = get_settings()
+    endpoint = (target.endpoint_url or settings.crmflow24_publish_endpoint or "").strip()
+    if target.name == "crmflow24-draft-webhook" and not target.endpoint_url:
+        endpoint = settings.crmflow24_publish_endpoint.strip()
+    force_dry = target.dry_run or not endpoint
+    return endpoint, force_dry
+
+
+def find_duplicate_publish_run(
+    db: Session,
+    *,
+    document_id: int,
+    publish_target_id: int,
+    payload_version: str = PAYLOAD_VERSION_ARTICLE_V1,
+) -> PublishRun | None:
+    return db.scalar(
+        select(PublishRun)
+        .where(
+            PublishRun.document_id == document_id,
+            PublishRun.publish_target_id == publish_target_id,
+            PublishRun.payload_version == payload_version,
+            PublishRun.status == PublishRunStatus.SUCCESS.value,
+            PublishRun.dry_run.is_(False),
+        )
+        .order_by(PublishRun.id.desc())
+    )
+
+
 def _validate_preconditions(
     db: Session,
     document: ParsedDocument,
     target: PublishTarget,
     *,
     requested_status: str | None = None,
-) -> tuple[ScrapingTask, Project, SeoMetadata]:
+    force: bool = False,
+) -> tuple[ScrapingTask, Project, SeoMetadata, ReviewResult | None]:
     if not is_publishing_enabled():
         raise PublishValidationError("Publishing is disabled (ENABLE_PUBLISHING=false)")
 
@@ -78,16 +118,6 @@ def _validate_preconditions(
     if status != "draft":
         raise PublishValidationError("Only draft status is allowed")
 
-    if not document.rewritten_text or not document.rewritten_text.strip():
-        raise PublishValidationError("Document has no rewritten_text")
-
-    seo = _latest_seo(db, document.id)
-    if not seo:
-        raise PublishValidationError("Document has no seo_metadata")
-
-    if not seo.slug:
-        raise PublishValidationError("seo_metadata.slug is required")
-
     task = document.task
     if not task:
         raise PublishValidationError("Document has no associated task")
@@ -96,13 +126,44 @@ def _validate_preconditions(
     if not project:
         raise PublishValidationError("No project found for document")
 
+    if not project.enabled:
+        raise PublishValidationError("Project is disabled")
+
     if target.project_id != project.id:
         raise PublishValidationError("Publish target does not belong to document project")
 
     if not target.enabled:
         raise PublishValidationError("Publish target is disabled")
 
-    return task, project, seo
+    seo = _latest_seo(db, document.id)
+    review = _latest_review(db, document.id)
+    meta = document.metadata_json or {}
+
+    article_check = validate_article_v1_publish(
+        document=document,
+        project=project,
+        target=target,
+        seo=seo,
+    )
+    article_check.raise_if_invalid()
+
+    review_check = validate_review_for_publish(
+        project=project,
+        review=review,
+        review_meta=meta.get("review") or {},
+        force=force,
+    )
+    review_check.raise_if_invalid()
+
+    if not seo:
+        raise PublishValidationError("Document has no seo_metadata")
+    if not seo.slug:
+        raise PublishValidationError("seo_metadata.slug is required")
+
+    if not document.rewritten_text or not document.rewritten_text.strip():
+        raise PublishValidationError("Document has no rewritten_text")
+
+    return task, project, seo, review
 
 
 def publish_draft_for_document(
@@ -111,6 +172,7 @@ def publish_draft_for_document(
     *,
     publish_target_id: int | None = None,
     dry_run: bool | None = None,
+    force: bool = False,
 ) -> PublishDraftResult:
     document = db.get(ParsedDocument, document_id)
     if not document:
@@ -134,7 +196,9 @@ def publish_draft_for_document(
         raise PublishValidationError("No publish target configured")
 
     try:
-        task, project, seo = _validate_preconditions(db, document, target)
+        task, project, seo, review = _validate_preconditions(
+            db, document, target, force=force
+        )
     except PublishValidationError as exc:
         return PublishDraftResult(
             success=False,
@@ -142,10 +206,23 @@ def publish_draft_for_document(
             validation_error=True,
         )
 
-    review = _latest_review(db, document.id)
-    effective_dry_run = target.dry_run if dry_run is None else dry_run
-    if target.target_type == "mock":
-        effective_dry_run = True
+    if not force:
+        existing = find_duplicate_publish_run(
+            db,
+            document_id=document.id,
+            publish_target_id=target.id,
+        )
+        if existing:
+            return PublishDraftResult(
+                success=False,
+                duplicate=True,
+                existing_publish_run_id=existing.id,
+                error_message=(
+                    f"Duplicate publish blocked: successful run #{existing.id} already exists. "
+                    "Use force=true to publish again."
+                ),
+                validation_error=True,
+            )
 
     if target.payload_format != "article_v1":
         raise PublishValidationError(f"Unsupported payload_format: {target.payload_format}")
@@ -158,6 +235,21 @@ def publish_draft_for_document(
         seo=seo,
         review=review,
     )
+    validate_article_v1_publish(
+        document=document,
+        project=project,
+        target=target,
+        seo=seo,
+        payload=payload,
+    ).raise_if_invalid()
+
+    endpoint, endpoint_requires_dry = resolve_target_endpoint(target)
+    if dry_run is not None:
+        effective_dry_run = bool(dry_run) or endpoint_requires_dry
+    else:
+        effective_dry_run = endpoint_requires_dry or target.dry_run
+    if target.target_type == "mock":
+        effective_dry_run = True
 
     settings = get_settings()
     emit_pipeline_event(
@@ -165,7 +257,11 @@ def publish_draft_for_document(
         task.id,
         PipelineStage.PUBLISHING,
         status="entered",
-        payload={"publish_target_id": target.id, "dry_run": effective_dry_run},
+        payload={
+            "publish_target_id": target.id,
+            "dry_run": effective_dry_run,
+            "force": force,
+        },
     )
 
     run = PublishRun(
@@ -175,17 +271,33 @@ def publish_draft_for_document(
         publish_target_id=target.id,
         status=PublishRunStatus.PENDING.value,
         dry_run=effective_dry_run,
-        endpoint_url=target.endpoint_url,
+        endpoint_url=endpoint or target.endpoint_url,
         request_payload_json=payload,
+        payload_version=PAYLOAD_VERSION_ARTICLE_V1,
+        force_used=force,
     )
     db.add(run)
     db.flush()
 
     publisher = get_publisher(target)
+    publish_target: Any = target
+    if endpoint and endpoint != (target.endpoint_url or ""):
+        publish_target = SimpleNamespace(
+            id=target.id,
+            name=target.name,
+            target_type=target.target_type,
+            endpoint_url=endpoint,
+            auth_type=target.auth_type,
+            auth_token_env_name=target.auth_token_env_name,
+            dry_run=target.dry_run,
+            default_status=target.default_status,
+            payload_format=target.payload_format,
+            enabled=target.enabled,
+        )
 
     try:
         result = publisher.publish(
-            target,
+            publish_target,
             payload,
             dry_run=effective_dry_run,
             timeout_seconds=settings.publish_default_timeout,
@@ -193,9 +305,16 @@ def publish_draft_for_document(
         run.response_status_code = result.response_status_code
         run.response_body = result.response_body
         run.external_id = result.external_id
+        run.draft_url = result.draft_url
         run.dry_run = result.dry_run
-        run.status = result.status
-        run.endpoint_url = result.endpoint_url or target.endpoint_url
+        run.status = (
+            PublishRunStatus.DRY_RUN.value
+            if result.dry_run
+            else PublishRunStatus.SUCCESS.value
+            if result.success
+            else result.status
+        )
+        run.endpoint_url = result.endpoint_url or endpoint or target.endpoint_url
 
         if result.success:
             emit_pipeline_event(
@@ -206,7 +325,9 @@ def publish_draft_for_document(
                 payload={
                     "publish_run_id": run.id,
                     "external_id": result.external_id,
+                    "draft_url": result.draft_url,
                     "dry_run": result.dry_run,
+                    "force": force,
                 },
             )
             db.commit()
@@ -216,6 +337,7 @@ def publish_draft_for_document(
                 status=run.status,
                 dry_run=run.dry_run,
                 external_id=run.external_id,
+                draft_url=run.draft_url,
                 payload=payload,
             )
 
@@ -246,6 +368,7 @@ def publish_draft_for_document(
             status=run.status,
             error_message=str(exc),
             payload=payload,
+            validation_error=True,
         )
 
     except PublishClientError as exc:
@@ -275,7 +398,7 @@ def publish_draft_for_document(
             task.id,
             PipelineStage.FAILED_RETRYABLE,
             status="entered",
-            payload={"reason": "publish_retryable"},
+            payload={"reason": "publish_retryable", "force": force},
         )
         db.commit()
         return PublishDraftResult(

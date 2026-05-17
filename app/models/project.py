@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, Text, func
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +18,8 @@ class Project(Base):
     rewrite_profile: Mapped[str] = mapped_column(String(64), default="default")
     seo_profile: Mapped[str] = mapped_column(String(64), default="default")
     publish_mode: Mapped[str] = mapped_column(String(32), default="draft")
+    minimum_review_score_for_publish: Mapped[int] = mapped_column(Integer, default=60)
+    require_review_take_for_publish: Mapped[bool] = mapped_column(Boolean, default=True)
 
     content_rules_md: Mapped[str | None] = mapped_column(Text, nullable=True)
     rewrite_instructions_md: Mapped[str | None] = mapped_column(Text, nullable=True)

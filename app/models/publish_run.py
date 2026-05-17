@@ -22,5 +22,8 @@ class PublishRun(Base):
     response_status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
     response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
     external_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    draft_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    payload_version: Mapped[str] = mapped_column(String(32), default="article_v1")
+    force_used: Mapped[bool] = mapped_column(Boolean, default=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
