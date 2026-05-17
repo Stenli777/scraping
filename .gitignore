@@ -1,6 +1,7 @@
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
 *.pem
 
 # Python
@@ -19,15 +20,18 @@ venv/
 .vscode/
 *.swp
 
-# Runtime storage (keep structure via .gitkeep)
-storage/backups/**/*
-!storage/backups/.gitkeep
-storage/logs/**/*
-!storage/logs/.gitkeep
+# Runtime storage and logs
+storage/
+logs/
 
-# DB / dumps
+# DB
+*.db
+*.sqlite3
 *.sql
 *.dump
+
+# Node
+node_modules/
 
 # OS
 .DS_Store
