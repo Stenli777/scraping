@@ -31,12 +31,18 @@ def _default_project_id(db: Session) -> int | None:
     return project.id if project else None
 
 
-def create_task(db: Session, source_url: str, parser_type: str = ParserType.GENERIC_ARTICLE.value) -> ScrapingTask:
+def create_task(
+    db: Session,
+    source_url: str,
+    parser_type: str = ParserType.GENERIC_ARTICLE.value,
+    *,
+    project_id: int | None = None,
+) -> ScrapingTask:
     parser_type = resolve_parser_type(source_url, parser_type)
     source = get_or_create_source(db, source_url, parser_type)
     task = ScrapingTask(
         source_id=source.id,
-        project_id=_default_project_id(db),
+        project_id=project_id or _default_project_id(db),
         source_url=source_url,
         parser_type=parser_type,
         status=TaskStatus.QUEUED.value,

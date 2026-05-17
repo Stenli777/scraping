@@ -33,6 +33,11 @@ def is_publishing_enabled() -> bool:
     return get_settings().enable_publishing
 
 
+@lru_cache
+def is_source_discovery_enabled() -> bool:
+    return get_settings().enable_source_discovery
+
+
 def all_flags() -> dict[str, bool]:
     return {
         "ENABLE_HERMES": is_hermes_enabled(),
@@ -41,4 +46,5 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_LLM_REVIEW": is_llm_review_enabled(),
         "ENABLE_PROJECT_PROFILES": is_project_profiles_enabled(),
         "ENABLE_PUBLISHING": is_publishing_enabled(),
+        "ENABLE_SOURCE_DISCOVERY": is_source_discovery_enabled(),
     }

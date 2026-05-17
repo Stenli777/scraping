@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     crmflow24_publish_token: str = ""
     publish_default_timeout: int = 60
 
+    enable_source_discovery: bool = True
+    discovery_default_max_urls: int = 50
+    discovery_default_timeout: int = 30
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 
