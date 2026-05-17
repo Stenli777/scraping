@@ -4,6 +4,8 @@ from app.models.llm_run import LLMRun
 from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
+from app.models.publish_run import PublishRun
+from app.models.publish_target import PublishTarget
 from app.models.review_result import ReviewResult
 from app.models.scraping_task import ScrapingTask
 from app.models.seo_metadata import SeoMetadata
@@ -24,4 +26,6 @@ __all__ = [
     "PipelineEvent",
     "ReviewResult",
     "SeoMetadata",
+    "PublishTarget",
+    "PublishRun",
 ]

@@ -37,3 +37,6 @@ class Project(Base):
     source_directories: Mapped[list["SourceDirectory"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
+    publish_targets: Mapped[list["PublishTarget"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
