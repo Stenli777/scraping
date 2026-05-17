@@ -36,3 +36,20 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Cursor / deploy artifacts (Stage 4C)
+tmp_*.py
+tmp_*.sh
+tmp_*.json
+tmp_*.log
+deploy*.tar.gz
+deploy*.zip
+cursor_tmp/
+.cursor_tmp/
+artifacts/
+tmp_artifacts/
+*.retry
+*.bak
+*.old
+_deploy_*.py
+
