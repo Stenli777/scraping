@@ -1079,3 +1079,7 @@ publish_run (success, not dry) → publication_record → manual import → anal
 - Startup logs warnings on mismatch (non-blocking)
 - `/api/system/workspace` for operator verification
 
+### Stage 4D ? crmflow24 inbound
+
+HTTP-only integration; Scrap builds `article_v2`, receives acknowledgment, tracks `PublicationRecord`. Mock receiver for tests. See `docs/CRMFLOW24_INTEGRATION.md`.
+

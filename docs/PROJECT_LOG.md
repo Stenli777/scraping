@@ -224,3 +224,15 @@
 - GET /api/system/workspace, /admin/system
 - Workspace startup warnings, smoke integration
 
+## 2026-05-17 ? Stage 4D: crmflow24 inbound integration
+
+- `article_v2` payload + `validators_v2.py`; v1 backward compatible
+- Payload negotiation via `publish_targets.payload_format`
+- Mock receiver `/api/mock-crmflow24/*` (testing only)
+- Publication acknowledgment: `external_article_id`, `draft_url`, `remote_status`, `response_schema_version`
+- Retry semantics: `failed_retryable` / `failed_terminal`, `retry_count`, `next_retry_at`, retry chains
+- `POST /api/publish-runs/{id}/retry`, `GET /api/publish-targets/health`
+- Migration `014_publish_retry_chains`
+- Admin: publish runs/targets show payload version, retry chain, health
+- Docs: `CRMFLOW24_INTEGRATION.md`, API/ARCHITECTURE/OPERATIONS updates
+

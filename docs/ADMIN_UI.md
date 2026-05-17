@@ -71,3 +71,9 @@ Base: **https://scrap.crmflow24.ru/admin**
 - Stale `running` (heartbeat timeout) → `failed` via scheduler recovery or `POST .../mark-failed`.
 - **Production default:** `ENABLE_SCHEDULER=false`, `ENABLE_AUTOMATION=false` (rules remain disabled in DB).
 
+### Publish admin (4D)
+
+- `/admin/publish-targets` ? health block per target
+- `/admin/publish-runs` ? payload version, retry chain, remote status
+- Document detail publish history ? payload version, retry parent, remote status
+

@@ -166,3 +166,7 @@ Readiness: `missing_preview_image` warning; publish allowed without media.
 - Stale `running` (heartbeat timeout) → `failed` via scheduler recovery or `POST .../mark-failed`.
 - **Production default:** `ENABLE_SCHEDULER=false`, `ENABLE_AUTOMATION=false` (rules remain disabled in DB).
 
+### Publish stage (4D)
+
+After rewrite/SEO/review/quality/editorial: manual `publish-draft` sends `article_v1` or `article_v2` to configured target. Acknowledgment updates publication tracking. No auto-publish.
+

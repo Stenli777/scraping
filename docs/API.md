@@ -134,3 +134,11 @@ Requires `ENABLE_ANALYTICS=true`.
 - Stale `running` (heartbeat timeout) → `failed` via scheduler recovery or `POST .../mark-failed`.
 - **Production default:** `ENABLE_SCHEDULER=false`, `ENABLE_AUTOMATION=false` (rules remain disabled in DB).
 
+### Publish (4D)
+
+- `GET /api/publish-targets/health` ? target connectivity and config
+- `GET /api/publish-runs/{id}` ? run detail + retry chain
+- `POST /api/publish-runs/{id}/retry` ? manual retry (retryable only)
+- Mock (testing): `POST /api/mock-crmflow24/articles/import`, `GET /api/mock-crmflow24/articles`
+- Payload versions: `article_v1`, `article_v2` (see `docs/CRMFLOW24_INTEGRATION.md`)
+
