@@ -10,7 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.enums import PublishRunStatus
-from app.core.feature_flags import is_auto_publish_enabled, is_publishing_enabled
+from app.core.feature_flags import (
+    is_auto_publish_enabled,
+    is_publishing_enabled,
+    is_quality_review_enabled,
+)
 from app.core.pipeline_states import PipelineStage
 from app.models.parsed_document import ParsedDocument
 from app.models.project import Project
@@ -31,8 +35,10 @@ from app.publishers.payloads import PAYLOAD_VERSION_ARTICLE_V1, build_article_v1
 from app.publishers.registry import get_publisher
 from app.publishers.validators import (
     validate_article_v1_publish,
+    validate_quality_for_publish,
     validate_review_for_publish,
 )
+from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
 from app.services.pipeline_event_service import emit_pipeline_event
 from app.services.project_profile_service import resolve_task_project
 
@@ -154,6 +160,17 @@ def _validate_preconditions(
         force=force,
     )
     review_check.raise_if_invalid()
+
+    settings = get_settings()
+    quality = get_latest_quality_score(db, document.id)
+    quality_check = validate_quality_for_publish(
+        quality_enabled=is_quality_review_enabled(),
+        quality_score=quality,
+        min_score=settings.min_quality_score_for_publish,
+        max_spamminess=MAX_SPAM_SCORE,
+        force=force,
+    )
+    quality_check.raise_if_invalid()
 
     if not seo:
         raise PublishValidationError("Document has no seo_metadata")

@@ -3,12 +3,14 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.feature_flags import is_publishing_enabled
+from app.core.config import get_settings
+from app.core.feature_flags import is_publishing_enabled, is_quality_review_enabled
 from app.models.parsed_document import ParsedDocument
 from app.models.publish_target import PublishTarget
 from app.models.review_result import ReviewResult
 from app.services.project_profile_service import resolve_task_project
 from app.services.publish_service import _latest_review, _latest_seo, find_duplicate_publish_run
+from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
 from app.publishers.validators import PAYLOAD_VERSION
 
 
@@ -20,6 +22,10 @@ def get_publish_readiness(
 ) -> dict:
     missing: list[str] = []
     warnings: list[str] = []
+    settings = get_settings()
+    quality_enabled = is_quality_review_enabled()
+    min_quality = settings.min_quality_score_for_publish
+
     checks: dict = {
         "review_take": None,
         "review_score": None,
@@ -28,6 +34,12 @@ def get_publish_readiness(
         "target_enabled": False,
         "project_enabled": False,
         "publishing_enabled": is_publishing_enabled(),
+        "quality_review_enabled": quality_enabled,
+        "quality_score_exists": False,
+        "quality_overall_score": None,
+        "quality_verdict": None,
+        "quality_spamminess_score": None,
+        "min_quality_score_for_publish": min_quality,
         "duplicate_publish": False,
         "force_required_for_duplicate": False,
     }
@@ -92,6 +104,35 @@ def get_publish_readiness(
                 warnings.append("review_score_invalid")
         elif project.require_review_take_for_publish:
             warnings.append("review_score_missing")
+
+    quality = get_latest_quality_score(db, document_id)
+    if quality:
+        checks["quality_score_exists"] = True
+        checks["quality_overall_score"] = quality.overall_score
+        checks["quality_verdict"] = quality.verdict
+        checks["quality_spamminess_score"] = quality.spamminess_score
+
+        if quality_enabled:
+            if quality.verdict != "approved":
+                missing.append("quality_not_approved")
+            if quality.overall_score is not None:
+                try:
+                    if int(quality.overall_score) < min_quality:
+                        missing.append("quality_score_below_threshold")
+                except (TypeError, ValueError):
+                    warnings.append("quality_score_invalid")
+            if quality.spamminess_score is not None:
+                try:
+                    if int(quality.spamminess_score) > MAX_SPAM_SCORE:
+                        missing.append("quality_spam_too_high")
+                except (TypeError, ValueError):
+                    warnings.append("quality_spamminess_invalid")
+    elif quality_enabled:
+        missing.append("quality_score")
+        warnings.append("quality_review_missing")
+    elif not quality_enabled:
+        if not quality:
+            warnings.append("quality_review_optional")
 
     enabled_targets: list[PublishTarget] = []
     if project:

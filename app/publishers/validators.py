@@ -117,3 +117,59 @@ def validate_review_for_publish(
             errors.append(ValidationIssue("review_score", "Invalid review score"))
 
     return PublishValidationResult(valid=len(errors) == 0, errors=errors)
+
+
+def validate_quality_for_publish(
+    *,
+    quality_enabled: bool,
+    quality_score: Any | None,
+    min_score: int,
+    max_spamminess: int = 70,
+    force: bool,
+) -> PublishValidationResult:
+    errors: list[ValidationIssue] = []
+    if not quality_enabled or force:
+        return PublishValidationResult(valid=True, errors=errors)
+
+    if not quality_score:
+        errors.append(
+            ValidationIssue("quality_score", "Quality review required before publish")
+        )
+        return PublishValidationResult(valid=False, errors=errors)
+
+    verdict = getattr(quality_score, "verdict", None) or ""
+    if verdict != "approved":
+        errors.append(
+            ValidationIssue(
+                "quality_verdict",
+                f"Quality verdict is {verdict!r}, expected approved",
+            )
+        )
+
+    overall = getattr(quality_score, "overall_score", None)
+    if overall is not None:
+        try:
+            if int(overall) < min_score:
+                errors.append(
+                    ValidationIssue(
+                        "quality_overall_score",
+                        f"Overall score {overall} below minimum {min_score}",
+                    )
+                )
+        except (TypeError, ValueError):
+            errors.append(ValidationIssue("quality_overall_score", "Invalid overall score"))
+
+    spam = getattr(quality_score, "spamminess_score", None)
+    if spam is not None:
+        try:
+            if int(spam) > max_spamminess:
+                errors.append(
+                    ValidationIssue(
+                        "quality_spamminess",
+                        f"Spamminess {spam} exceeds maximum {max_spamminess}",
+                    )
+                )
+        except (TypeError, ValueError):
+            pass
+
+    return PublishValidationResult(valid=len(errors) == 0, errors=errors)

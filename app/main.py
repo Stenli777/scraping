@@ -8,7 +8,9 @@ from app.api.discovery import router as discovery_router
 from app.api.documents import router as documents_router
 from app.api.health import router as health_router
 from app.api.llm import router as llm_router
+from app.api.prompts import router as prompts_router
 from app.api.publish import router as publish_router
+from app.api.quality import router as quality_router
 from app.api.review import router as review_router
 from app.api.rewrite import router as rewrite_router
 from app.api.seo import router as seo_router
@@ -27,6 +29,8 @@ app.include_router(rewrite_router)
 app.include_router(review_router)
 app.include_router(seo_router)
 app.include_router(publish_router)
+app.include_router(prompts_router)
+app.include_router(quality_router)
 app.include_router(discovery_router)
 app.include_router(llm_router)
 app.include_router(admin_router)
