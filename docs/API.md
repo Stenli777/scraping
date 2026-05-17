@@ -23,8 +23,14 @@ Base: **https://scrap.crmflow24.ru**
 | GET | `/api/discovered-urls` | Очередь URL (filters: project_id, source_directory_id, status) |
 | POST | `/api/discovered-urls/{id}/enqueue` | Создать scraping task (manual) |
 | POST | `/api/discovered-urls/{id}/ignore` | Игнорировать URL |
-| GET | `/api/documents/{id}/publish-readiness` | Readiness + checks (review, duplicate, SEO) |
+| GET | `/api/documents/{id}/publish-readiness` | Readiness + checks (review, SEO, quality, duplicate) |
 | POST | `/api/documents/{id}/publish-draft` | Body: `publish_target_id`, `dry_run`, `force` (default false) |
+| GET | `/api/prompts` | Список prompt templates + active version |
+| GET | `/api/prompts/{key}` | Template + version history |
+| POST | `/api/prompts/{key}/versions` | Создать версию `{ "version", "content_md", "notes", "activate" }` |
+| POST | `/api/prompts/{key}/versions/{id}/activate` | Активировать версию |
+| POST | `/api/documents/{id}/run-quality` | Quality review (rewritten + SEO) → `content_quality_scores` |
+| GET | `/api/documents/{id}/quality-scores` | История quality scores |
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |
@@ -35,5 +41,19 @@ Base: **https://scrap.crmflow24.ru**
 `POST /api/documents/{id}/rerun-rewrite` — использует существующий `clean_text`, создаёт новый `llm_run`, обновляет `rewritten_text`, пишет `pipeline_event`, сохраняет backup.
 
 Ответ: `success`, `provider`, `model_alias`, `upstream_model`, `fallback_used`, `llm_run_id`, `error_message`, `warnings`.
+
+## Quality review
+
+`POST /api/documents/{id}/run-quality` — только после rewrite + SEO; не меняет текст статьи.
+
+При `ENABLE_QUALITY_REVIEW=false` → HTTP 503 с сообщением о disabled flag.
+
+Ответ: `overall_score`, `verdict` (`approved` | `needs_revision` | `rejected`), `risks`, `recommendations`, `llm_run_id`.
+
+## Publish readiness (quality)
+
+При `ENABLE_QUALITY_REVIEW=true` в `missing` могут быть: `quality_score`, `quality_not_approved`, `quality_score_below_threshold`, `quality_spam_too_high`.
+
+`force=true` на publish-draft обходит quality (и review/duplicate) — в `publish_runs.force_used=true`.
 
 OpenAPI: `/docs`

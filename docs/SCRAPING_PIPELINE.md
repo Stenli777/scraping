@@ -44,6 +44,7 @@ REWRITER_PROVIDER=mock
 |------|---------|--------|
 | `ENABLE_LLM_REVIEW` | true | Стадия review после clean |
 | `ENABLE_SEO_ENRICH` | true | SEO metadata после rewrite |
+| `ENABLE_QUALITY_REVIEW` | true | Блокирует publish без approved quality score (manual run) |
 | `ENABLE_PROJECT_PROFILES` | true | Профиль проекта в промптах |
 
 ### Source discovery (controlled)
@@ -59,7 +60,17 @@ source_directory → discover → discovered_urls → manual enqueue → scrapin
 
 ### Manual end-to-end (operations)
 
-См. [OPERATIONS.md](OPERATIONS.md): discovery → enqueue → task → review → rewrite → SEO → publish dry-run.
+См. [OPERATIONS.md](OPERATIONS.md): discovery → enqueue → task → review → rewrite → SEO → **quality review** → publish dry-run.
+
+### Quality review (Stage 2H, manual-first)
+
+```
+rewrite → seo_enrich → [quality_review manual] → publish draft
+```
+
+- `POST /api/documents/{id}/run-quality` или кнопка в admin
+- Автоматическая стадия в worker **выключена** (снижение нагрузки на LLM)
+- При ошибке quality: `rewritten_text` / SEO не трогаются; `llm_run` + `pipeline_event` пишутся
 
 ### Publish draft (manual only)
 

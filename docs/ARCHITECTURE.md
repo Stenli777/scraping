@@ -902,6 +902,14 @@ Controlled URL discovery from `source_directories` → `discovered_urls` → man
 - Failed-items view; safe skip/stale reset
 - See `docs/OPERATIONS.md`
 
+### Prompt management + editorial QC (Stage 2H)
+
+- Tables: `prompt_templates`, `prompt_versions`, `project_prompt_overrides`, `content_quality_scores`
+- `prompt_service`: active version from DB; project override; code fallback; audit `key:version` in `llm_runs`
+- `quality_service`: post-rewrite JSON scoring; verdict `approved` | `needs_revision` | `rejected`
+- Publish gating when `ENABLE_QUALITY_REVIEW=true`; `force=true` bypass with `publish_runs.force_used`
+- Admin: prompts, quality scores, editorial queue
+
 ### Production publishing (Stage 2G)
 
 - `article_v1` payload with `payload_version`

@@ -131,3 +131,17 @@
 - Payload `payload_version: article_v1`, validators, idempotency, force publish
 - WebhookPublisher hardening (retry, redacted logs, draft_url parsing)
 - crmflow24-draft-webhook target (env-driven endpoint, dry-run until ready)
+
+---
+
+## 2026-05-17 — Stage 2H: prompt management + quality scoring + editorial control
+
+- Migration 007: `prompt_templates`, `prompt_versions`, `project_prompt_overrides`, `content_quality_scores`
+- Seeded active prompts: `review_article_v1`, `rewrite_article_v1`, `seo_enrich_v1`, `quality_review_v1`
+- `prompt_service` (DB active + project override + code fallback); `llm_runs.prompt_template` = `key:version`
+- `quality_service` manual review → JSON scores + verdict; does not mutate `rewritten_text`
+- Publish readiness + publish validation: quality required when `ENABLE_QUALITY_REVIEW=true`; `force=true` bypass
+- API: `/api/prompts`, `/api/documents/{id}/run-quality`, `/api/documents/{id}/quality-scores`
+- Admin: `/admin/prompts`, `/admin/quality-scores`, `/admin/editorial-queue`, quality block on document detail
+- Env: `ENABLE_QUALITY_REVIEW`, `QUALITY_MODEL_ALIAS`, `MIN_QUALITY_SCORE_FOR_PUBLISH`
+- Pipeline stage `quality_review` defined; automatic stage not enabled in worker (manual-first)

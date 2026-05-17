@@ -15,6 +15,10 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/projects` | Список проектов |
 | `/admin/projects/{id}` | Профиль проекта (read-only): instructions, topics, tone |
 | `/admin/review-queue` | Очередь review: take/reject, score, risks |
+| `/admin/editorial-queue` | Документы: review ok, rewrite+SEO, quality missing/needs_revision, не опубликованы |
+| `/admin/prompts` | Prompt templates (read + activate version) |
+| `/admin/prompts/{key}` | История версий, preview, create version |
+| `/admin/quality-scores` | Последние content quality scores |
 | `/admin/publish-targets` | Publish targets (read-only) |
 | `/admin/publish-runs` | Аудит попыток публикации |
 | `/admin/source-directories` | Список discovery sources |
@@ -27,5 +31,9 @@ Base: **https://scrap.crmflow24.ru/admin**
 На странице **задачи** и **документа**: блок Rewrite metadata — provider, model_alias, upstream_model, fallback_used, ссылка на llm_run; кнопка **Rerun rewrite**.
 
 На странице документа: parser_name, word_count, extraction_warnings, ссылки JSON/Markdown export.
+
+**Quality Review** на document detail: scores, verdict, risks, recommendations, кнопка **Run quality**.
+
+**Publish safety** показывает QC verdict/score; force republish обходит review и quality.
 
 Стили: `/static/admin.css`
