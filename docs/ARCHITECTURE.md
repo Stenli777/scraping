@@ -902,6 +902,13 @@ Controlled URL discovery from `source_directories` → `discovered_urls` → man
 - Failed-items view; safe skip/stale reset
 - See `docs/OPERATIONS.md`
 
+### Hermes optional orchestration (Stage 3A)
+
+- HTTP-only connector in `app/hermes/` — no imports from `/hermes`
+- `hermes_runs` audit; failures isolated from pipeline/worker
+- `ENABLE_HERMES=false` by default; readiness unaffected when disabled
+- Contract `POST /v1/orchestrate`; CLIProxy fallback when orchestrate API not deployed
+
 ### Editorial workflow + revisions (Stage 2I)
 
 - `editorial_status` on documents; operator approval separate from LLM quality verdict

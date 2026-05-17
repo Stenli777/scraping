@@ -17,6 +17,7 @@ Base: **https://scrap.crmflow24.ru/admin**
 | `/admin/review-queue` | Очередь review: take/reject, score, risks |
 | `/admin/editorial-queue` | Группы: Needs review / Needs revision / Ready / Rejected |
 | `/admin/documents/{id}/revisions` | Read-only история revision snapshots |
+| `/admin/hermes` | Hermes status, recent hermes_runs, aliases |
 | `/admin/prompts` | Prompt templates (read + activate version) |
 | `/admin/prompts/{key}` | История версий, preview, create version |
 | `/admin/quality-scores` | Последние content quality scores |

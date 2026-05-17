@@ -157,3 +157,16 @@
 - Admin: editorial controls, timeline, `/admin/documents/{id}/revisions`, grouped editorial queue
 - API: `/api/documents/{id}/editorial/*`, `GET /api/documents/{id}/revisions`
 - `ENABLE_EDITORIAL_WORKFLOW` feature flag
+
+---
+
+## 2026-05-17 — Stage 3A: Hermes optional orchestration layer
+
+- `app/hermes/` HTTP connector (client, health, routing, adapters, schemas)
+- Migration 009: `hermes_runs` audit table
+- Optional tasks: research_summary, rewrite_critique, campaign_ideas (service)
+- Readiness: Hermes check only when `ENABLE_HERMES=true` (degraded if down)
+- API: `/api/hermes/health`, `/api/hermes/runs`, document research/critique
+- Admin: `/admin/hermes`, document Hermes actions
+- Contract: `POST {HERMES_BASE_URL}/v1/orchestrate`; fallback to CLIProxy when endpoint missing
+- Discovered Hermes health: `http://127.0.0.1:8000/health`

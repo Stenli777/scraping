@@ -40,7 +40,11 @@ Base: **https://scrap.crmflow24.ru**
 | GET | `/api/llm/aliases` | Список model aliases (CLIProxy routing) |
 | POST | `/api/llm/smoke` | Smoke test LLM `{ "model_alias", "content" }` |
 | GET | `/api/llm/rewrite-config` | Текущий `REWRITER_PROVIDER` и aliases из env |
-| GET | `/health/ready` | Readiness: DB, worker, CLIProxyAPI `/v1/models` |
+| GET | `/health/ready` | Readiness: DB, worker, CLIProxyAPI; Hermes optional (degraded if down) |
+| GET | `/api/hermes/health` | Hermes connector health (when enabled) |
+| GET | `/api/hermes/runs` | Audit list (`document_id` filter) |
+| POST | `/api/documents/{id}/hermes/research` | Optional research summary |
+| POST | `/api/documents/{id}/hermes/critique` | Optional rewrite critique |
 
 ## Rewrite API
 
