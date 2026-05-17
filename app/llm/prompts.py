@@ -129,3 +129,74 @@ def build_seo_messages(request: SeoEnrichRequest) -> list[dict[str, str]]:
         {"role": "system", "content": SEO_ENRICH_V1_SYSTEM},
         {"role": "user", "content": user_content},
     ]
+
+
+QUALITY_REVIEW_V1_SYSTEM = """Ты главный редактор контент-фабрики. Оцени готовую статью после rewrite и SEO.
+Отвечай ТОЛЬКО валидным JSON без markdown-обёртки."""
+
+QUALITY_REVIEW_V1_USER = """Оцени качество статьи для публикации как draft. Верни JSON:
+- overall_score (integer 0-100)
+- readability_score (integer 0-100)
+- seo_score (integer 0-100)
+- factual_consistency_score (integer 0-100)
+- structure_score (integer 0-100)
+- usefulness_score (integer 0-100)
+- spamminess_score (integer 0-100, выше = больше спама/воды)
+- risks (array of strings)
+- recommendations (array of strings)
+- verdict (string): approved | needs_revision | rejected
+
+{profile_block}
+
+SEO title: {seo_title}
+Slug: {slug}
+URL: {source_url}
+
+Текст статьи:
+---
+{content}
+---"""
+
+
+def build_rewrite_messages_from_parts(system: str, user_template: str, ctx: dict) -> list[dict[str, str]]:
+    user_content = user_template.format(
+        language=ctx.get("language", "ru"),
+        profile_block=ctx.get("profile_block", ""),
+        source_url=ctx.get("source_url", "не указан"),
+        title=ctx.get("title", "Без названия"),
+        content=ctx.get("content", ""),
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": user_content}]
+
+
+def build_review_messages_from_parts(system: str, user_template: str, ctx: dict) -> list[dict[str, str]]:
+    user_content = user_template.format(
+        profile_block=ctx.get("profile_block", ""),
+        source_url=ctx.get("source_url", "не указан"),
+        title=ctx.get("title", "Без названия"),
+        content=ctx.get("content", ""),
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": user_content}]
+
+
+def build_seo_messages_from_parts(system: str, user_template: str, ctx: dict) -> list[dict[str, str]]:
+    user_content = user_template.format(
+        profile_block=ctx.get("profile_block", ""),
+        source_url=ctx.get("source_url", "не указан"),
+        title=ctx.get("title", "Без названия"),
+        content=ctx.get("content", ""),
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": user_content}]
+
+
+def build_quality_messages_from_parts(system: str, user_template: str, ctx: dict) -> list[dict[str, str]]:
+    sys = system or QUALITY_REVIEW_V1_SYSTEM
+    tpl = user_template or QUALITY_REVIEW_V1_USER
+    user_content = tpl.format(
+        profile_block=ctx.get("profile_block", ""),
+        seo_title=ctx.get("seo_title", ""),
+        slug=ctx.get("slug", ""),
+        source_url=ctx.get("source_url", "не указан"),
+        content=ctx.get("content", ""),
+    )
+    return [{"role": "system", "content": sys}, {"role": "user", "content": user_content}]

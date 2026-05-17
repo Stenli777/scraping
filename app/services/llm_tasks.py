@@ -7,14 +7,6 @@ from sqlalchemy.orm import Session
 from app.llm.client import LLMClient
 from app.llm.exceptions import LLMError
 from app.llm.json_utils import parse_llm_json
-from app.llm.prompts import (
-    REVIEW_ARTICLE_V1,
-    REWRITE_ARTICLE_V1,
-    SEO_ENRICH_V1,
-    build_review_messages,
-    build_rewrite_messages,
-    build_seo_messages,
-)
 from app.llm.schemas import (
     ReviewRequest,
     ReviewResponse,
@@ -24,6 +16,7 @@ from app.llm.schemas import (
     SeoEnrichResponse,
 )
 from app.services.llm_run_service import record_llm_run
+from app.services.prompt_service import render_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +27,12 @@ def _extract_title_from_markdown(text: str) -> str:
         if line.startswith("# "):
             return line[2:].strip()
     return ""
+
+
+def _profile_block(profile_context: str | None) -> str:
+    if not profile_context or not profile_context.strip():
+        return ""
+    return f"Профиль проекта:\n{profile_context.strip()}\n"
 
 
 def execute_rewrite(
@@ -48,8 +47,18 @@ def execute_rewrite(
             model_alias="",
         )
 
+    ctx = profile_context or request.metadata.get("profile_context")
+    context = {
+        "language": request.language,
+        "profile_block": _profile_block(ctx),
+        "source_url": request.source_url or "не указан",
+        "title": request.title or "Без названия",
+        "content": request.content.strip(),
+    }
+    messages, resolved = render_prompt(
+        db, "rewrite_article", context, project_id=request.project_id
+    )
     client = LLMClient()
-    messages = build_rewrite_messages(request, profile_context=profile_context)
 
     try:
         result = client.complete(model_alias=request.model_alias, messages=messages)
@@ -62,7 +71,7 @@ def execute_rewrite(
             project_id=request.project_id,
             model_alias=request.model_alias,
             upstream_model=result.upstream_model,
-            prompt_template=REWRITE_ARTICLE_V1,
+            prompt_template=resolved.template_ref,
             result=result,
             success=True,
         )
@@ -80,7 +89,7 @@ def execute_rewrite(
             fallback_used=result.fallback_used,
             metadata={
                 "llm_run_id": run.id,
-                "prompt_template": REWRITE_ARTICLE_V1,
+                "prompt_template": resolved.template_ref,
                 **request.metadata,
             },
         )
@@ -92,7 +101,7 @@ def execute_rewrite(
             project_id=request.project_id,
             model_alias=request.model_alias,
             upstream_model=request.model_alias,
-            prompt_template=REWRITE_ARTICLE_V1,
+            prompt_template=resolved.template_ref,
             success=False,
             error_message=str(exc),
         )
@@ -114,8 +123,17 @@ def execute_review(db: Session, request: ReviewRequest) -> ReviewResponse:
             warnings=["model_alias is required"],
         )
 
+    ctx = request.profile_context or request.metadata.get("profile_context")
+    context = {
+        "profile_block": _profile_block(ctx),
+        "source_url": request.source_url or "не указан",
+        "title": request.title or "Без названия",
+        "content": request.content.strip()[:12000],
+    }
+    messages, resolved = render_prompt(
+        db, "review_article", context, project_id=request.project_id
+    )
     client = LLMClient()
-    messages = build_review_messages(request)
 
     try:
         result = client.complete(model_alias=request.model_alias, messages=messages)
@@ -132,7 +150,7 @@ def execute_review(db: Session, request: ReviewRequest) -> ReviewResponse:
             project_id=request.project_id,
             model_alias=request.model_alias,
             upstream_model=result.upstream_model,
-            prompt_template=REVIEW_ARTICLE_V1,
+            prompt_template=resolved.template_ref,
             result=result,
             success=True,
         )
@@ -151,7 +169,7 @@ def execute_review(db: Session, request: ReviewRequest) -> ReviewResponse:
             model_alias=request.model_alias,
             upstream_model=result.upstream_model,
             fallback_used=result.fallback_used,
-            metadata={"llm_run_id": run.id, "raw": data},
+            metadata={"llm_run_id": run.id, "raw": data, "prompt_template": resolved.template_ref},
         )
     except (LLMError, ValueError) as exc:
         logger.warning("Review failed task_id=%s: %s", request.task_id, exc)
@@ -161,7 +179,7 @@ def execute_review(db: Session, request: ReviewRequest) -> ReviewResponse:
             project_id=request.project_id,
             model_alias=request.model_alias,
             upstream_model=request.model_alias,
-            prompt_template=REVIEW_ARTICLE_V1,
+            prompt_template=resolved.template_ref,
             success=False,
             error_message=str(exc),
         )
@@ -183,8 +201,17 @@ def execute_seo_enrich(db: Session, request: SeoEnrichRequest) -> SeoEnrichRespo
             warnings=["model_alias is required"],
         )
 
+    ctx = request.profile_context or request.metadata.get("profile_context")
+    context = {
+        "profile_block": _profile_block(ctx),
+        "source_url": request.source_url or "не указан",
+        "title": request.title or "Без названия",
+        "content": request.content.strip()[:12000],
+    }
+    messages, resolved = render_prompt(
+        db, "seo_enrich", context, project_id=request.project_id
+    )
     client = LLMClient()
-    messages = build_seo_messages(request)
 
     try:
         result = client.complete(model_alias=request.model_alias, messages=messages)
@@ -202,7 +229,7 @@ def execute_seo_enrich(db: Session, request: SeoEnrichRequest) -> SeoEnrichRespo
             project_id=request.project_id,
             model_alias=request.model_alias,
             upstream_model=result.upstream_model,
-            prompt_template=SEO_ENRICH_V1,
+            prompt_template=resolved.template_ref,
             result=result,
             success=True,
         )
@@ -222,7 +249,7 @@ def execute_seo_enrich(db: Session, request: SeoEnrichRequest) -> SeoEnrichRespo
             model_alias=request.model_alias,
             upstream_model=result.upstream_model,
             fallback_used=result.fallback_used,
-            metadata={"llm_run_id": run.id},
+            metadata={"llm_run_id": run.id, "prompt_template": resolved.template_ref},
         )
     except (LLMError, ValueError) as exc:
         logger.warning("SEO enrich failed task_id=%s: %s", request.task_id, exc)
@@ -232,7 +259,7 @@ def execute_seo_enrich(db: Session, request: SeoEnrichRequest) -> SeoEnrichRespo
             project_id=request.project_id,
             model_alias=request.model_alias,
             upstream_model=request.model_alias,
-            prompt_template=SEO_ENRICH_V1,
+            prompt_template=resolved.template_ref,
             success=False,
             error_message=str(exc),
         )

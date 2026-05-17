@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     discovery_default_max_urls: int = 50
     discovery_default_timeout: int = 30
 
+    enable_quality_review: bool = True
+    quality_model_alias: str = "local/qc-reviewer"
+    min_quality_score_for_publish: int = 70
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 
