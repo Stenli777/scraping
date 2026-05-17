@@ -36,6 +36,7 @@ from app.services.rewrite_service import rerun_rewrite_for_document
 from app.services.seo_service import run_seo_for_document
 from app.services.admin_context_service import load_document_context, load_task_context
 from app.services.operations_service import get_dashboard_stats, get_failed_items, list_stale_running_tasks
+from app.services.operations_context_service import build_operations_context
 from app.services.pipeline_summary_service import build_pipeline_summary
 from app.models.document_revision import DocumentRevision
 from app.services import editorial_service
@@ -623,6 +624,26 @@ def admin_quality_scores(request: Request, db: Session = Depends(get_db)):
         request,
         "quality_scores.html",
         {"request": request, "scores": scores, "title": "Quality Scores"},
+    )
+
+
+
+@router.get("/admin/operations", response_class=HTMLResponse)
+def admin_operations(request: Request, db: Session = Depends(get_db)):
+    ctx = build_operations_context(db)
+    return templates.TemplateResponse(
+        request,
+        "operations.html",
+        {
+            "request": request,
+            "readiness": ctx["readiness"],
+            "config": ctx["config"],
+            "paths": ctx["paths"],
+            "latest_manifest": ctx["latest_manifest"],
+            "smoke_hint": ctx["smoke_hint"],
+            "backup_hint": ctx["backup_hint"],
+            "title": "Operations",
+        },
     )
 
 

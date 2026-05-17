@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from sqlalchemy import text
 
 from app.core.config import get_settings
+from app.core.config_validator import validate_config
 from app.core.feature_flags import is_hermes_enabled
 from app.db.session import SessionLocal
 from app.hermes.health import check_hermes_health
@@ -14,8 +15,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health/ready")
-def health_ready():
+def collect_readiness_checks() -> dict:
+    """Build readiness checks dict (shared with admin operations)."""
     settings = get_settings()
     checks: dict[str, str] = {}
     ok = True
@@ -64,6 +65,37 @@ def health_ready():
     else:
         checks["cliproxyapi"] = "not_configured"
 
+    # Local storage
+    try:
+        settings.storage_root.mkdir(parents=True, exist_ok=True)
+        test_file = settings.storage_root / ".write_test"
+        test_file.write_text("ok", encoding="utf-8")
+        test_file.unlink(missing_ok=True)
+        checks["storage"] = "ok"
+    except Exception as exc:
+        checks["storage"] = f"error: {exc}"
+        ok = False
+
+    try:
+        settings.media_storage_root.mkdir(parents=True, exist_ok=True)
+        if not settings.media_storage_root.is_dir():
+            checks["media_storage"] = "not_a_directory"
+            ok = False
+        else:
+            checks["media_storage"] = "ok"
+    except Exception as exc:
+        checks["media_storage"] = f"error: {exc}"
+        ok = False
+
+    validation = validate_config(check_db=False)
+    if validation.errors:
+        checks["config"] = f"errors:{len(validation.errors)}"
+        ok = False
+    elif validation.warnings:
+        checks["config"] = "warnings"
+    else:
+        checks["config"] = "ok"
+
     hermes_checked = False
     if is_hermes_enabled():
         hermes_checked = True
@@ -80,4 +112,28 @@ def health_ready():
         "status": "ready" if ok else "degraded",
         "checks": checks,
         "hermes_checked": hermes_checked,
+        "ok": ok,
+    }
+
+
+@router.get("/health/ready")
+def health_ready():
+    data = collect_readiness_checks()
+    return {
+        "status": data["status"],
+        "checks": data["checks"],
+        "hermes_checked": data["hermes_checked"],
+    }
+
+
+@router.get("/health/config")
+def health_config():
+    validation = validate_config()
+    settings = get_settings()
+    return {
+        "ok": validation.ok,
+        "errors": validation.errors,
+        "warnings": validation.warnings,
+        "app_env": settings.app_env,
+        "app_debug": settings.app_debug,
     }

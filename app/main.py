@@ -24,6 +24,18 @@ from app.core.logging_config import setup_logging
 settings = get_settings()
 setup_logging()
 
+import logging as _logging
+from app.core.config_validator import validate_config as _validate_config
+
+_startup_log = _logging.getLogger("scrap.startup")
+_cv = _validate_config()
+for _w in _cv.warnings:
+    _startup_log.warning("Config: %s", _w)
+for _e in _cv.errors:
+    _startup_log.error("Config: %s", _e)
+if not _cv.ok:
+    _startup_log.error("Config validation has errors — service continues (check /health/config)")
+
 app = FastAPI(title=settings.app_name, debug=settings.app_debug)
 app.include_router(health_router)
 app.include_router(tasks_router)

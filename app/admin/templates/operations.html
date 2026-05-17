@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Health &amp; readiness</h2>
+  <p><strong>Status:</strong> <span class="badge status-{{ readiness.status }}">{{ readiness.status }}</span></p>
+  <table class="table">
+    <thead><tr><th>Check</th><th>Result</th></tr></thead>
+    <tbody>
+      {% for name, result in readiness.checks.items() %}
+      <tr><td>{{ name }}</td><td><code>{{ result }}</code></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Config validation</h2>
+  <p><strong>OK:</strong> {{ 'yes' if config.ok else 'no' }}</p>
+  {% if config.errors %}
+  <h3>Errors</h3>
+  <ul>{% for e in config.errors %}<li class="error">{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if config.warnings %}
+  <h3>Warnings</h3>
+  <ul>{% for w in config.warnings %}<li class="warn-box">{{ w }}</li>{% endfor %}</ul>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Paths</h2>
+  <ul>
+    {% for k, v in paths.items() %}
+    <li><strong>{{ k }}:</strong> <code>{{ v }}</code></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="panel">
+  <h2>Latest backup manifest</h2>
+  {% if latest_manifest %}
+  <pre class="content">{{ latest_manifest | tojson(indent=2) }}</pre>
+  {% else %}
+  <p class="warn-box">No manifest yet. Run backup scripts.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Operational hints</h2>
+  <p><strong>Smoke:</strong> <code>{{ smoke_hint }}</code></p>
+  <p><strong>Backup:</strong> <code>{{ backup_hint }}</code></p>
+  <p><strong>Verify:</strong> <code>bash scripts/verify_backup.sh</code></p>
+  <p><strong>Storage integrity:</strong> <code>.venv/bin/python scripts/check_storage_integrity.py</code></p>
+  <p><strong>DB integrity:</strong> <code>.venv/bin/python scripts/check_db_integrity.py</code></p>
+</div>
+{% endblock %}
