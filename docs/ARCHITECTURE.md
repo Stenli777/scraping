@@ -1073,3 +1073,9 @@ publish_run (success, not dry) → publication_record → manual import → anal
 - Stale `running` (heartbeat timeout) → `failed` via scheduler recovery or `POST .../mark-failed`.
 - **Production default:** `ENABLE_SCHEDULER=false`, `ENABLE_AUTOMATION=false` (rules remain disabled in DB).
 
+## Workspace guardrails (Stage 4C)
+
+- Expected production workspace: hostname contains `hermes`, path `/opt/scrap`
+- Startup logs warnings on mismatch (non-blocking)
+- `/api/system/workspace` for operator verification
+

@@ -24,3 +24,24 @@
 - Always backup PostgreSQL before `alembic upgrade`
 - Verify `alembic current` shows expected head
 - Never run destructive downgrades on production without DB backup
+
+## Remote-only deploy policy (Stage 4C)
+
+- **Only** develop on hermes: `ssh hermes` → `/opt/scrap`
+- **NO** local `deploy*.tar.gz`, `tmp_deploy_*.py`, shadow-repo commits
+- Flow: Cursor Remote SSH → edit → `git commit` → `git push` → on server `git pull` → migrate → restart → smoke
+
+### Recommended flow
+
+```bash
+cd /opt/scrap
+python scripts/pre_deploy_check.py
+git pull
+.venv/bin/alembic upgrade head
+systemctl restart scrap-api scrap-worker scrap-scheduler
+python scripts/post_deploy_check.py
+python scripts/smoke/run_all.py
+```
+
+See [CURSOR_WORKFLOW.md](CURSOR_WORKFLOW.md).
+

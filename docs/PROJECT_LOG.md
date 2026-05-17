@@ -217,3 +217,10 @@
 - Cancel, mark-failed, run detail admin, extended scheduler status
 - Migration 013 lifecycle fields
 
+### 2026-05-17 — Stage 4C: Cursor workflow guardrails
+
+- CURSOR_WORKFLOW.md, hardened .gitignore
+- check_repo_safety, check_git_integrity, pre/post deploy checks
+- GET /api/system/workspace, /admin/system
+- Workspace startup warnings, smoke integration
+

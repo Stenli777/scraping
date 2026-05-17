@@ -197,3 +197,13 @@ Readiness при включённом scheduler проверяет heartbeat (<1
 - Stale `running` (heartbeat timeout) → `failed` via scheduler recovery or `POST .../mark-failed`.
 - **Production default:** `ENABLE_SCHEDULER=false`, `ENABLE_AUTOMATION=false` (rules remain disabled in DB).
 
+## Repository safety (Stage 4C)
+
+```bash
+python scripts/check_repo_safety.py
+python scripts/check_git_integrity.py
+python scripts/pre_deploy_check.py
+python scripts/post_deploy_check.py
+curl -s http://127.0.0.1:8800/api/system/workspace
+```
+
