@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     media_provider: str = "placeholder"
     media_storage_path: str = "/opt/scrap/storage/media"
 
+    enable_analytics: bool = True
+    enable_publication_tracking: bool = True
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 

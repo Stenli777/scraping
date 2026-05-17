@@ -44,6 +44,7 @@ from app.services.editorial_service import mark_published_draft
 from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
 from app.services.revision_service import ensure_revision_for_publish
 from app.services.media_service import build_media_block_for_publish, get_approved_preview_asset
+from app.services.publication_tracking_service import create_publication_from_publish_run
 from app.services.pipeline_event_service import emit_pipeline_event
 from app.services.project_profile_service import resolve_task_project
 
@@ -63,6 +64,7 @@ class PublishDraftResult:
     validation_error: bool = False
     duplicate: bool = False
     existing_publish_run_id: int | None = None
+    publication_record_id: int | None = None
 
 
 def _latest_seo(db: Session, document_id: int) -> SeoMetadata | None:
@@ -369,6 +371,10 @@ def publish_draft_for_document(
                 },
             )
             mark_published_draft(db, document.id)
+            pub_record = create_publication_from_publish_run(
+                db, run=run, external_id=result.external_id,
+                external_url=result.draft_url, dry_run=result.dry_run,
+            )
             db.commit()
             return PublishDraftResult(
                 success=True,
@@ -378,6 +384,7 @@ def publish_draft_for_document(
                 external_id=run.external_id,
                 draft_url=run.draft_url,
                 payload=payload,
+                publication_record_id=pub_record.id if pub_record else None,
             )
 
         run.error_message = result.error_message

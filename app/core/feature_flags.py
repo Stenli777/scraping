@@ -75,6 +75,16 @@ def is_media_generation_enabled() -> bool:
     return get_settings().enable_media_generation
 
 
+@lru_cache
+def is_analytics_enabled() -> bool:
+    return get_settings().enable_analytics
+
+
+@lru_cache
+def is_publication_tracking_enabled() -> bool:
+    return get_settings().enable_analytics and get_settings().enable_publication_tracking
+
+
 def all_flags() -> dict[str, bool]:
     return {
         "ENABLE_HERMES": is_hermes_enabled(),
@@ -91,4 +101,6 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_EDITORIAL_WORKFLOW": is_editorial_workflow_enabled(),
         "ENABLE_MEDIA_PIPELINE": is_media_pipeline_enabled(),
         "ENABLE_MEDIA_GENERATION": is_media_generation_enabled(),
+        "ENABLE_ANALYTICS": is_analytics_enabled(),
+        "ENABLE_PUBLICATION_TRACKING": is_publication_tracking_enabled(),
     }
