@@ -13,7 +13,10 @@ from app.publishers.exceptions import (
     PublishClientError,
     PublishServerError,
     PublishTransportError,
+    PublishUnsupportedPayloadError,
 )
+from app.publishers.response_parser import parse_publish_acknowledgment
+from app.publishers.versions import SUPPORTED_PAYLOAD_FORMATS
 
 logger = logging.getLogger(__name__)
 
@@ -54,32 +57,7 @@ def _truncate_body(text: str | None) -> str | None:
         return text
     if len(text) <= MAX_RESPONSE_BODY:
         return text
-    return text[:MAX_RESPONSE_BODY] + "…"
-
-
-def _parse_response_json(data: dict[str, Any]) -> tuple[str | None, str | None, str | None]:
-    """Extract external_id, draft_url, remote status from common API shapes."""
-    external_id = data.get("external_id") or data.get("id") or data.get("article_id")
-    if external_id is not None:
-        external_id = str(external_id)
-
-    draft_url = data.get("draft_url") or data.get("url") or data.get("link")
-    if draft_url is not None:
-        draft_url = str(draft_url)
-
-    remote_status = data.get("status")
-    if remote_status is not None:
-        remote_status = str(remote_status)
-
-    if data.get("success") is False:
-        return external_id, draft_url, remote_status
-
-    nested = data.get("data")
-    if isinstance(nested, dict):
-        ext2, url2, st2 = _parse_response_json(nested)
-        return external_id or ext2, draft_url or url2, remote_status or st2
-
-    return external_id, draft_url, remote_status
+    return text[:MAX_RESPONSE_BODY] + "?"
 
 
 class WebhookPublisher(BasePublisher):
@@ -91,8 +69,15 @@ class WebhookPublisher(BasePublisher):
         dry_run: bool,
         timeout_seconds: int,
     ) -> PublisherResult:
+        payload_version = str(payload.get("payload_version") or "")
+        if payload_version and payload_version not in SUPPORTED_PAYLOAD_FORMATS:
+            raise PublishUnsupportedPayloadError(
+                f"Unsupported payload_version for webhook: {payload_version}"
+            )
+
+        endpoint = (getattr(target, "endpoint_url", None) or "").strip()
         if dry_run or target.dry_run:
-            endpoint = (target.endpoint_url or "").strip() or "(dry-run)"
+            endpoint = endpoint or "(dry-run)"
             preview = {
                 "dry_run": True,
                 "payload_version": payload.get("payload_version"),
@@ -108,10 +93,16 @@ class WebhookPublisher(BasePublisher):
                 metadata={"publisher": "webhook", "skipped_http": True},
             )
 
+        if not endpoint:
+            raise PublishTransportError("Publish endpoint URL is not configured")
+
         headers = {"Content-Type": "application/json", **_resolve_auth_header(target)}
-        doc_id = payload.get("meta", {}).get("scrap_document_id")
+        doc_id = payload.get("meta", {}).get("scrap_document_id") or payload.get("source", {}).get(
+            "document_id"
+        )
 
         last_exc: Exception | None = None
+        response = None
         for attempt in range(2):
             try:
                 with httpx.Client(timeout=timeout_seconds) as client:
@@ -141,8 +132,8 @@ class WebhookPublisher(BasePublisher):
                     continue
                 raise PublishTransportError(_redact_sensitive(str(exc))) from exc
 
-        if last_exc:
-            raise PublishTransportError(str(last_exc))
+        if last_exc or response is None:
+            raise PublishTransportError(str(last_exc or "No response"))
 
         body = _truncate_body(_redact_sensitive(response.text))
         logger.info(
@@ -156,10 +147,13 @@ class WebhookPublisher(BasePublisher):
             external_id = None
             draft_url = None
             remote_status = None
+            response_schema_version = None
             try:
                 data = response.json()
                 if isinstance(data, dict):
-                    external_id, draft_url, remote_status = _parse_response_json(data)
+                    external_id, draft_url, remote_status, response_schema_version = (
+                        parse_publish_acknowledgment(data)
+                    )
             except Exception:
                 pass
             return PublisherResult(
@@ -174,12 +168,21 @@ class WebhookPublisher(BasePublisher):
                 metadata={
                     "publisher": "webhook",
                     "remote_status": remote_status,
+                    "response_schema_version": response_schema_version,
                 },
             )
 
-        if 400 <= response.status_code < 500:
+        if response.status_code in (401, 403):
             raise PublishClientError(
-                f"HTTP {response.status_code}: {(body or '')[:200]}"
+                f"HTTP {response.status_code}: unauthorized"
             )
+
+        if 400 <= response.status_code < 500:
+            detail = (body or "")[:200]
+            if "unsupported" in detail.lower() or "payload_version" in detail.lower():
+                raise PublishUnsupportedPayloadError(
+                    f"HTTP {response.status_code}: {detail}"
+                )
+            raise PublishClientError(f"HTTP {response.status_code}: {detail}")
 
         raise PublishServerError(f"HTTP {response.status_code}: {(body or '')[:200]}")
