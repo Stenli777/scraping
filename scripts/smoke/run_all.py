@@ -7,6 +7,9 @@ from pathlib import Path
 
 ROOT = Path("/opt/scrap")
 CHECKS = [
+    "check_pre_deploy.py",
+    "check_workspace.py",
+    "check_repo_safety.py",
     "check_health.py",
     "check_ready.py",
     "check_db.py",
