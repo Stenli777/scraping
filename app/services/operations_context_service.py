@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.config_validator import validate_config_summary
 from app.api.health import collect_readiness_checks
+from app.scheduler.status import build_scheduler_status
 from app.services.operations_service import get_dashboard_stats
 
 
