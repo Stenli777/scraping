@@ -43,6 +43,11 @@ def is_quality_review_enabled() -> bool:
     return get_settings().enable_quality_review
 
 
+@lru_cache
+def is_editorial_workflow_enabled() -> bool:
+    return get_settings().enable_editorial_workflow
+
+
 def all_flags() -> dict[str, bool]:
     return {
         "ENABLE_HERMES": is_hermes_enabled(),
@@ -53,4 +58,5 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_PUBLISHING": is_publishing_enabled(),
         "ENABLE_SOURCE_DISCOVERY": is_source_discovery_enabled(),
         "ENABLE_QUALITY_REVIEW": is_quality_review_enabled(),
+        "ENABLE_EDITORIAL_WORKFLOW": is_editorial_workflow_enabled(),
     }

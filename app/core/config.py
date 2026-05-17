@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     quality_model_alias: str = "local/qc-reviewer"
     min_quality_score_for_publish: int = 70
 
+    enable_editorial_workflow: bool = True
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 
