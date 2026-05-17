@@ -171,3 +171,19 @@ curl -X POST http://127.0.0.1:8800/api/publications/{id}/analytics/import \
 
 Flags: `ENABLE_ANALYTICS`, `ENABLE_PUBLICATION_TRACKING`.
 
+## Scheduler service
+
+```bash
+systemctl status scrap-scheduler
+journalctl -u scrap-scheduler -n 50
+```
+
+Enable (operator):
+```
+ENABLE_SCHEDULER=true
+ENABLE_AUTOMATION=true
+systemctl restart scrap-api scrap-scheduler
+```
+
+Readiness при включённом scheduler проверяет heartbeat (<180s).
+

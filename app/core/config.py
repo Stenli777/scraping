@@ -78,6 +78,12 @@ class Settings(BaseSettings):
     enable_analytics: bool = True
     enable_publication_tracking: bool = True
 
+    enable_scheduler: bool = False
+    enable_automation: bool = False
+    scheduler_interval_seconds: int = 60
+    automation_max_concurrent_runs: int = 1
+    automation_global_hourly_limit: int = 50
+
     log_level: str = "INFO"
     log_dir: str = "storage/logs"
 

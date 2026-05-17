@@ -149,3 +149,10 @@ Readiness: `missing_preview_image` warning; publish allowed without media.
 После успешного publish (не dry-run) создаётся `publication_record`.
 Метрики импортируются вручную через API — snapshots immutable.
 
+## Controlled automation (4A)
+
+1. **discovery** — `run_discovery` → `discovered_urls` (no auto enqueue unless enqueue rule)
+2. **enqueue** — filters, dedupe, same-host, rate limits
+3. **pipeline_progression** — quality for DONE tasks only; review/rewrite/SEO via worker on QUEUED
+4. Editorial / publish — **manual only**
+

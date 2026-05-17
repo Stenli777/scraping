@@ -56,3 +56,8 @@ Base: **https://scrap.crmflow24.ru/admin**
 - `/admin/analytics` — top/low content, snapshots, project summary, aging
 - Document detail — блок Publication & performance
 
+## Automation admin
+
+- `/admin/automation` — rules, enable/disable, manual run, heartbeat
+- `/admin/automation-runs` — audit log
+

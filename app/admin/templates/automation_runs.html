@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Automation runs (audit)</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Rule</th><th>Status</th><th>Started</th><th>Completed</th>
+        <th>Tasks</th><th>Docs</th><th>Discoveries</th><th>Error</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for run in runs %}
+      <tr>
+        <td>{{ run.id }}</td>
+        <td>{{ rule_names.get(run.automation_rule_id, run.automation_rule_id) }}</td>
+        <td><span class="badge status-{{ run.status }}">{{ run.status }}</span></td>
+        <td>{{ run.started_at }}</td>
+        <td>{{ run.completed_at }}</td>
+        <td>{{ run.created_tasks }}</td>
+        <td>{{ run.created_documents }}</td>
+        <td>{{ run.created_discoveries }}</td>
+        <td>{{ run.error_message or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

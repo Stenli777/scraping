@@ -3,6 +3,9 @@ from app.models.hermes_run import HermesRun
 from app.models.media_asset import MediaAsset
 from app.models.media_job import MediaJob
 from app.models.publication_record import PublicationRecord
+from app.models.automation_rule import AutomationRule
+from app.models.automation_run import AutomationRun
+from app.models.scheduler_state import SchedulerState
 from app.models.analytics_snapshot import AnalyticsSnapshot
 from app.models.content_performance import ContentPerformance
 from app.models.discovered_url import DiscoveredUrl
@@ -50,4 +53,7 @@ __all__ = [
     "MediaAsset",
     "MediaJob",
     "PublicationRecord",
+    "AutomationRule",
+    "AutomationRun",
+    "SchedulerState",
 ]

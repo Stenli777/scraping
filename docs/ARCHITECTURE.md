@@ -1053,3 +1053,13 @@ publish_run (success, not dry) → publication_record → manual import → anal
 - `performance_feedback_json` — future AI hook (not used automatically)
 - No live tracking / no GA clone
 
+## Scheduler and controlled automation (Stage 4A)
+
+- **scrap-scheduler** — отдельный systemd-процесс, single-process loop (`app/scheduler/engine.py`).
+- **Locks** — `scheduler_state` (`scheduler_lock`, `scheduler_heartbeat`), stale lock recovery 300s.
+- **Automation rules** — `automation_rules` + `automation_runs` (audit).
+- **Feature flags:** `ENABLE_SCHEDULER`, `ENABLE_AUTOMATION` (default false).
+- **Limits:** global hourly, per-rule hourly/daily, max concurrent runs.
+- **Manual gates:** editorial, publish, media approval — не автоматизируются.
+- **NO:** auto-publish, autonomous AI loops, Celery/Redis/K8s cron.
+

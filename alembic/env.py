@@ -5,6 +5,9 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import get_settings
 from app.db.base import Base
+from app.models.automation_rule import AutomationRule
+from app.models.automation_run import AutomationRun
+from app.models.scheduler_state import SchedulerState
 from app.models import (  # noqa: F401 — register models
     DocumentVersion,
     Export,
@@ -16,6 +19,9 @@ from app.models import (  # noqa: F401 — register models
     Source,
     SourceDirectory,
     TaskLog,
+    AutomationRule,
+    AutomationRun,
+    SchedulerState,
 )
 
 config = context.config

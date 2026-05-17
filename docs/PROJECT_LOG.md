@@ -201,3 +201,12 @@
 - Editorial insights service (no LLM)
 - Admin: `/admin/publications`, `/admin/analytics`
 
+### 2026-05-17 — Stage 4A: scheduler + controlled automation
+
+- Tables: automation_rules, automation_runs, scheduler_state (migration 012)
+- scrap-scheduler systemd service, heartbeat in /health/ready
+- Discovery, enqueue, pipeline_progression automations with audit
+- Admin /admin/automation, /admin/automation-runs
+- API automation + scheduler status
+- Smoke check_scheduler.py
+

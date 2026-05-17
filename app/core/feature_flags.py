@@ -81,6 +81,16 @@ def is_analytics_enabled() -> bool:
 
 
 @lru_cache
+def is_scheduler_enabled() -> bool:
+    return get_settings().enable_scheduler
+
+
+@lru_cache
+def is_automation_enabled() -> bool:
+    return get_settings().enable_automation and get_settings().enable_scheduler
+
+
+@lru_cache
 def is_publication_tracking_enabled() -> bool:
     return get_settings().enable_analytics and get_settings().enable_publication_tracking
 
@@ -103,4 +113,6 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_MEDIA_GENERATION": is_media_generation_enabled(),
         "ENABLE_ANALYTICS": is_analytics_enabled(),
         "ENABLE_PUBLICATION_TRACKING": is_publication_tracking_enabled(),
+        "ENABLE_SCHEDULER": is_scheduler_enabled(),
+        "ENABLE_AUTOMATION": is_automation_enabled(),
     }

@@ -14,6 +14,7 @@ CHECKS = [
     "check_pipeline.py",
     "check_media.py",
     "check_publish.py",
+    "check_scheduler.py",
 ]
 
 

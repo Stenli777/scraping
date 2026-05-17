@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Scheduler</h2>
+  <p><strong>Scheduler enabled:</strong> {{ scheduler_enabled }}</p>
+  <p><strong>Automation enabled:</strong> {{ automation_enabled }}</p>
+  <p><strong>Heartbeat:</strong> <code>{{ heartbeat | tojson }}</code></p>
+</div>
+<div class="panel">
+  <h2>Automation rules</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Type</th><th>Enabled</th><th>Trigger</th>
+        <th>Limits</th><th>Next run</th><th>Last run</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rules %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.name }}</td>
+        <td><code>{{ r.automation_type }}</code></td>
+        <td>{{ 'yes' if r.enabled else 'no' }}</td>
+        <td>{{ r.trigger_type }}<br><small>{{ r.schedule_cron or '' }}</small></td>
+        <td>{{ r.rate_limit_per_hour }}/h, {{ r.max_daily_runs }}/day</td>
+        <td>{{ r.next_run_preview }}</td>
+        <td>{% if r.last_run %}{{ r.last_run.status }} #{{ r.last_run.id }}{% else %}—{% endif %}</td>
+        <td>
+          <form method="post" action="/admin/automation/rules/{{ r.id }}/run" style="display:inline">
+            <button type="submit">Run</button>
+          </form>
+          {% if r.enabled %}
+          <form method="post" action="/admin/automation/rules/{{ r.id }}/disable" style="display:inline">
+            <button type="submit">Disable</button>
+          </form>
+          {% else %}
+          <form method="post" action="/admin/automation/rules/{{ r.id }}/enable" style="display:inline">
+            <button type="submit">Enable</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

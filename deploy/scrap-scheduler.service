@@ -1,0 +1,15 @@
+[Unit]
+Description=Scrap Scheduler (controlled automation)
+After=network.target postgresql.service scrap-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/scrap
+EnvironmentFile=/opt/scrap/.env
+ExecStart=/opt/scrap/.venv/bin/python -m app.scheduler.runner
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

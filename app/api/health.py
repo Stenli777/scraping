@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.core.config_validator import validate_config
-from app.core.feature_flags import is_hermes_enabled
+from app.core.feature_flags import is_hermes_enabled, is_scheduler_enabled
 from app.db.session import SessionLocal
 from app.hermes.health import check_hermes_health
 
@@ -108,22 +108,47 @@ def collect_readiness_checks() -> dict:
     else:
         checks["hermes"] = "disabled"
 
-    return {
+    scheduler_info: dict | None = None
+    if is_scheduler_enabled():
+        from app.scheduler.heartbeat import get_heartbeat_status
+
+        try:
+            with SessionLocal() as db:
+                scheduler_info = get_heartbeat_status(db)
+            if scheduler_info.get("status") == "stale":
+                checks["scheduler"] = f"stale:{scheduler_info.get('last_heartbeat_seconds')}s"
+                ok = False
+            elif scheduler_info.get("status") == "unknown":
+                checks["scheduler"] = "no_heartbeat"
+                ok = False
+            else:
+                checks["scheduler"] = "ok"
+        except Exception as exc:
+            checks["scheduler"] = f"error: {exc}"
+            ok = False
+
+    result = {
         "status": "ready" if ok else "degraded",
         "checks": checks,
         "hermes_checked": hermes_checked,
         "ok": ok,
     }
+    if scheduler_info is not None:
+        result["scheduler"] = scheduler_info
+    return result
 
 
 @router.get("/health/ready")
 def health_ready():
     data = collect_readiness_checks()
-    return {
+    out = {
         "status": data["status"],
         "checks": data["checks"],
         "hermes_checked": data["hermes_checked"],
     }
+    if "scheduler" in data:
+        out["scheduler"] = data["scheduler"]
+    return out
 
 
 @router.get("/health/config")

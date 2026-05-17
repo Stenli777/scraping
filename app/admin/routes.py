@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -856,3 +857,99 @@ def admin_llm_smoke_run(
             "content": content,
         },
     )
+
+# --- Stage 4A automation admin ---
+from app.core.feature_flags import is_automation_enabled, is_scheduler_enabled
+from app.models.automation_rule import AutomationRule
+from app.models.automation_run import AutomationRun
+from app.scheduler.heartbeat import get_heartbeat_status
+from app.scheduler.rules import next_run_preview
+from app.services.automation_service import AutomationError, execute_automation_rule, set_rule_enabled
+
+
+@router.get("/admin/automation", response_class=HTMLResponse)
+def admin_automation(request: Request, db: Session = Depends(get_db)):
+    rules = list(db.scalars(select(AutomationRule).order_by(AutomationRule.id.asc())).all())
+    last_runs = {}
+    for rule in rules:
+        last_runs[rule.id] = db.scalar(
+            select(AutomationRun)
+            .where(AutomationRun.automation_rule_id == rule.id)
+            .order_by(AutomationRun.id.desc())
+        )
+    from types import SimpleNamespace
+
+    enriched = []
+    for rule in rules:
+        enriched.append(
+            SimpleNamespace(
+                id=rule.id,
+                name=rule.name,
+                automation_type=rule.automation_type,
+                enabled=rule.enabled,
+                trigger_type=rule.trigger_type,
+                schedule_cron=rule.schedule_cron,
+                rate_limit_per_hour=rule.rate_limit_per_hour,
+                max_daily_runs=rule.max_daily_runs,
+                next_run_preview=next_run_preview(rule, db),
+                last_run=last_runs.get(rule.id),
+            )
+        )
+    hb = get_heartbeat_status(db)
+    return templates.TemplateResponse(
+        request,
+        "automation.html",
+        {
+            "request": request,
+            "title": "Automation",
+            "rules": enriched,
+            "scheduler_enabled": is_scheduler_enabled(),
+            "automation_enabled": is_automation_enabled(),
+            "heartbeat": hb,
+        },
+    )
+
+
+@router.get("/admin/automation-runs", response_class=HTMLResponse)
+def admin_automation_runs(request: Request, db: Session = Depends(get_db), limit: int = 100):
+    runs = list(
+        db.scalars(select(AutomationRun).order_by(AutomationRun.id.desc()).limit(min(limit, 200))).all()
+    )
+    rule_names = {r.id: r.name for r in db.scalars(select(AutomationRule)).all()}
+    return templates.TemplateResponse(
+        request,
+        "automation_runs.html",
+        {
+            "request": request,
+            "title": "Automation Runs",
+            "runs": runs,
+            "rule_names": rule_names,
+        },
+    )
+
+
+@router.post("/admin/automation/rules/{rule_id}/run")
+def admin_automation_run(rule_id: int, db: Session = Depends(get_db)):
+    try:
+        execute_automation_rule(db, rule_id, trigger="manual")
+    except (AutomationError, Exception):
+        pass
+    return RedirectResponse("/admin/automation-runs", status_code=303)
+
+
+@router.post("/admin/automation/rules/{rule_id}/enable")
+def admin_automation_enable(rule_id: int, db: Session = Depends(get_db)):
+    try:
+        set_rule_enabled(db, rule_id, True)
+    except AutomationError:
+        pass
+    return RedirectResponse("/admin/automation", status_code=303)
+
+
+@router.post("/admin/automation/rules/{rule_id}/disable")
+def admin_automation_disable(rule_id: int, db: Session = Depends(get_db)):
+    try:
+        set_rule_enabled(db, rule_id, False)
+    except AutomationError:
+        pass
+    return RedirectResponse("/admin/automation", status_code=303)

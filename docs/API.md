@@ -113,3 +113,14 @@ Readiness (`/health/ready`) includes: `storage`, `media_storage`, `config`, opti
 
 Requires `ENABLE_ANALYTICS=true`.
 
+### Automation API
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/automation/rules` | List rules |
+| POST | `/api/automation/rules/{id}/run` | Manual run |
+| POST | `/api/automation/rules/{id}/enable` | Enable |
+| POST | `/api/automation/rules/{id}/disable` | Disable |
+| GET | `/api/automation/runs` | Audit runs |
+| GET | `/api/scheduler/status` | Scheduler heartbeat |
+
