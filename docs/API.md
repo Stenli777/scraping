@@ -149,3 +149,7 @@ Requires `ENABLE_ANALYTICS=true`.
 - `POST /api/documents/{id}/extract-topics`, `assign-cluster`, `assign-campaign`
 - `GET /api/documents/{id}/strategy`, `duplicate-warnings`
 
+### Topic extraction v2 (4F)
+
+`POST /api/documents/{id}/extract-topics` returns `schema_version: topic_v2` with `relevance_score`, `project_fit`, `rejected_terms`, `entities`, `warnings`.
+

@@ -84,3 +84,29 @@ Fields: `retry_count`, `next_retry_at`, `last_retry_error`, `retry_parent_publis
 - Direct DB writes to crmflow24
 - Shared runtime with Hermes
 - Event bus / GraphQL / CMS rewrite
+
+## Production target (4F)
+
+| Field | Value |
+|-------|-------|
+| Name | `crmflow24-production-v2` |
+| Endpoint | `https://crmflow24.ru/api/scrap/articles/import` |
+| Payload | `article_v2` |
+| Auth | Bearer via `CRMFLOW24_PUBLISH_TOKEN` |
+| ACK schema | `crmflow24_ack_v2` |
+
+Mock target `crmflow24-mock-v2` remains for local integration tests.
+
+### Idempotency
+
+CRMFlow24 returns stable `external_id` / `draft_url` for same document+revision.
+Scrap duplicate protection may block re-publish without `force=true`.
+
+### Smoke publish
+
+```bash
+PYTHONPATH=/opt/scrap .venv/bin/python scripts/seed_crmflow24_production_v2_target.py
+# manual publish via API with title prefix "Smoke test Scrap to CRMFlow24 production"
+```
+
+Delete test draft manually in CRMFlow24 admin after smoke.

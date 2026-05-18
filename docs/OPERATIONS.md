@@ -221,3 +221,9 @@ curl -s http://127.0.0.1:8800/api/system/workspace
 - Tests: `PYTHONPATH=/opt/scrap .venv/bin/python scripts/test_4e_campaigns.py [doc_id]`
 - Smoke: `scripts/smoke/check_campaigns.py`
 
+### Production publish (4F)
+
+- Seed: `scripts/seed_crmflow24_production_v2_target.py`
+- Env on server only: `CRMFLOW24_PUBLISH_ENDPOINT`, `CRMFLOW24_PUBLISH_TOKEN`
+- Health: `GET /api/publish-targets/health`
+

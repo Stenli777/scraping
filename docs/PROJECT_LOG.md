@@ -246,3 +246,12 @@
 - Admin: `/admin/campaigns`, `/admin/clusters`, document strategy block
 - Automation hook: `campaign_analysis` (disabled)
 - Smoke: `scripts/smoke/check_campaigns.py`
+
+## 2026-05-18 ? Stage 4F: CRMFlow24 production target + topic extraction v2
+
+- Production target `crmflow24-production-v2` ? `https://crmflow24.ru/api/scrap/articles/import`
+- Env: `CRMFLOW24_PUBLISH_ENDPOINT`, `CRMFLOW24_PUBLISH_TOKEN`, aliases `SCRAP_CRMFLOW24_IMPORT_*`
+- Health probe: OPTIONS/HEAD (no draft creation on health check)
+- Topic extraction v2: `topic_quality_service`, relevance_score, rejected_terms, project_fit
+- Admin: topic quality block on document detail
+- Seed: `scripts/seed_crmflow24_production_v2_target.py`
