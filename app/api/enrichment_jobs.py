@@ -9,10 +9,17 @@ from app.models.llm_enrichment_job import LlmEnrichmentJob
 from app.services.enrichment_service import (
     cancel_enrichment_job,
     job_to_dict,
+    replay_enrichment_job,
     retry_enrichment_job,
 )
+from app.services.enrichment_metrics_service import get_enrichment_metrics
 
 router = APIRouter(prefix="/api/enrichment-jobs", tags=["enrichment-jobs"])
+
+
+@router.get("/metrics")
+def enrichment_metrics(db: Session = Depends(get_db)):
+    return get_enrichment_metrics(db)
 
 
 @router.get("")
@@ -53,6 +60,17 @@ def api_retry_enrichment_job(job_id: int, db: Session = Depends(get_db)):
 def api_cancel_enrichment_job(job_id: int, db: Session = Depends(get_db)):
     try:
         job = cancel_enrichment_job(db, job_id)
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return job_to_dict(job)
+
+
+
+@router.post("/{job_id}/replay")
+def api_replay_enrichment_job(job_id: int, db: Session = Depends(get_db)):
+    try:
+        job = replay_enrichment_job(db, job_id)
         db.commit()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
