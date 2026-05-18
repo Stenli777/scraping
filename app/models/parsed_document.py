@@ -19,6 +19,9 @@ class ParsedDocument(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     task_id: Mapped[int] = mapped_column(ForeignKey("scraping_tasks.id"), unique=True)
+    canonical_group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("canonical_content_groups.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     source_url: Mapped[str] = mapped_column(String(2048), index=True)
     content_hash: Mapped[str] = mapped_column(String(64), index=True)
     raw_html: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -40,6 +43,7 @@ class ParsedDocument(Base):
     )
 
     task: Mapped["ScrapingTask"] = relationship(back_populates="document")
+    canonical_group: Mapped["CanonicalContentGroup | None"] = relationship(back_populates="documents")
     versions: Mapped[list["DocumentVersion"]] = relationship(
         back_populates="document", cascade="all, delete-orphan"
     )

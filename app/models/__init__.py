@@ -15,6 +15,9 @@ from app.models.content_campaign import ContentCampaign
 from app.models.discovered_url import DiscoveredUrl
 from app.models.source_quality_score import SourceQualityScore
 from app.models.domain_trust_registry import DomainTrustRegistry
+from app.models.canonical_content_group import CanonicalContentGroup
+from app.models.document_similarity_link import DocumentSimilarityLink
+from app.models.rewrite_lineage import RewriteLineage
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
 from app.models.prompt_version import PromptVersion
@@ -55,6 +58,9 @@ __all__ = [
     "DiscoveredUrl",
     "SourceQualityScore",
     "DomainTrustRegistry",
+    "CanonicalContentGroup",
+    "DocumentSimilarityLink",
+    "RewriteLineage",
     "PromptTemplate",
     "PromptVersion",
     "ProjectPromptOverride",
