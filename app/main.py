@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.admin.routes import router as admin_router
+from app.api.enrichment_jobs import router as enrichment_jobs_router
 from app.api.editorial import router as editorial_router
 from app.api.discovery import router as discovery_router
 from app.api.documents import router as documents_router
@@ -49,6 +50,7 @@ for _ww in _workspace_warnings():
 app = FastAPI(title=settings.app_name, debug=settings.app_debug)
 app.include_router(health_router)
 app.include_router(tasks_router)
+app.include_router(enrichment_jobs_router)
 app.include_router(documents_router)
 app.include_router(rewrite_router)
 app.include_router(review_router)

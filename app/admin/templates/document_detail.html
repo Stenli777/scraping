@@ -31,6 +31,20 @@
   </p>
   {% endif %}
 
+
+  {% if strategy_context.latest_enrichment_job %}
+  <p><strong>Enrichment job:</strong>
+    <a href="/admin/enrichment-jobs">#{{ strategy_context.latest_enrichment_job.id }}</a>
+    — {{ strategy_context.latest_enrichment_job.status }}
+    {% if strategy_context.latest_enrichment_job.model_alias %}({{ strategy_context.latest_enrichment_job.model_alias }}){% endif %}
+    {% if strategy_context.latest_enrichment_job.llm_run_id %} — <a href="/admin/llm-runs">LLM run #{{ strategy_context.latest_enrichment_job.llm_run_id }}</a>{% endif %}
+  </p>
+  {% endif %}
+  {% if strategy_context.enrichment_history %}
+  <p><strong>Enrichment history:</strong>
+    {% for ej in strategy_context.enrichment_history[:5] %}#{{ ej.id }} {{ ej.status }}; {% endfor %}
+  </p>
+  {% endif %}
   {% if strategy_context.strategy_blocked_message %}
   <p class="warn-box"><strong>Strategy gate:</strong> {{ strategy_context.strategy_blocked_message }}</p>
   {% endif %}

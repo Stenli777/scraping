@@ -79,6 +79,8 @@ from app.hermes.routing import list_hermes_aliases
 from app.models.hermes_run import HermesRun
 from app.models.media_asset import MediaAsset
 from app.models.media_job import MediaJob
+from app.models.llm_enrichment_job import LlmEnrichmentJob
+from app.services.enrichment_service import job_to_dict
 from app.services.media_service import (
     approve_media,
     list_document_media,
@@ -805,6 +807,17 @@ def admin_media(request: Request, db: Session = Depends(get_db)):
             "settings": get_settings(),
             "title": "Media Assets",
         },
+    )
+
+
+@router.get("/admin/enrichment-jobs", response_class=HTMLResponse)
+def admin_enrichment_jobs(request: Request, db: Session = Depends(get_db)):
+    jobs = db.query(LlmEnrichmentJob).order_by(LlmEnrichmentJob.id.desc()).limit(150).all()
+    items = [job_to_dict(j) for j in jobs]
+    return templates.TemplateResponse(
+        request,
+        "enrichment_jobs.html",
+        {"request": request, "jobs": items, "title": "LLM Enrichment Jobs"},
     )
 
 

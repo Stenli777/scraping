@@ -501,6 +501,7 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
     strategy_blocked_message = None
     if doc:
         from app.services.strategy_gate_service import get_strategy_readiness
+        from app.services.enrichment_service import enrichment_history, latest_enrichment_for_document, job_to_dict
         strategy_readiness = get_strategy_readiness(db, document_id)
         topics = (doc.metadata_json or {}).get("topics") or {}
         if topics.get("strategy_allowed") is False:
@@ -517,4 +518,6 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
         "suggested_cluster": suggested,
         "strategy_readiness": strategy_readiness,
         "strategy_blocked_message": strategy_blocked_message,
+        "latest_enrichment_job": job_to_dict(latest_enrichment_for_document(db, document_id)) if doc else None,
+        "enrichment_history": [job_to_dict(j) for j in enrichment_history(db, document_id)] if doc else [],
     }

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>LLM enrichment queue</h2>
+  <p><a href="/admin">Admin</a></p>
+  <table class="data-table">
+    <thead>
+      <tr><th>ID</th><th>Doc</th><th>Type</th><th>Status</th><th>Model</th><th>Retries</th><th>Latency</th><th>Created</th></tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td><a href="/api/enrichment-jobs/{{ j.id }}">{{ j.id }}</a></td>
+        <td><a href="/admin/documents/{{ j.document_id }}">#{{ j.document_id }}</a></td>
+        <td>{{ j.enrichment_type }}</td>
+        <td><span class="badge">{{ j.status }}</span></td>
+        <td><small>{{ j.model_alias or '?' }}</small></td>
+        <td>{{ j.retry_count }}</td>
+        <td>{% if j.latency_ms %}{{ j.latency_ms }}ms{% else %}—{% endif %}</td>
+        <td><small>{{ j.created_at or '' }}</small></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8">No jobs</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}
