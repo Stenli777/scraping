@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Import metrics — publication #{{ pub.id }}</h1>
+<p>Document <a href="/admin/documents/{{ pub.document_id }}">#{{ pub.document_id }}</a>
+  | <a href="/admin/publications/{{ pub.id }}">Publication detail</a></p>
+
+{% if not ready %}
+<div class="warn-box">Publication is not analytics_ready. Confirm public visibility in CRMFlow24 first.</div>
+{% endif %}
+
+{% if errors %}
+<ul class="warnings">
+  {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<form method="post" action="/admin/publications/{{ pub.id }}/analytics/import" class="panel">
+  <label>Snapshot date <input name="snapshot_date" type="date" value="{{ form.snapshot_date or '' }}"></label>
+  <label>Views <input name="views" type="number" min="0" value="{{ form.views or '' }}"></label>
+  <label>Unique visitors <input name="unique_visitors" type="number" min="0" value="{{ form.unique_visitors or '' }}"></label>
+  <label>Avg time (sec) <input name="avg_time_seconds" type="number" min="0" value="{{ form.avg_time_seconds or '' }}"></label>
+  <label>Bounce rate (0–1) <input name="bounce_rate" step="0.001" min="0" max="1" value="{{ form.bounce_rate or '' }}"></label>
+  <label>CTR (0–1) <input name="ctr" step="0.001" min="0" max="1" value="{{ form.ctr or '' }}"></label>
+  <label>Impressions <input name="impressions" type="number" min="0" value="{{ form.impressions or '' }}"></label>
+  <label>Conversions <input name="conversions" type="number" min="0" value="{{ form.conversions or '' }}"></label>
+  <label>Position avg <input name="position_avg" step="0.1" min="0" value="{{ form.position_avg or '' }}"></label>
+  <label>Source
+    <select name="source">
+      <option value="manual" {% if form.source == 'manual' or not form.source %}selected{% endif %}>manual</option>
+      <option value="import" {% if form.source == 'import' %}selected{% endif %}>import</option>
+      <option value="estimated" {% if form.source == 'estimated' %}selected{% endif %}>estimated</option>
+    </select>
+  </label>
+  <label>Imported by <input name="imported_by" value="{{ form.imported_by or 'operator' }}"></label>
+  <label>Notes <textarea name="import_notes" rows="3">{{ form.import_notes or '' }}</textarea></label>
+  <button class="btn" type="submit" {% if not ready %}disabled{% endif %}>Import snapshot</button>
+</form>
+{% endblock %}

@@ -1,14 +1,78 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block content %}
 {% if not feature_flags.get('ENABLE_ANALYTICS') %}
 <div class="warn-box">Analytics disabled (ENABLE_ANALYTICS=false)</div>
 {% else %}
 
 <div class="panel">
+  <h2>Analytics workflow</h2>
+  <p>
+    <a class="btn" href="/admin/analytics-ready">Analytics ready queue</a>
+    <span class="warn-box">Manual import only вЂ” no auto polling or external APIs.</span>
+  </p>
+  <ul>
+    <li>Analytics ready: <strong>{{ dashboard.analytics_ready_count }}</strong></li>
+    <li>Missing metrics: <strong>{{ dashboard.missing_metrics_count }}</strong></li>
+  </ul>
+</div>
+
+<div class="panel">
   <h2>Project summary</h2>
   {% for pid, summary in project_summaries.items() %}
-  <p><strong>Project #{{ pid }}:</strong> {{ summary.count }} articles, avg score {{ summary.avg_score or '—' }}, top {{ summary.top_count }}, low {{ summary.low_count }}</p>
+  <p><strong>Project #{{ pid }}:</strong> {{ summary.count }} articles, avg score {{ summary.avg_score or 'вЂ”' }}, top {{ summary.top_count }}, low {{ summary.low_count }}</p>
   {% endfor %}
+</div>
+
+<div class="panel">
+  <h2>Top opportunities (high quality, low traffic)</h2>
+  <ul>
+    {% for item in dashboard.top_opportunities %}
+    <li><a href="/admin/documents/{{ item.document_id }}">Doc #{{ item.document_id }}</a> вЂ” score {{ item.performance_score }} вЂ” views {{ item.latest_views or 'вЂ”' }}</li>
+    {% else %}<li>None</li>{% endfor %}
+  </ul>
+</div>
+
+<div class="panel">
+  <h2>Low performance warnings</h2>
+  <table class="table">
+    <thead><tr><th>Doc</th><th>Score</th><th>Views</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for item in dashboard.low_performance_warnings %}
+      <tr>
+        <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
+        <td>{{ item.performance_score or 'вЂ”' }}</td>
+        <td>{{ item.latest_views or 'вЂ”' }}</td>
+        <td>{{ item.status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Insight labels</h2>
+  <h3>High traffic, low quality</h3>
+  <ul>{% for item in dashboard.high_traffic_low_quality %}<li>Doc #{{ item.document_id }} вЂ” {{ item.insight_labels | join(', ') }}</li>{% else %}<li>None</li>{% endfor %}</ul>
+  <h3>Needs title / SEO review</h3>
+  <ul>{% for item in dashboard.needs_seo_review %}<li>Doc #{{ item.document_id }}</li>{% else %}<li>None</li>{% endfor %}</ul>
+</div>
+
+<div class="panel">
+  <h2>Recently imported snapshots</h2>
+  <table class="table">
+    <thead><tr><th>ID</th><th>Pub</th><th>Date</th><th>Views</th><th>Source</th></tr></thead>
+    <tbody>
+      {% for s in dashboard.recent_snapshots %}
+      <tr>
+        <td>#{{ s.id }}</td>
+        <td><a href="/admin/publications/{{ s.publication_record_id }}">#{{ s.publication_record_id }}</a></td>
+        <td>{{ s.snapshot_date }}</td>
+        <td>{{ s.views or 'вЂ”' }}</td>
+        <td>{{ s.source }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 <div class="panel">
@@ -20,8 +84,8 @@
       <tr>
         <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
         <td>{{ item.performance_score }}</td>
-        <td>{{ item.latest_views or '—' }}</td>
-        <td>{{ item.latest_ctr or '—' }}</td>
+        <td>{{ item.latest_views or 'вЂ”' }}</td>
+        <td>{{ item.latest_ctr or 'вЂ”' }}</td>
         <td>{{ item.trend }}</td>
       </tr>
       {% endfor %}
@@ -37,28 +101,9 @@
       {% for item in low_items %}
       <tr>
         <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
-        <td>{{ item.performance_score or '—' }}</td>
-        <td>{{ item.latest_views or '—' }}</td>
+        <td>{{ item.performance_score or 'вЂ”' }}</td>
+        <td>{{ item.latest_views or 'вЂ”' }}</td>
         <td>{{ item.status }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<div class="panel">
-  <h2>Latest snapshots</h2>
-  <table class="table">
-    <thead><tr><th>ID</th><th>Pub</th><th>Date</th><th>Views</th><th>CTR</th><th>Source</th></tr></thead>
-    <tbody>
-      {% for s in latest_snapshots %}
-      <tr>
-        <td>#{{ s.id }}</td>
-        <td>#{{ s.publication_record_id }}</td>
-        <td>{{ s.snapshot_date }}</td>
-        <td>{{ s.views or '—' }}</td>
-        <td>{{ s.ctr or '—' }}</td>
-        <td>{{ s.source }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -69,7 +114,7 @@
   <h2>Content aging (30+ days)</h2>
   <ul>
     {% for a in aging %}
-    <li>Doc #{{ a.document_id }} — published {{ a.published_at }} — score {{ a.performance_score or '—' }}</li>
+    <li>Doc #{{ a.document_id }} вЂ” published {{ a.published_at }} вЂ” score {{ a.performance_score or 'вЂ”' }}</li>
     {% else %}
     <li>None</li>
     {% endfor %}

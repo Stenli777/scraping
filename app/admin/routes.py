@@ -271,6 +271,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     doc_publication = None
     doc_performance = None
     doc_analytics_snapshots = []
+    doc_analytics_ready = False
+    doc_public_visibility = None
     if all_flags().get("ENABLE_ANALYTICS"):
         doc_publication = (
             db.query(PublicationRecord)
@@ -279,6 +281,10 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             .first()
         )
         if doc_publication:
+            from app.services.publication_confirmation_service import analytics_ready as _analytics_ready
+
+            doc_analytics_ready = _analytics_ready(doc_publication)
+            doc_public_visibility = doc_publication.public_visibility_status
             doc_performance = db.query(ContentPerformance).filter(
                 ContentPerformance.publication_record_id == doc_publication.id
             ).first()
@@ -308,6 +314,8 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "doc_publication": doc_publication,
             "doc_performance": doc_performance,
             "doc_analytics_snapshots": doc_analytics_snapshots,
+            "doc_analytics_ready": doc_analytics_ready,
+            "doc_public_visibility": doc_public_visibility,
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
             "publish_revision_numbers": publish_revision_numbers,
@@ -755,6 +763,9 @@ def admin_analytics(request: Request, db: Session = Depends(get_db)):
         .all()
     )
     aging = content_aging_signals(db, limit=15)
+    from app.services.analytics_ready_service import build_analytics_dashboard
+
+    dashboard = build_analytics_dashboard(db)
     return templates.TemplateResponse(
         request,
         "analytics.html",
@@ -765,6 +776,7 @@ def admin_analytics(request: Request, db: Session = Depends(get_db)):
             "low_items": low_items,
             "latest_snapshots": latest_snapshots,
             "aging": aging,
+            "dashboard": dashboard,
             "feature_flags": all_flags(),
             "title": "Analytics",
         },
@@ -1520,11 +1532,34 @@ def admin_publication_detail(publication_id: int, request: Request, db: Session 
     pub = db.get(PublicationRecord, publication_id)
     if not pub:
         return RedirectResponse("/admin/publications", status_code=302)
+    from app.models.content_performance import ContentPerformance
+
     status = get_publication_confirmation_status(db, publication_id)
+    performance = db.query(ContentPerformance).filter(
+        ContentPerformance.publication_record_id == publication_id
+    ).first()
+    snapshots = (
+        db.query(AnalyticsSnapshot)
+        .filter(AnalyticsSnapshot.publication_record_id == publication_id)
+        .order_by(AnalyticsSnapshot.snapshot_date.desc(), AnalyticsSnapshot.id.desc())
+        .limit(30)
+        .all()
+    )
+    insight_labels = []
+    if performance and performance.performance_feedback_json:
+        insight_labels = performance.performance_feedback_json.get("insight_labels") or []
     return templates.TemplateResponse(
         request,
         "publication_detail.html",
-        {"request": request, "pub": pub, "status": status, "title": f"Publication #{publication_id}"},
+        {
+            "request": request,
+            "pub": pub,
+            "status": status,
+            "performance": performance,
+            "snapshots": snapshots,
+            "insight_labels": insight_labels,
+            "title": f"Publication #{publication_id}",
+        },
     )
 
 
@@ -1558,3 +1593,7 @@ def admin_pub_mark_not_public(publication_id: int, db: Session = Depends(get_db)
     mark_not_public(db, publication_id)
     db.commit()
     return RedirectResponse(f"/admin/publications/{publication_id}", status_code=303)
+
+from app.admin.analytics_workflow_routes import router as analytics_workflow_router
+
+router.include_router(analytics_workflow_router)

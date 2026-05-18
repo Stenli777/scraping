@@ -32,9 +32,46 @@
 <form method="post" action="/admin/publications/{{ pub.id }}/mark-not-public" style="display:inline">
   <button class="btn" type="submit">Mark not public</button>
 </form>
+{% if status.analytics_ready %}
+<a class="btn" href="/admin/publications/{{ pub.id }}/analytics/import">Import metrics</a>
+{% endif %}
 
 {% if pub.public_confirmation_notes %}
 <h3>Notes</h3>
 <p>{{ pub.public_confirmation_notes }}</p>
+{% endif %}
+
+{% if performance %}
+<h2>Performance</h2>
+<p>Score: <strong>{{ performance.performance_score or '—' }}</strong>
+  | Views: {{ performance.latest_views or '—' }}
+  | CTR: {{ performance.latest_ctr or '—' }}
+  | Trend: <code>{{ performance.trend }}</code>
+  | Status: <code>{{ performance.status }}</code></p>
+{% if insight_labels %}
+<p>Insights: {% for label in insight_labels %}<code>{{ label }}</code> {% endfor %}</p>
+{% endif %}
+{% endif %}
+
+<h2>Performance history</h2>
+{% if snapshots %}
+<table class="table">
+  <thead><tr><th>Date</th><th>Views</th><th>UV</th><th>CTR</th><th>Conv</th><th>Pos</th><th>Source</th></tr></thead>
+  <tbody>
+    {% for s in snapshots %}
+    <tr>
+      <td>{{ s.snapshot_date }}</td>
+      <td>{{ s.views or '—' }}</td>
+      <td>{{ s.unique_visitors or '—' }}</td>
+      <td>{{ s.ctr or '—' }}</td>
+      <td>{{ s.conversions or '—' }}</td>
+      <td>{{ s.position_avg or '—' }}</td>
+      <td>{{ s.source }}{% if s.metadata_json and s.metadata_json.sample %} <span class="warn-box">sample</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No snapshots yet.{% if status.analytics_ready %} <a href="/admin/publications/{{ pub.id }}/analytics/import">Import metrics</a>.{% endif %}</p>
 {% endif %}
 {% endblock %}

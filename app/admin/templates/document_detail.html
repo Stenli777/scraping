@@ -206,14 +206,25 @@
 <div class="panel" id="analytics">
   <h2>Publication &amp; performance</h2>
   {% if doc_publication %}
-  <p><strong>Publication #{{ doc_publication.id }}</strong> · rev {{ doc_publication.revision_id or '—' }} ·
-     <span class="badge">{{ doc_publication.publication_status }}</span></p>
-  <p><strong>URL:</strong> {% if doc_publication.external_url %}<a href="{{ doc_publication.external_url }}" target="_blank">{{ doc_publication.external_url }}</a>{% else %}—{% endif %}</p>
-  <p><strong>Published:</strong> {{ doc_publication.published_at or '—' }}</p>
+  <p><strong>Publication <a href="/admin/publications/{{ doc_publication.id }}">#{{ doc_publication.id }}</a></strong>
+     · rev {{ doc_publication.revision_id or '—' }}
+     · <span class="badge">{{ doc_publication.publication_status }}</span>
+     · public <code>{{ doc_public_visibility or '—' }}</code>
+     {% if doc_analytics_ready %}<span class="badge status-done">analytics ready</span>{% endif %}
+  </p>
+  <p><strong>Draft URL:</strong> {% if doc_publication.external_url %}<a href="{{ doc_publication.external_url }}" target="_blank">{{ doc_publication.external_url }}</a>{% else %}—{% endif %}</p>
+  <p><strong>Public URL:</strong> {% if doc_publication.public_url %}<a href="{{ doc_publication.public_url }}" target="_blank">{{ doc_publication.public_url }}</a>{% else %}—{% endif %}</p>
   {% if doc_performance %}
   <h3>Performance</h3>
   <p>Score: <strong>{{ doc_performance.performance_score or '—' }}</strong> · Views: {{ doc_performance.latest_views or '—' }} · CTR: {{ doc_performance.latest_ctr or '—' }} · Trend: {{ doc_performance.trend }} · Status: {{ doc_performance.status }}</p>
+  {% if doc_performance.performance_feedback_json and doc_performance.performance_feedback_json.insight_labels %}
+  <p>Insights: {% for label in doc_performance.performance_feedback_json.insight_labels %}<code>{{ label }}</code> {% endfor %}</p>
   {% endif %}
+  {% endif %}
+  <p>
+    {% if doc_analytics_ready %}<a class="btn" href="/admin/publications/{{ doc_publication.id }}/analytics/import">Import metrics</a>{% endif %}
+    <a class="btn" href="/admin/publications/{{ doc_publication.id }}">Publication history</a>
+  </p>
   {% if doc_analytics_snapshots %}
   <h3>Recent snapshots</h3>
   <table class="table">
@@ -317,12 +328,7 @@
 
 
 {% if feature_flags.get('ENABLE_ANALYTICS') %}
-<div class="panel" id="analytics">
-  <h2>Publication &amp; performance</h2>
-  {% if doc_publication %}
-  <p><strong>Publication #{{ doc_publication.id }}</strong> · rev {{ doc_publication.revision_id or '—' }} ·
-     <span class="badge">{{ doc_publication.publication_status }}</span></p>
-  <p><strong>URL:</strong> {% if doc_publication.external_url %}<a href="{{ doc_publication.external_url }}" target="_blank">{{ doc_publication.external_url }}</a>{% else %}—{% endif %}</p>
+</p>
   <p><strong>Published:</strong> {{ doc_publication.published_at or '—' }}</p>
   {% if doc_performance %}
   <h3>Performance</h3>

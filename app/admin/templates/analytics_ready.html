@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Analytics ready queue</h1>
+<p class="warn-box">Manual workflow: public confirmed in CRMFlow24 → import metrics here → review performance &amp; campaign impact.</p>
+
+{% if rows %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Publication</th>
+      <th>Document</th>
+      <th>Public URL</th>
+      <th>Campaign</th>
+      <th>Cluster</th>
+      <th>Last snapshot</th>
+      <th>Views</th>
+      <th>Score</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td><a href="/admin/publications/{{ row.publication.id }}">#{{ row.publication.id }}</a></td>
+      <td><a href="/admin/documents/{{ row.publication.document_id }}">#{{ row.publication.document_id }}</a></td>
+      <td>{% if row.publication.public_url %}<a href="{{ row.publication.public_url }}" target="_blank" rel="noopener">blog</a>{% else %}—{% endif %}</td>
+      <td>{% if row.campaign_id %}<a href="/admin/campaigns/{{ row.campaign_id }}">{{ row.campaign_name }}</a>{% else %}—{% endif %}</td>
+      <td>{% if row.cluster_id %}<a href="/admin/clusters/{{ row.cluster_id }}">{{ row.cluster_name }}</a>{% else %}—{% endif %}</td>
+      <td>{{ row.last_snapshot_date or '—' }}{% if row.missing_metrics %} <span class="warn-box">no metrics</span>{% endif %}</td>
+      <td>{{ row.performance.latest_views if row.performance else '—' }}</td>
+      <td>{{ row.performance.performance_score if row.performance else '—' }}</td>
+      <td><a class="btn" href="/admin/publications/{{ row.publication.id }}/analytics/import">Import metrics</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="warn-box">No public-confirmed publications yet. Publish manually in CRMFlow24, then run <strong>Check public status</strong> and <strong>Confirm public</strong>.</p>
+{% endif %}
+{% endblock %}
