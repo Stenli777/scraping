@@ -77,6 +77,16 @@ def seed_default_rules(db: Session) -> None:
             max_daily_runs=24,
         ),
         AutomationRule(
+            name="campaign analysis (disabled)",
+            project_id=1,
+            enabled=False,
+            trigger_type="manual",
+            automation_type="campaign_analysis",
+            config_json={"note": "Operator-controlled planning only ? no autonomous runs"},
+            rate_limit_per_hour=1,
+            max_daily_runs=1,
+        ),
+        AutomationRule(
             name="auto enqueue max 10/hour",
             project_id=1,
             enabled=False,
@@ -328,6 +338,9 @@ def process_automation_run(db: Session, run_id: int) -> AutomationRun:
             affected["note"] = "manual import only"
         elif rule.automation_type == "media_generation":
             raise AutomationError("media_generation not enabled")
+        elif rule.automation_type == "campaign_analysis":
+            log_event(run, "info", "campaign_analysis disabled ? operator planning only")
+            affected["skipped"] = True
         else:
             raise AutomationError(f"Unknown automation_type: {rule.automation_type}")
 
