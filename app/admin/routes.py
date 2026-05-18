@@ -810,6 +810,29 @@ def admin_media(request: Request, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/admin/enrichment-dashboard", response_class=HTMLResponse)
+def admin_enrichment_dashboard(request: Request, db: Session = Depends(get_db)):
+    from app.services.enrichment_metrics_service import get_enrichment_metrics, get_enrichment_health
+    from app.models.llm_enrichment_job import LlmEnrichmentJob, EnrichmentJobStatus
+    metrics = get_enrichment_metrics(db)
+    health = get_enrichment_health(db)
+    recent = db.query(LlmEnrichmentJob).filter(
+        LlmEnrichmentJob.status.in_([EnrichmentJobStatus.FAILED_RETRYABLE, EnrichmentJobStatus.FAILED_TERMINAL])
+    ).order_by(LlmEnrichmentJob.id.desc()).limit(15).all()
+    from app.services.enrichment_service import job_to_dict
+    return templates.TemplateResponse(
+        request,
+        "enrichment_dashboard.html",
+        {
+            "request": request,
+            "metrics": metrics,
+            "health": health,
+            "recent_failures": [job_to_dict(j) for j in recent],
+            "title": "Enrichment Dashboard",
+        },
+    )
+
+
 @router.get("/admin/enrichment-jobs", response_class=HTMLResponse)
 def admin_enrichment_jobs(request: Request, db: Session = Depends(get_db)):
     jobs = db.query(LlmEnrichmentJob).order_by(LlmEnrichmentJob.id.desc()).limit(150).all()

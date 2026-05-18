@@ -22,6 +22,7 @@ from app.models.seo_metadata import SeoMetadata
 from app.models.topic_cluster import CLUSTER_TYPES, TopicCluster
 from app.services.clustering_service import normalize_keyword, slugify, tokenize
 from app.services.strategy_gate_service import filter_strategy_document_ids
+from app.services.strategy_topics_service import get_effective_strategy_topics, topics_eligible_for_campaign_intelligence
 
 DUPLICATE_TITLE_THRESHOLD = 0.82
 DUPLICATE_SLUG_THRESHOLD = 0.88

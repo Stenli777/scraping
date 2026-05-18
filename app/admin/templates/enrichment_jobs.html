@@ -5,7 +5,7 @@
   <p><a href="/admin">Admin</a></p>
   <table class="data-table">
     <thead>
-      <tr><th>ID</th><th>Doc</th><th>Type</th><th>Status</th><th>Model</th><th>Retries</th><th>Latency</th><th>Created</th></tr>
+      <tr><th>ID</th><th>Doc</th><th>Type</th><th>Status</th><th>Model</th><th>Retries</th><th>Latency</th><th>Parent</th><th>Created</th></tr>
     </thead>
     <tbody>
       {% for j in jobs %}
@@ -17,6 +17,7 @@
         <td><small>{{ j.model_alias or '?' }}</small></td>
         <td>{{ j.retry_count }}</td>
         <td>{% if j.latency_ms %}{{ j.latency_ms }}ms{% else %}—{% endif %}</td>
+        <td>{% if j.parent_enrichment_job_id %}<a href="/api/enrichment-jobs/{{ j.parent_enrichment_job_id }}">#{{ j.parent_enrichment_job_id }}</a>{% else %}—{% endif %}</td>
         <td><small>{{ j.created_at or '' }}</small></td>
       </tr>
       {% else %}

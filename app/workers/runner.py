@@ -16,13 +16,14 @@ from app.core.config import get_settings as _get_settings
 logger = logging.getLogger(__name__)
 
 
+# Enrichment runs AFTER scraping batch — scraping queue must not starve.
 def process_enrichment_batch() -> int:
     settings = _get_settings()
     if not settings.enable_async_llm_enrichment:
         return 0
     from app.services.enrichment_service import tick_enrichment_jobs
     with SessionLocal() as db:
-        result = tick_enrichment_jobs(db, limit=1)
+        result = tick_enrichment_jobs(db, limit=get_settings().worker_enrichment_per_poll)
         if result.get("processed"):
             db.commit()
             return int(result["processed"])

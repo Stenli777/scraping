@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Enrichment dashboard</h2>
+  <p><a href="/admin/enrichment-jobs">Job list</a> · <a href="/admin">Admin</a></p>
+  <p>Health: <span class="badge">{{ health.status }}</span></p>
+<div class="panel">
+  <h3>Queue</h3>
+  <p>Depth: {{ metrics.queue_depth }} · Running: {{ metrics.running }} · Stale (running): {{ metrics.stale_recovered_running }}</p>
+  <p>Retryable: {{ metrics.by_status.failed_retryable }} · Terminal: {{ metrics.by_status.failed_terminal }}</p>
+</div>
+<div class="panel">
+  <h3>Performance (24h window)</h3>
+  <p>Completed: {{ metrics.completed_pct }}% · Retryable: {{ metrics.retryable_pct }}% · Avg latency: {{ metrics.avg_latency_ms or '—' }}ms</p>
+  <p>Timeout rate: {{ metrics.timeout_pct }}% · Skipped: {{ metrics.skipped_pct }}%</p>
+<div class="panel">
+  <h3>By type</h3>
+  <ul>{% for k, v in metrics.by_type.items() %}<li>{{ k }}: {{ v }}</li>{% endfor %}</ul>
+<div class="panel">
+  <h3>Recent failures</h3>
+  <ul>{% for j in recent_failures %}<li>#{{ j.id }} {{ j.status }} doc {{ j.document_id }} — {{ j.error_message or '?' }}</li>{% else %}<li>None</li>{% endfor %}</ul>
+</div>
+{% endblock %}
