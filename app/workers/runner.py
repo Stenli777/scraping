@@ -11,8 +11,23 @@ from app.core.logging_config import setup_logging
 from app.db.session import SessionLocal
 from app.models.scraping_task import ScrapingTask
 from app.services.pipeline import PipelineService
+from app.core.config import get_settings as _get_settings
 
 logger = logging.getLogger(__name__)
+
+
+def process_enrichment_batch() -> int:
+    settings = _get_settings()
+    if not settings.enable_async_llm_enrichment:
+        return 0
+    from app.services.enrichment_service import tick_enrichment_jobs
+    with SessionLocal() as db:
+        result = tick_enrichment_jobs(db, limit=1)
+        if result.get("processed"):
+            db.commit()
+            return int(result["processed"])
+        db.commit()
+    return 0
 
 
 def process_batch() -> int:
@@ -38,8 +53,11 @@ def main() -> None:
     while True:
         try:
             count = process_batch()
+            enrich = process_enrichment_batch()
             if count:
                 logger.info("Processed %s task(s)", count)
+            if enrich:
+                logger.info("Processed %s enrichment job(s)", enrich)
         except Exception:
             logger.exception("Worker batch failed")
         time.sleep(settings.worker_poll_interval_seconds)

@@ -11,6 +11,7 @@ from app.db.session import SessionLocal
 from app.scheduler.locks import acquire_lock, release_lock, set_state
 from app.scheduler.heartbeat import update_heartbeat
 from app.scheduler.services import tick_automation
+from app.services.enrichment_service import tick_enrichment_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,9 @@ class SchedulerEngine:
                 return
             try:
                 update_heartbeat(db)
+                enrichment_result = tick_enrichment_jobs(db)
+                if enrichment_result.get("processed"):
+                    logger.debug("Enrichment tick: %s", enrichment_result)
                 result = tick_automation(db)
                 if not result.get("skipped"):
                     logger.debug("Automation tick: %s", result)
