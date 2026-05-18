@@ -287,7 +287,7 @@ def build_topic_extraction_v2(
     tags: list[str],
     text_sample: str,
     project_slug: str | None = None,
-    use_llm_cleanup: bool = True,
+    use_llm_cleanup: bool = False,
 ) -> dict[str, Any]:
     phrases, rejected_singles = extract_phrase_candidates(
         title=title, tags=tags, text_sample=text_sample
@@ -331,14 +331,6 @@ def build_topic_extraction_v2(
         warnings.append("low_project_relevance")
     if len(secondary_topics) < 2:
         warnings.append("few_secondary_topics")
-
-    if use_llm_cleanup:
-        secondary_topics, keywords, llm_warn = maybe_llm_cleanup(
-            primary_topic=primary_topic,
-            secondary_topics=secondary_topics,
-            keywords=keywords,
-        )
-        warnings.extend(llm_warn)
 
     return {
         "schema_version": TOPIC_SCHEMA_VERSION,

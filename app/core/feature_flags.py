@@ -41,6 +41,19 @@ def is_llm_review_enabled() -> bool:
 
 
 @lru_cache
+def is_llm_topic_cleanup_enabled() -> bool:
+    settings = get_settings()
+    if not settings.enable_llm_topic_cleanup:
+        return False
+    return bool(settings.cliproxyapi_base_url.strip())
+
+
+@lru_cache
+def is_cliproxy_configured() -> bool:
+    return bool(get_settings().cliproxyapi_base_url.strip())
+
+
+@lru_cache
 def is_project_profiles_enabled() -> bool:
     return get_settings().enable_project_profiles
 
@@ -104,6 +117,7 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_AUTO_PUBLISH": is_auto_publish_enabled(),
         "ENABLE_SEO_ENRICH": is_seo_enrich_enabled(),
         "ENABLE_LLM_REVIEW": is_llm_review_enabled(),
+        "ENABLE_LLM_TOPIC_CLEANUP": is_llm_topic_cleanup_enabled(),
         "ENABLE_PROJECT_PROFILES": is_project_profiles_enabled(),
         "ENABLE_PUBLISHING": is_publishing_enabled(),
         "ENABLE_SOURCE_DISCOVERY": is_source_discovery_enabled(),

@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     enable_auto_publish: bool = False
     enable_seo_enrich: bool = True
     enable_llm_review: bool = True
+    enable_llm_topic_cleanup: bool = True
+    topic_cleanup_model_alias: str = "local/classifier-fast"
+    min_topic_relevance_for_strategy: int = 60
     enable_project_profiles: bool = True
     enable_publishing: bool = True
 

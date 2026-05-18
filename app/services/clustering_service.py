@@ -57,72 +57,16 @@ def extract_topics_for_document(
     document_id: int,
     *,
     persist_audit: bool = True,
+    use_llm_cleanup: bool | None = None,
 ) -> dict[str, Any]:
-    document = db.get(ParsedDocument, document_id)
-    if not document:
-        raise ValueError(f"Document {document_id} not found")
+    from app.services.topic_extraction_service import extract_topics_for_document as _extract
 
-    seo = db.scalar(
-        select(SeoMetadata)
-        .where(SeoMetadata.document_id == document_id)
-        .order_by(SeoMetadata.id.desc())
+    return _extract(
+        db,
+        document_id,
+        persist_audit=persist_audit,
+        use_llm_cleanup=use_llm_cleanup,
     )
-    meta = document.metadata_json or {}
-    title = (
-        (seo.h1 if seo else None)
-        or (seo.seo_title if seo else None)
-        or meta.get("extracted_title")
-        or meta.get("title")
-        or ""
-    )
-    tags = list((seo.tags_json if seo else None) or [])
-    text_sample = (document.rewritten_text or document.clean_text or "")[:2000]
-
-    project_slug = None
-    if document.task:
-        from app.services.project_profile_service import resolve_task_project
-        project = resolve_task_project(db, document.task)
-        project_slug = project.slug if project else None
-
-    from app.services.topic_quality_service import build_topic_extraction_v2
-
-    result = build_topic_extraction_v2(
-        title=title,
-        tags=tags,
-        text_sample=text_sample,
-        project_slug=project_slug,
-    )
-    result["extracted_at"] = datetime.now(timezone.utc).isoformat()
-    result["payload_version"] = "topic_v2"
-
-    if persist_audit:
-        meta = dict(document.metadata_json or {})
-        if meta.get("topics"):
-            history = list(meta.get("topic_extractions") or [])
-            history.append(meta["topics"])
-            meta["topic_extractions"] = history[-20:]
-        audits = list(meta.get("topic_extractions") or [])
-        audits.append(result)
-        meta["topic_extractions"] = audits[-20:]
-        meta["topics"] = result
-        document.metadata_json = meta
-        db.flush()
-
-        if document.task_id:
-            from app.services.pipeline_event_service import emit_pipeline_event
-            emit_pipeline_event(
-                db,
-                document.task_id,
-                "topic_extraction",
-                status="completed",
-                payload={
-                    "document_id": document_id,
-                    "relevance_score": result.get("relevance_score"),
-                    "project_fit": result.get("project_fit"),
-                },
-            )
-
-    return result
 
 
 def cluster_similarity(
@@ -179,6 +123,11 @@ def suggest_cluster(
             best = cluster
 
     suggested_name = pk.replace("-", " ").title() if pk else "New cluster"
+    strategy_blocked = False
+    strategy_block_reason = None
+    if document_id and topics:
+        strategy_blocked = topics.get("strategy_allowed") is False
+        strategy_block_reason = topics.get("strategy_block_reason")
     return {
         "suggested_cluster_id": best.id if best and best_score >= 0.35 else None,
         "similarity_score": best_score,
@@ -188,6 +137,8 @@ def suggest_cluster(
         "suggested_primary_keyword": pk,
         "suggested_search_intent": search_intent,
         "topics": topics,
+        "strategy_blocked": strategy_blocked,
+        "strategy_block_reason": strategy_block_reason,
     }
 
 
