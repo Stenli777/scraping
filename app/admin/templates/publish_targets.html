@@ -7,47 +7,76 @@
     <span class="badge {% if health.healthy %}status-done{% else %}status-error{% endif %}">
       {% if health.healthy %}All healthy{% else %}Issues detected{% endif %}
     </span>
+    <span class="badge">smoke scope: {% if health.healthy_for_smoke %}OK{% else %}issues{% endif %}</span>
   </p>
   <table class="table">
-    <thead><tr><th>Target</th><th>OK</th><th>Payload</th><th>Auth</th><th>Reachable</th><th>Detail</th></tr></thead>
+    <thead><tr><th>Target</th><th>Class</th><th>OK</th><th>Auth</th><th>Reachable</th><th>Smoke?</th><th>Detail</th></tr></thead>
     <tbody>
       {% for c in health.targets %}
       <tr>
         <td>{{ c.name }} (#{{ c.target_id }})</td>
+        <td><code>{{ c.target_class }}</code></td>
         <td>{{ "yes" if c.healthy else "no" }}</td>
-        <td>{{ c.payload_format }}{% if not c.payload_supported %} (unsupported){% endif %}</td>
-        <td>{{ "yes" if c.auth_configured else "no" }}</td>
+        <td>{{ "yes" if c.auth_configured else "no" }}{% if c.auth_token_env_name is defined and c.auth_detail %} ({{ c.auth_detail }}){% endif %}</td>
         <td>{{ "yes" if c.reachable else "no" }}</td>
+        <td>{% if c.ignored_by_smoke %}ignored{% else %}included{% endif %}</td>
         <td class="url">{{ c.reach_detail }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-
+</div>
 {% endif %}
+
+{% if safety_profiles %}
+<div class="panel">
+  <h2>Target safety</h2>
+  <p>Policy: <strong>mock</strong> = local/smoke only; <strong>test</strong> = disabled by default; <strong>production</strong> = requires env token, never used by default smoke.</p>
+  <table class="table">
+    <thead><tr><th>ID</th><th>Name</th><th>Class</th><th>Warnings</th><th>Prod flag?</th></tr></thead>
+    <tbody>
+      {% for s in safety_profiles %}
+      <tr>
+        <td>{{ s.target_id }}</td>
+        <td>{{ s.name }}</td>
+        <td><code>{{ s.target_class }}</code></td>
+        <td>
+          {% if s.issues %}
+          <ul>{% for i in s.issues %}<li class="{% if i.level == 'error' %}error{% else %}warn-box{% endif %}">{{ i.code }}: {{ i.message }}</li>{% endfor %}</ul>
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ "yes" if s.requires_production_flag else "no" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
 <table class="table">
   <thead>
     <tr>
-      <th>ID</th><th>Project</th><th>Name</th><th>Type</th><th>Endpoint</th>
-      <th>Auth</th><th>Enabled</th><th>Dry-run</th><th>Status</th><th>Format</th>
+      <th>ID</th><th>Project</th><th>Name</th><th>Class</th><th>Type</th><th>Endpoint</th>
+      <th>Auth</th><th>Enabled</th><th>Dry-run</th><th>Format</th>
     </tr>
   </thead>
   <tbody>
     {% for t in targets %}
+    {% set sp = safety_map.get(t.id) %}
     <tr>
       <td>{{ t.id }}</td>
       <td>{{ t.project_id }}</td>
       <td>{{ t.name }}</td>
+      <td><code>{{ sp.target_class if sp else '?' }}</code></td>
       <td><code>{{ t.target_type }}</code></td>
       <td class="url">{{ t.endpoint_url or "?" }}</td>
       <td>{{ t.auth_type }}{% if t.auth_token_env_name %} ({{ t.auth_token_env_name }}){% endif %}</td>
       <td>{{ "yes" if t.enabled else "no" }}</td>
       <td>{{ "yes" if t.dry_run else "no" }}</td>
-      <td>{{ t.default_status }}</td>
       <td>{{ t.payload_format }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="10">Publish targets ?? ?????????</td></tr>
+    <tr><td colspan="10">No publish targets</td></tr>
     {% endfor %}
   </tbody>
 </table>

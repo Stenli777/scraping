@@ -443,12 +443,23 @@ def admin_publish_draft(
 
 @router.get("/admin/publish-targets", response_class=HTMLResponse)
 def admin_publish_targets(request: Request, db: Session = Depends(get_db)):
+    from app.services.publish_target_safety_service import validate_publish_target_safety
+
     targets = db.query(PublishTarget).order_by(PublishTarget.id.asc()).all()
     health = check_all_publish_targets_health(db)
+    safety_profiles = [validate_publish_target_safety(t) for t in targets]
+    safety_map = {s["target_id"]: s for s in safety_profiles}
     return templates.TemplateResponse(
         request,
         "publish_targets.html",
-        {"request": request, "targets": targets, "health": health, "title": "Publish Targets"},
+        {
+            "request": request,
+            "targets": targets,
+            "health": health,
+            "safety_profiles": safety_profiles,
+            "safety_map": safety_map,
+            "title": "Publish Targets",
+        },
     )
 
 
@@ -775,6 +786,9 @@ def admin_operations(request: Request, db: Session = Depends(get_db)):
             "backup_hint": ctx["backup_hint"],
             "release_state_hint": ctx.get("release_state_hint"),
             "release_ops": ctx.get("release_ops"),
+            "target_safety": ctx.get("target_safety"),
+            "smoke_safe_hint": ctx.get("smoke_safe_hint"),
+            "smoke_production_hint": ctx.get("smoke_production_hint"),
             "title": "Operations",
         },
     )

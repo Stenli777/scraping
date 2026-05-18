@@ -19,6 +19,7 @@
   <p>
     <a class="btn" href="/admin/draft-reviews">Draft reviews</a>
     <a class="btn" href="/admin/release-candidates">Release candidates</a>
+    <a class="btn" href="/admin/publish-targets">Publish targets</a>
   </p>
   <ul>
     <li>Needs edits: <strong>{{ release_ops.needs_edits_count }}</strong></li>
@@ -68,6 +69,25 @@
   </table>
   {% else %}<p>None pending</p>{% endif %}
 </div>
+
+{% if target_safety %}
+<div class="panel">
+  <h2>Publish target safety</h2>
+  <p>Smoke (default): <code>{{ smoke_safe_hint }}</code></p>
+  <p>Production check (opt-in): <code>{{ smoke_production_hint }}</code></p>
+  <ul>
+    <li>Mock: {{ target_safety.mock_count }} | Test: {{ target_safety.test_count }} | Production: {{ target_safety.production_count }}</li>
+    <li>Unsafe (errors): <strong>{{ target_safety.unsafe_count }}</strong> | Warnings: {{ target_safety.warning_count }}</li>
+  </ul>
+  {% if target_safety.unsafe_targets %}
+  <ul class="warnings">
+    {% for u in target_safety.unsafe_targets %}
+    <li>#{{ u.id }} {{ u.name }}: {% for i in u.issues %}{{ i.code }}; {% endfor %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}<p>No unsafe target configuration errors.</p>{% endif %}
+</div>
+{% endif %}
 
 <div class="panel">
   <h2>Config validation</h2>

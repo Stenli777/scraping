@@ -11,6 +11,8 @@ from app.api.health import collect_readiness_checks
 from app.scheduler.status import build_scheduler_status
 from app.services.operations_service import get_dashboard_stats
 from app.services.release_operations_service import build_release_operations_summary
+from app.models.publish_target import PublishTarget
+from app.services.publish_target_safety_service import summarize_targets_safety
 
 
 def _latest_backup_manifest() -> dict | None:
@@ -40,5 +42,8 @@ def build_operations_context(db: Session) -> dict:
         "backup_hint": "bash scripts/backup_postgres.sh && bash scripts/backup_storage.sh",
         "release_state_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_release_state.py",
         "release_ops": build_release_operations_summary(db),
+        "target_safety": summarize_targets_safety(db.query(PublishTarget).order_by(PublishTarget.id.asc()).all()),
+        "smoke_safe_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py",
+        "smoke_production_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-production",
         "paths": config.get("paths", {}),
     }

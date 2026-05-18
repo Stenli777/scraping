@@ -1,4 +1,10 @@
-"""Publish pipeline smoke checks (targets, health, mock receiver, v2 validation)."""
+"""Publish pipeline smoke checks (mock targets only; no production publish).
+
+Safety:
+- read-only by default
+- does not call production CRMFlow24 import
+- mock validation expects HTTP 400, not 401
+"""
 
 import json
 import os
@@ -23,6 +29,11 @@ def main() -> int:
             "targets" in health,
             str(health.get("healthy")),
         )
+        failures += check(
+            "publish_targets_smoke_scope",
+            health.get("healthy_for_smoke") is True,
+            "unhealthy non-production target in smoke scope",
+        )
 
     ok, mock_list, err = get_json("/api/mock-crmflow24/articles")
     failures += check("mock_crmflow24_list", ok, err or "")
@@ -33,7 +44,6 @@ def main() -> int:
             "testing_only missing",
         )
 
-    # minimal article_v2 validation via mock import (invalid payload -> 400)
     import urllib.error
     import urllib.request
 
