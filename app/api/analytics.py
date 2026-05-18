@@ -23,16 +23,18 @@ router = APIRouter(tags=["analytics"])
 
 
 class AnalyticsImportBody(BaseModel):
-    views: int | None = None
-    unique_visitors: int | None = None
-    avg_time_seconds: int | None = None
+    views: int | None = Field(None, ge=0)
+    unique_visitors: int | None = Field(None, ge=0)
+    avg_time_seconds: int | None = Field(None, ge=0)
     bounce_rate: float | None = Field(None, ge=0, le=1)
     ctr: float | None = Field(None, ge=0, le=1)
-    impressions: int | None = None
-    conversions: int | None = None
+    impressions: int | None = Field(None, ge=0)
+    conversions: int | None = Field(None, ge=0)
     position_avg: float | None = Field(None, ge=0)
     source: str = "manual"
     snapshot_date: date | None = None
+    import_notes: str | None = None
+    imported_by: str | None = None
 
 
 def _require_analytics():
@@ -62,10 +64,13 @@ def list_publications(
                 "revision_id": r.revision_id,
                 "publish_run_id": r.publish_run_id,
                 "external_url": r.external_url,
+                "public_url": r.public_url,
                 "publication_status": r.publication_status,
+                "public_visibility_status": r.public_visibility_status,
                 "draft_review_status": r.draft_review_status,
                 "draft_reviewed_at": r.draft_reviewed_at.isoformat() if r.draft_reviewed_at else None,
                 "published_at": r.published_at.isoformat() if r.published_at else None,
+                "public_confirmed_at": r.public_confirmed_at.isoformat() if r.public_confirmed_at else None,
             }
             for r in records
         ]
@@ -79,12 +84,19 @@ def import_analytics(
     db: Session = Depends(get_db),
 ):
     _require_analytics()
+    payload = body.model_dump(exclude_none=True)
+    imported_by = payload.pop("imported_by", None)
+    import_notes = payload.pop("import_notes", None)
+    snap_date = payload.pop("snapshot_date", None)
+    if import_notes:
+        payload["import_notes"] = import_notes
     try:
         snap = create_snapshot(
             db,
             publication_id,
-            body.model_dump(exclude_none=True),
-            snapshot_date=body.snapshot_date,
+            payload,
+            snapshot_date=snap_date,
+            imported_by=imported_by,
         )
         perf = db.scalar(
             select(ContentPerformance).where(
@@ -100,6 +112,7 @@ def import_analytics(
         "performance_score": perf.performance_score if perf else None,
         "trend": perf.trend if perf else None,
         "status": perf.status if perf else None,
+        "insight_labels": (perf.performance_feedback_json or {}).get("insight_labels") if perf else [],
     }
 
 
@@ -147,7 +160,9 @@ def document_analytics(document_id: int, db: Session = Depends(get_db)):
                 "id": rec.id,
                 "revision_id": rec.revision_id,
                 "external_url": rec.external_url,
+                "public_url": rec.public_url,
                 "publication_status": rec.publication_status,
+                "public_visibility_status": rec.public_visibility_status,
                 "published_at": rec.published_at.isoformat() if rec.published_at else None,
             },
             "performance": {
@@ -156,6 +171,7 @@ def document_analytics(document_id: int, db: Session = Depends(get_db)):
                 "ctr": perf.latest_ctr if perf else None,
                 "trend": perf.trend if perf else None,
                 "status": perf.status if perf else None,
+                "insight_labels": (perf.performance_feedback_json or {}).get("insight_labels") if perf else [],
             },
             "snapshots": [
                 {"id": s.id, "date": str(s.snapshot_date), "views": s.views, "ctr": s.ctr}

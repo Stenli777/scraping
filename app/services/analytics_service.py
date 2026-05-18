@@ -1,17 +1,9 @@
-"""Analytics snapshots and content performance — deterministic, no AI.
+"""Analytics snapshots and content performance — deterministic, no AI."""
 
-Performance score formula (0–100):
-  views_score    = min(100, views / 100)           # 10k views => 100
-  ctr_score      = min(100, ctr * 1000)            # 10% CTR => 100
-  position_score = max(0, 100 - position_avg * 10) # rank 1 => 90
-  conv_score     = min(100, conversions * 5)       # 20 conv => 100
-  score = round(0.35*views + 0.25*ctr + 0.25*position + 0.15*conv)
+from __future__ import annotations
 
-Status from score: 0-25 low, 26-50 average, 51-75 high, 76-100 top
-Trend: compare latest two snapshots views (+/- 5% threshold)
-"""
-
-from datetime import date, datetime, timezone
+import logging
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import select
@@ -19,7 +11,16 @@ from sqlalchemy.orm import Session
 
 from app.models.analytics_snapshot import AnalyticsSnapshot
 from app.models.content_performance import ContentPerformance
+from app.models.parsed_document import ParsedDocument
 from app.models.publication_record import PublicationRecord
+from app.services.analytics_insight_service import compute_insight_labels
+from app.services.pipeline_event_service import emit_pipeline_event
+from app.services.publication_confirmation_service import analytics_ready
+
+logger = logging.getLogger(__name__)
+
+ANALYTICS_IMPORT_STAGE = "analytics_import"
+MAX_FUTURE_SNAPSHOT_DAYS = 1
 
 
 class AnalyticsValidationError(ValueError):
@@ -99,6 +100,14 @@ def calculate_trend(db: Session, publication_record_id: int) -> str:
     return "stable"
 
 
+def _validate_snapshot_date(snapshot_date: date) -> None:
+    today = date.today()
+    if snapshot_date > today + timedelta(days=MAX_FUTURE_SNAPSHOT_DAYS):
+        raise AnalyticsValidationError(
+            f"snapshot_date must not be more than {MAX_FUTURE_SNAPSHOT_DAYS} day(s) in the future"
+        )
+
+
 def _validate_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     errors: list[str] = []
     cleaned: dict[str, Any] = {}
@@ -134,6 +143,24 @@ def _validate_metrics(payload: dict[str, Any]) -> dict[str, Any]:
         except (TypeError, ValueError):
             errors.append(f"{key} must be number")
 
+    views = cleaned.get("views")
+    uv = cleaned.get("unique_visitors")
+    if views is not None and views > 0 and uv is not None and uv > views:
+        errors.append("unique_visitors must be <= views when views > 0")
+
+    metric_keys = (
+        "views",
+        "unique_visitors",
+        "avg_time_seconds",
+        "impressions",
+        "conversions",
+        "bounce_rate",
+        "ctr",
+        "position_avg",
+    )
+    if not any(k in cleaned for k in metric_keys):
+        errors.append("at least one metric field is required")
+
     source = str(payload.get("source") or "manual").strip().lower()
     if source not in ("manual", "import", "api", "estimated"):
         errors.append("source must be manual|import|api|estimated")
@@ -145,21 +172,83 @@ def _validate_metrics(payload: dict[str, Any]) -> dict[str, Any]:
     return cleaned
 
 
+def _build_metadata(metrics: dict[str, Any], *, sample: bool = False) -> dict[str, Any] | None:
+    meta: dict[str, Any] = {}
+    if isinstance(metrics.get("metadata"), dict):
+        meta.update(metrics["metadata"])
+    notes = metrics.get("import_notes") or metrics.get("notes")
+    if notes:
+        meta["import_notes"] = str(notes).strip()
+    if metrics.get("imported_by"):
+        meta["imported_by"] = str(metrics["imported_by"]).strip()
+    if sample:
+        meta["sample"] = True
+        meta["sample_warning"] = "TEST ONLY — not for production reporting"
+    return meta or None
+
+
+def _emit_analytics_import(
+    db: Session,
+    *,
+    document_id: int,
+    publication_id: int,
+    snapshot_id: int,
+    source: str,
+    imported_by: str | None,
+    score: int | None,
+) -> None:
+    doc = db.get(ParsedDocument, document_id)
+    if not doc or not doc.task_id:
+        return
+    try:
+        emit_pipeline_event(
+            db,
+            doc.task_id,
+            ANALYTICS_IMPORT_STAGE,
+            status="imported",
+            payload={
+                "publication_id": publication_id,
+                "snapshot_id": snapshot_id,
+                "source": source,
+                "imported_by": imported_by,
+                "performance_score": score,
+            },
+        )
+    except Exception as exc:
+        logger.warning("analytics_import pipeline event failed: %s", exc)
+
+
 def create_snapshot(
     db: Session,
     publication_record_id: int,
     metrics: dict[str, Any],
     *,
     snapshot_date: date | None = None,
+    require_analytics_ready: bool = True,
+    imported_by: str | None = None,
+    sample: bool = False,
 ) -> AnalyticsSnapshot:
     record = db.get(PublicationRecord, publication_record_id)
     if not record:
         raise AnalyticsValidationError(f"Publication record {publication_record_id} not found")
 
+    if require_analytics_ready and not analytics_ready(record):
+        raise AnalyticsValidationError(
+            "Publication is not analytics_ready: confirm public in CRMFlow24 first"
+        )
+
+    snap_date = snapshot_date or date.today()
+    _validate_snapshot_date(snap_date)
+
     cleaned = _validate_metrics(metrics)
+    if sample:
+        cleaned["source"] = "estimated"
+
+    meta = _build_metadata(metrics, sample=sample)
+
     snap = AnalyticsSnapshot(
         publication_record_id=publication_record_id,
-        snapshot_date=snapshot_date or date.today(),
+        snapshot_date=snap_date,
         views=cleaned.get("views"),
         unique_visitors=cleaned.get("unique_visitors"),
         avg_time_seconds=cleaned.get("avg_time_seconds"),
@@ -169,13 +258,22 @@ def create_snapshot(
         conversions=cleaned.get("conversions"),
         position_avg=cleaned.get("position_avg"),
         source=cleaned.get("source", "manual"),
-        metadata_json=metrics.get("metadata") if isinstance(metrics.get("metadata"), dict) else None,
+        metadata_json=meta,
     )
     db.add(snap)
     db.flush()
 
     record.last_checked_at = datetime.now(timezone.utc)
-    update_content_performance(db, publication_record_id)
+    perf = update_content_performance(db, publication_record_id)
+    _emit_analytics_import(
+        db,
+        document_id=record.document_id,
+        publication_id=publication_record_id,
+        snapshot_id=snap.id,
+        source=snap.source,
+        imported_by=imported_by or (meta or {}).get("imported_by"),
+        score=perf.performance_score,
+    )
     db.commit()
     db.refresh(snap)
     return snap
@@ -205,6 +303,8 @@ def update_content_performance(db: Session, publication_record_id: int) -> Conte
         )
         db.add(perf)
 
+    prior_feedback = dict(perf.performance_feedback_json or {})
+
     if latest:
         score = calculate_performance_score(
             views=latest.views,
@@ -219,11 +319,14 @@ def update_content_performance(db: Session, publication_record_id: int) -> Conte
         perf.performance_score = score
         perf.status = _score_to_status(score)
         perf.trend = calculate_trend(db, publication_record_id)
+        insights = compute_insight_labels(db, publication_record_id)
         perf.performance_feedback_json = {
+            **prior_feedback,
             "formula_version": "v1",
             "weights": {"views": 0.35, "ctr": 0.25, "position": 0.25, "conversions": 0.15},
             "last_snapshot_id": latest.id,
             "ready_for_ai_optimization": False,
+            "insight_labels": insights,
         }
     else:
         perf.trend = "unknown"
