@@ -3,7 +3,9 @@
 <h1>Release candidate #{{ detail.id }}</h1>
 <p>Document <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a>
   | Revision #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">stale</span>{% endif %}
-  | Status <code>{{ detail.status }}</code> | QA score <strong>{{ detail.qa_score }}</strong></p>
+  | Status <code>{{ detail.status }}</code> | QA score <strong>{{ detail.qa_score }}</strong>
+  {% if public_info.analytics_ready %}<span class="badge status-done">analytics ready</span>{% endif %}
+</p>
 
 <h2>Blocking issues</h2>
 {% if detail.blocking_issues %}
@@ -66,16 +68,15 @@
   <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn">Mark accepted</button></form>
   <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn">Mark needs edits</button></form>
   <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn">Mark rejected</button></form>
-</div>
 {% if draft_review.publication_id %}
 <form method="post" action="/admin/publications/{{ draft_review.publication_id }}/check-visibility" style="display:inline;margin-left:0.5rem">
-  <button class="btn" type="submit">Check public visibility</button>
+  <button class="btn" type="submit">Check public visibility (legacy)</button>
 </form>
 {% endif %}
 </div>
 
 {% if draft_review.visibility %}
-<h3>Public visibility</h3>
+<h3>Public visibility (legacy check)</h3>
 <p>Checked at: {{ draft_review.visibility.checked_at }}</p>
 <ul>
   <li>Blog: {% if draft_review.visibility.visible_in_blog %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
@@ -91,6 +92,23 @@
   <li>#{{ fb.id }} — <code>{{ fb.review_status }}</code> — {{ fb.created_at }}</li>
   {% endfor %}
 </ul>
+{% endif %}
+
+<h2>Public publication (4Q)</h2>
+<p>Visibility: <code>{{ public_info.public_visibility_status or 'unknown' }}</code>
+  | Candidate: <code>{{ detail.public_status or 'unknown' }}</code>
+  {% if public_info.analytics_ready %}| <span class="badge status-done">analytics ready</span>{% endif %}
+</p>
+{% if public_info.public_url %}
+<p>Public URL: <a href="{{ public_info.public_url }}" target="_blank" rel="noopener">{{ public_info.public_url }}</a></p>
+{% endif %}
+{% if public_info.publication_id %}
+<div style="margin:1rem 0">
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/check-public-status" style="display:inline"><button class="btn">Check public status</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/confirm-public" style="display:inline"><button class="btn">Confirm public</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/mark-not-public" style="display:inline"><button class="btn">Mark not public</button></form>
+  <a class="btn" href="/admin/publications/{{ public_info.publication_id }}">Publication detail</a>
+</div>
 {% endif %}
 </section>
 {% endblock %}

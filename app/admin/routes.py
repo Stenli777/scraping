@@ -731,7 +731,8 @@ def admin_publications(request: Request, db: Session = Depends(get_db)):
         perf = db.query(ContentPerformance).filter(
             ContentPerformance.publication_record_id == rec.id
         ).first()
-        rows.append({"record": rec, "perf": perf})
+        from app.services.publication_confirmation_service import analytics_ready
+        rows.append({"record": rec, "perf": perf, "analytics_ready": analytics_ready(rec)})
     return templates.TemplateResponse(
         request,
         "publications.html",
@@ -789,6 +790,7 @@ def admin_operations(request: Request, db: Session = Depends(get_db)):
             "target_safety": ctx.get("target_safety"),
             "smoke_safe_hint": ctx.get("smoke_safe_hint"),
             "smoke_production_hint": ctx.get("smoke_production_hint"),
+            "post_publication": ctx.get("post_publication"),
             "title": "Operations",
         },
     )
@@ -1292,8 +1294,19 @@ def _load_draft_review_context(db: Session, candidate_id: int) -> dict:
             "visible_in_rss": bool((paths.get("/rss.xml") or {}).get("visible")),
         }
     draft_url = (pub.external_url if pub else None) or (run.draft_url if run else None)
+    public_info = {"publication_id": pub.id if pub else None, "public_url": None, "public_visibility_status": None, "analytics_ready": False}
+    if pub:
+        from app.services.publication_confirmation_service import analytics_ready, get_publication_confirmation_status
+        st = get_publication_confirmation_status(db, pub.id)
+        public_info = {
+            "publication_id": pub.id,
+            "public_url": st.get("public_url"),
+            "public_visibility_status": st.get("public_visibility_status"),
+            "analytics_ready": st.get("analytics_ready"),
+        }
     return {
         "detail": detail,
+        "public_info": public_info,
         "draft_review": {
             "draft_url": draft_url,
             "draft_review_status": cand.draft_review_status if cand else None,
@@ -1498,3 +1511,50 @@ def admin_check_public_visibility(publication_id: int, db: Session = Depends(get
     if redirect_cid:
         return RedirectResponse(f"/admin/release-candidates/{redirect_cid}", status_code=303)
     return RedirectResponse("/admin/draft-reviews", status_code=303)
+
+
+@router.get("/admin/publications/{publication_id}", response_class=HTMLResponse)
+def admin_publication_detail(publication_id: int, request: Request, db: Session = Depends(get_db)):
+    from app.services.publication_confirmation_service import get_publication_confirmation_status
+
+    pub = db.get(PublicationRecord, publication_id)
+    if not pub:
+        return RedirectResponse("/admin/publications", status_code=302)
+    status = get_publication_confirmation_status(db, publication_id)
+    return templates.TemplateResponse(
+        request,
+        "publication_detail.html",
+        {"request": request, "pub": pub, "status": status, "title": f"Publication #{publication_id}"},
+    )
+
+
+@router.post("/admin/publications/{publication_id}/check-public-status")
+def admin_pub_check_public(publication_id: int, db: Session = Depends(get_db)):
+    from app.services.publication_confirmation_service import check_public_visibility
+
+    check_public_visibility(db, publication_id)
+    db.commit()
+    return RedirectResponse(f"/admin/publications/{publication_id}", status_code=303)
+
+
+@router.post("/admin/publications/{publication_id}/confirm-public")
+def admin_pub_confirm_public(
+    publication_id: int,
+    confirmed_by: str = Form("operator"),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    from app.services.publication_confirmation_service import confirm_publication
+
+    confirm_publication(db, publication_id, confirmed_by=confirmed_by, notes=notes or None, force=bool(notes))
+    db.commit()
+    return RedirectResponse(f"/admin/publications/{publication_id}", status_code=303)
+
+
+@router.post("/admin/publications/{publication_id}/mark-not-public")
+def admin_pub_mark_not_public(publication_id: int, db: Session = Depends(get_db)):
+    from app.services.publication_confirmation_service import mark_not_public
+
+    mark_not_public(db, publication_id)
+    db.commit()
+    return RedirectResponse(f"/admin/publications/{publication_id}", status_code=303)

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Publication #{{ pub.id }}</h1>
+<p>Document <a href="/admin/documents/{{ pub.document_id }}">#{{ pub.document_id }}</a>
+  | Status <code>{{ pub.publication_status }}</code>
+  | Visibility <code>{{ pub.public_visibility_status }}</code>
+  {% if status.analytics_ready %}<span class="badge status-done">analytics ready</span>{% endif %}
+</p>
+
+<dl>
+  <dt>Draft URL (CRMFlow24 admin)</dt><dd>{% if pub.external_url %}<a href="{{ pub.external_url }}" target="_blank">{{ pub.external_url }}</a>{% else %}—{% endif %}</dd>
+  <dt>Public URL</dt><dd>{% if pub.public_url %}<a href="{{ pub.public_url }}" target="_blank">{{ pub.public_url }}</a>{% else %}—{% endif %}</dd>
+  <dt>Last visibility check</dt><dd>{{ pub.public_visibility_checked_at or '—' }}</dd>
+  <dt>Confirmed</dt><dd>{{ pub.public_confirmed_at or '—' }} {% if pub.public_confirmed_by %}by {{ pub.public_confirmed_by }}{% endif %}</dd>
+</dl>
+
+<ul>
+  <li>Blog: {% if pub.public_visible_in_blog %}yes{% else %}no{% endif %}</li>
+  <li>Sitemap: {% if pub.public_visible_in_sitemap %}yes{% else %}no{% endif %}</li>
+  <li>RSS: {% if pub.public_visible_in_rss %}yes{% else %}no{% endif %}</li>
+</ul>
+
+<h2>Actions</h2>
+<form method="post" action="/admin/publications/{{ pub.id }}/check-public-status" style="display:inline">
+  <button class="btn" type="submit">Check public status</button>
+</form>
+<form method="post" action="/admin/publications/{{ pub.id }}/confirm-public" style="display:inline">
+  <input type="hidden" name="confirmed_by" value="operator">
+  <input name="notes" placeholder="Confirmation notes" style="min-width:240px">
+  <button class="btn" type="submit">Confirm public</button>
+</form>
+<form method="post" action="/admin/publications/{{ pub.id }}/mark-not-public" style="display:inline">
+  <button class="btn" type="submit">Mark not public</button>
+</form>
+
+{% if pub.public_confirmation_notes %}
+<h3>Notes</h3>
+<p>{{ pub.public_confirmation_notes }}</p>
+{% endif %}
+{% endblock %}

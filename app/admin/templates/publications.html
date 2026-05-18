@@ -1,22 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <table class="table">
-  <thead><tr><th>ID</th><th>Doc</th><th>Rev</th><th>Status</th><th>URL</th><th>Published</th><th>Score</th><th>Views</th><th>Trend</th></tr></thead>
+  <thead><tr><th>ID</th><th>Doc</th><th>Pub status</th><th>Visibility</th><th>Analytics</th><th>Draft</th><th>Public</th><th></th></tr></thead>
   <tbody>
     {% for row in rows %}
     <tr>
-      <td>#{{ row.record.id }}</td>
+      <td><a href="/admin/publications/{{ row.record.id }}">#{{ row.record.id }}</a></td>
       <td><a href="/admin/documents/{{ row.record.document_id }}">#{{ row.record.document_id }}</a></td>
-      <td>{{ row.record.revision_id or '—' }}</td>
       <td><span class="badge">{{ row.record.publication_status }}</span></td>
-      <td class="url">{% if row.record.external_url %}<a href="{{ row.record.external_url }}" target="_blank">link</a>{% else %}—{% endif %}</td>
-      <td>{{ row.record.published_at or '—' }}</td>
-      <td>{{ row.perf.performance_score if row.perf else '—' }}</td>
-      <td>{{ row.perf.latest_views if row.perf else '—' }}</td>
-      <td>{{ row.perf.trend if row.perf else '—' }}</td>
+      <td><code>{{ row.record.public_visibility_status }}</code></td>
+      <td>{% if row.analytics_ready %}<span class="badge status-done">ready</span>{% else %}—{% endif %}</td>
+      <td class="url">{% if row.record.external_url %}<a href="{{ row.record.external_url }}" target="_blank">admin</a>{% else %}—{% endif %}</td>
+      <td class="url">{% if row.record.public_url %}<a href="{{ row.record.public_url }}" target="_blank">blog</a>{% else %}—{% endif %}</td>
+      <td><a href="/admin/publications/{{ row.record.id }}">view</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="9">No publication records yet.</td></tr>
+    <tr><td colspan="8">No publication records yet.</td></tr>
     {% endfor %}
   </tbody>
 </table>

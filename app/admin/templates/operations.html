@@ -70,6 +70,18 @@
   {% else %}<p>None pending</p>{% endif %}
 </div>
 
+{% if post_publication %}
+<div class="panel">
+  <h2>Post-publication tracking</h2>
+  <ul>
+    <li>Drafts awaiting public confirm: <strong>{{ post_publication.draft_awaiting_count }}</strong></li>
+    <li>Public confirmed: <strong>{{ post_publication.public_confirmed_count }}</strong></li>
+    <li>Inconsistent visibility: <strong>{{ post_publication.inconsistent_visibility_count }}</strong></li>
+    <li>Analytics ready: <strong>{{ post_publication.analytics_ready_count }}</strong></li>
+  </ul>
+</div>
+{% endif %}
+
 {% if target_safety %}
 <div class="panel">
   <h2>Publish target safety</h2>
@@ -124,6 +136,7 @@
   <h2>Operational hints</h2>
   <p><strong>Smoke:</strong> <code>{{ smoke_hint }}</code></p>
   <p><strong>Release state:</strong> <code>{{ release_state_hint }}</code></p>
+  <p><strong>Public check:</strong> <code>PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --publication-id ID</code></p>
   <p><strong>Backup:</strong> <code>{{ backup_hint }}</code></p>
   <p><strong>Verify:</strong> <code>bash scripts/verify_backup.sh</code></p>
   <p><strong>Storage integrity:</strong> <code>.venv/bin/python scripts/check_storage_integrity.py</code></p>
