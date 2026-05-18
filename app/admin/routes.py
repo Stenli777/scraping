@@ -574,6 +574,8 @@ def admin_discovered_urls(
     urls = q.limit(200).all()
     projects = {p.id: p for p in db.query(Project).all()}
     directories = {d.id: d for d in db.query(SourceDirectory).all()}
+    from app.services.source_quality_service import latest_quality_for_discovered, quality_to_dict
+    quality_map = {u.id: quality_to_dict(latest_quality_for_discovered(db, u.id)) for u in urls if latest_quality_for_discovered(db, u.id)}
     return templates.TemplateResponse(
         request,
         "discovered_urls.html",
@@ -583,6 +585,7 @@ def admin_discovered_urls(
             "filter_status": status,
             "projects": projects,
             "directories": directories,
+            "quality_map": quality_map,
             "title": "Discovered URLs",
         },
     )
@@ -593,6 +596,13 @@ def admin_enqueue_discovered(discovered_url_id: int, db: Session = Depends(get_d
     record = enqueue_discovered_url(db, discovered_url_id)
     if record.existing_task_id:
         return RedirectResponse(f"/admin/tasks/{record.existing_task_id}", status_code=303)
+    return RedirectResponse("/admin/discovered-urls", status_code=303)
+
+
+@router.post("/admin/discovered-urls/{discovered_url_id}/approve-quality")
+def admin_approve_quality(discovered_url_id: int, db: Session = Depends(get_db)):
+    from app.services.source_quality_service import approve_discovered_url_quality
+    approve_discovered_url_quality(db, discovered_url_id)
     return RedirectResponse("/admin/discovered-urls", status_code=303)
 
 
@@ -807,6 +817,22 @@ def admin_media(request: Request, db: Session = Depends(get_db)):
             "settings": get_settings(),
             "title": "Media Assets",
         },
+    )
+
+
+@router.get("/admin/source-quality", response_class=HTMLResponse)
+def admin_source_quality(request: Request, db: Session = Depends(get_db)):
+    from app.services.source_quality_metrics_service import get_source_quality_metrics
+    from app.models.source_quality_score import SourceQualityScore
+    from app.models.domain_trust_registry import DomainTrustRegistry
+    metrics = get_source_quality_metrics(db)
+    trusted = db.query(DomainTrustRegistry).order_by(DomainTrustRegistry.trust_score.desc()).limit(30).all()
+    blocked = db.query(SourceQualityScore).filter(SourceQualityScore.strategy_allowed.is_(False)).order_by(SourceQualityScore.id.desc()).limit(20).all()
+    high = db.query(SourceQualityScore).filter(SourceQualityScore.quality_score >= 75).order_by(SourceQualityScore.id.desc()).limit(15).all()
+    return templates.TemplateResponse(
+        request,
+        "source_quality_dashboard.html",
+        {"request": request, "metrics": metrics, "trusted": trusted, "blocked": blocked, "high": high, "title": "Source Quality"},
     )
 
 

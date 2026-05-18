@@ -10,6 +10,12 @@ from app.services.discovery_service import (
     ignore_discovered_url,
     run_discovery,
 )
+from app.services.source_quality_service import (
+    approve_discovered_url_quality,
+    latest_quality_for_discovered,
+    quality_to_dict,
+    score_discovered_url,
+)
 
 router = APIRouter(tags=["discovery"])
 
@@ -104,6 +110,7 @@ def list_discovered_urls(
                 "existing_task_id": r.existing_task_id,
                 "existing_document_id": r.existing_document_id,
                 "discovered_at": r.discovered_at.isoformat() if r.discovered_at else None,
+                "quality": quality_to_dict(q) if (q := latest_quality_for_discovered(db, r.id)) else None,
             }
             for r in rows
         ]
@@ -131,3 +138,25 @@ def api_ignore_discovered_url(discovered_url_id: int, db: Session = Depends(get_
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"success": True, "id": record.id, "status": record.status}
+
+
+
+@router.post("/api/discovered-urls/{discovered_url_id}/score-quality")
+def api_score_discovered_quality(discovered_url_id: int, db: Session = Depends(get_db)):
+    try:
+        row = score_discovered_url(db, discovered_url_id)
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return quality_to_dict(row)
+
+
+@router.post("/api/discovered-urls/{discovered_url_id}/approve-quality")
+def api_approve_discovered_quality(discovered_url_id: int, db: Session = Depends(get_db)):
+    try:
+        record = approve_discovered_url_quality(db, discovered_url_id)
+        db.commit()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    q = latest_quality_for_discovered(db, discovered_url_id)
+    return {"success": True, "id": record.id, "status": record.status, "quality": quality_to_dict(q) if q else None}

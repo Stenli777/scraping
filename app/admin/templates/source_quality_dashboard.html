@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Source quality intelligence</h2>
+  <p><a href="/admin/discovered-urls">Discovered URLs</a> · <a href="/admin">Admin</a></p>
+
+<div class="panel">
+  <h3>Metrics</h3>
+  <p>Scored: {{ metrics.total_scored_urls }} · Blocked: {{ metrics.blocked_pct }}% · Avg quality: {{ metrics.avg_quality_score or '—' }}</p>
+  <p>Avg relevance: {{ metrics.avg_relevance_score or '—' }} · Pending: {{ metrics.quality_pending }} · Blocked URLs: {{ metrics.quality_blocked_urls }}</p>
+  <p>Duplicate high risk: {{ metrics.duplicate_high_risk_count }} · AI noise warnings: {{ metrics.ai_noise_warnings }}</p>
+
+<div class="panel"><h3>Trusted domains</h3>
+<ul>{% for d in trusted %}<li>{{ d.domain }} — {{ d.trust_score }} ({{ d.trust_level }})</li>{% endfor %}</ul>
+
+<div class="panel"><h3>Recent blocked</h3>
+<ul>{% for b in blocked %}<li><a href="/admin/discovered-urls">{{ b.url[:60] }}</a> — {{ b.strategy_block_reason }} (q={{ b.quality_score }})</li>{% endfor %}</ul>
+
+<div class="panel"><h3>High quality</h3>
+<ul>{% for h in high %}<li>{{ h.url[:70] }} — Q{{ h.quality_score }} R{{ h.relevance_score }}</li>{% endfor %}</ul>
+
+{% endblock %}

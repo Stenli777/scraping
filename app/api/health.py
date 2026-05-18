@@ -146,6 +146,13 @@ def collect_readiness_checks() -> dict:
     except Exception as exc:
         result["enrichment"] = {"status": "error", "detail": str(exc)[:200]}
 
+    try:
+        from app.services.source_quality_metrics_service import get_source_quality_health
+        with SessionLocal() as db:
+            result["source_quality"] = get_source_quality_health(db)
+    except Exception as exc:
+        result["source_quality"] = {"status": "error", "detail": str(exc)[:200]}
+
     return result
 
 
@@ -161,6 +168,8 @@ def health_ready():
         out["scheduler"] = data["scheduler"]
     if "enrichment" in data:
         out["enrichment"] = data["enrichment"]
+    if "source_quality" in data:
+        out["source_quality"] = data["source_quality"]
     return out
 
 
