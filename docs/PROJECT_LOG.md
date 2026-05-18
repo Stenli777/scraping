@@ -344,3 +344,11 @@
 - `docs/SCRIPTS.md` — inventory scripts.
 - `/admin/operations` — блок Release Operations.
 - Post-draft review checklist в RELEASE_RUNBOOK.
+
+## 2026-05-18 — Этап 4P: smoke repair + publish target isolation
+
+- Root cause smoke FAIL: mock `/api/mock-crmflow24/articles/import` used `CRMFLOW24_PUBLISH_TOKEN` → HTTP 401 without Bearer.
+- Fix: mock auth isolated (`MOCK_CRMFLOW24_PUBLISH_TOKEN` only; open if unset).
+- `publish_target_safety_service.py`: mock/test/production classes + validation.
+- Smoke default skips production; `--include-production` for safe production probe script.
+- Disabled `crmflow24-test-bad-token` target.

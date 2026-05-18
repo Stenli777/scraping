@@ -88,3 +88,13 @@
 8. If **needs edits** — revise in Scrap, new revision + release candidate, re-publish draft when ready.
 
 > **Warning:** Scrap never publishes publicly. CRMFlow24 admin remains the final public publishing boundary.
+
+## Publish target classes (smoke safety)
+
+| Class | Rules |
+|-------|--------|
+| **mock** | Local mock receiver only; no production token; default smoke |
+| **test** | Failure simulation; disabled by default; ignored in health |
+| **production** | Requires env token; never in default smoke; use `--include-production` |
+
+Scrap never public-publishes. Production draft/publish only with explicit operator action.

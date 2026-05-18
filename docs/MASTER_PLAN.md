@@ -52,3 +52,5 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - [x] **4N** — CRMFlow24 draft review feedback loop (manual operator layer, visibility check, admin queue).
 
 - [x] **4O** — workspace cleanup, scripts inventory, release state checks, operations checkpoint.
+
+- [x] **4P** — smoke suite repair, publish target safety validation, mock/production isolation.

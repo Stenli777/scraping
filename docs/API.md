@@ -251,3 +251,7 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 | POST | `/api/publications/{id}/check-public-visibility` | GET-only проверка blog/sitemap/rss |
 
 `review_status`: `pending`, `accepted`, `needs_edits`, `rejected`, `archived`.
+
+### GET /api/publish-targets/health
+
+Response includes per-target: `target_class`, `ignored_by_smoke`, `ignored_by_default_health`, `safety_issues`, `healthy_for_smoke` (aggregate).

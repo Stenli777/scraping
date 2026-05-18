@@ -310,3 +310,15 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - `PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_release_state.py`
 - `docs/SCRIPTS.md` — полный inventory
 - `/admin/operations` — release summary (drafts, missing feedback, smoke warnings)
+
+### Smoke (safe default)
+
+```bash
+PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py
+```
+
+Production target probe (no publish):
+
+```bash
+PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-production
+```

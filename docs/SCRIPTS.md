@@ -63,3 +63,10 @@ Stage regression tests (2x–4x). По умолчанию не трогают CR
 **Prerequisites:** `.env` на сервере, `systemctl` сервисы active, `alembic upgrade head`.
 
 **Граница:** Scrap **никогда** не публикует публично. Public publish — только вручную в CRMFlow24 admin.
+
+### Smoke safety mode (4P)
+
+| Script | Default | Production |
+|--------|---------|------------|
+| `scripts/smoke/run_all.py` | mock-only, no production publish | `--include-production` adds `check_crmflow24_production_target.py` |
+| `scripts/smoke/check_crmflow24_production_target.py` | not in default suite | OPTIONS/HEAD probe, token env check, no draft |

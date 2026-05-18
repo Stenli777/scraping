@@ -129,3 +129,8 @@ Force publish on raw `/api/publish` remains for admin debug only.
 ## Manual publication boundary (4N)
 
 Scrap записывает результат ручной проверки draft (`draft_review_feedback`, `draft_review_status`). Scrap **не** меняет статус поста в CRMFlow24 и **не** выполняет public publish. Публичная публикация — только оператором в CRMFlow24 admin.
+
+## Mock vs production auth (4P)
+
+- **Mock receiver** (`/api/mock-crmflow24/*`): optional `MOCK_CRMFLOW24_PUBLISH_TOKEN` only. Does **not** read `CRMFLOW24_PUBLISH_TOKEN`.
+- **Production** (`crmflow24.ru/api/scrap/articles/import`): requires `CRMFLOW24_PUBLISH_TOKEN` (or configured env).

@@ -159,3 +159,8 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 ### Operations — Release Operations block (4O)
 
 Read-only summary: latest `published_draft` candidates, publications missing feedback, needs_edits/rejected counts, smoke/test warnings. Links to draft reviews and release candidates.
+
+### Publish targets safety (4P)
+
+`/admin/publish-targets` — target class (mock/test/production), safety warnings, smoke scope.
+`/admin/operations` — publish target safety summary, smoke command hints.
