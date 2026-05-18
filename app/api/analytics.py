@@ -63,6 +63,8 @@ def list_publications(
                 "publish_run_id": r.publish_run_id,
                 "external_url": r.external_url,
                 "publication_status": r.publication_status,
+                "draft_review_status": r.draft_review_status,
+                "draft_reviewed_at": r.draft_reviewed_at.isoformat() if r.draft_reviewed_at else None,
                 "published_at": r.published_at.isoformat() if r.published_at else None,
             }
             for r in records

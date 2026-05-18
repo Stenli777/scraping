@@ -519,6 +519,8 @@ def run_release_qa(db: Session, candidate_id: int) -> dict[str, Any]:
             "qa_score": score,
             "blocking_count": len(blocking),
             "status": candidate.status,
+        "draft_review_status": candidate.draft_review_status,
+        "draft_reviewed_at": candidate.draft_reviewed_at.isoformat() if candidate.draft_reviewed_at else None,
         },
     )
 

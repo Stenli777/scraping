@@ -37,7 +37,7 @@ _ALLOWED: dict[EditorialStatus, set[EditorialStatus]] = {
         EditorialStatus.NEEDS_REVISION,
         EditorialStatus.REJECTED,
     },
-    EditorialStatus.PUBLISHED_DRAFT: {EditorialStatus.ARCHIVED},
+    EditorialStatus.PUBLISHED_DRAFT: {EditorialStatus.ARCHIVED, EditorialStatus.NEEDS_REVISION, EditorialStatus.REJECTED},
     EditorialStatus.REJECTED: {EditorialStatus.OPERATOR_REVIEW, EditorialStatus.ARCHIVED},
     EditorialStatus.ARCHIVED: set(),
 }
