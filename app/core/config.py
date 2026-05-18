@@ -68,6 +68,8 @@ class Settings(BaseSettings):
     similarity_topic_overlap_threshold: int = 65
     similarity_cannibalization_threshold: int = 75
     enable_similarity_analysis: bool = True
+    release_qa_required_pass_base: int = 70
+    enable_release_candidates: bool = True
     seo_enrich_timeout_seconds: int = 60
     quality_review_timeout_seconds: int = 90
     enable_project_profiles: bool = True
