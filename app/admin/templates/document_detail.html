@@ -17,6 +17,38 @@
   </p>
 </div>
 
+
+<div class="panel" id="strategy">
+  <h2>Content strategy</h2>
+  {% if strategy_context.clusters %}
+  <p><strong>Clusters:</strong>
+    {% for c in strategy_context.clusters %}<span class="badge"><a href="/admin/clusters/{{ c.id }}">{{ c.name }}</a></span> {% endfor %}
+  </p>
+  {% endif %}
+  {% if strategy_context.campaigns %}
+  <p><strong>Campaigns:</strong>
+    {% for c in strategy_context.campaigns %}<span class="badge"><a href="/admin/campaigns/{{ c.id }}">{{ c.name }}</a></span> {% endfor %}
+  </p>
+  {% endif %}
+  {% if strategy_context.duplicate_warnings %}
+  <p class="warn-box"><strong>Duplicate warnings (non-blocking):</strong>
+    {% for w in strategy_context.duplicate_warnings %}{{ w.message }}; {% endfor %}
+  </p>
+  {% endif %}
+  {% if strategy_context.topics %}
+  <p><strong>Topics:</strong> {{ strategy_context.topics.primary_topic }}
+    {% if strategy_context.topics.keywords %}<br><small>{{ strategy_context.topics.keywords | join(', ') }}</small>{% endif %}
+  </p>
+  {% endif %}
+  {% if strategy_context.coverage_context %}
+  <h3>Cluster coverage</h3>
+  <ul>{% for cov in strategy_context.coverage_context %}
+    <li>{{ cov.cluster }}: {{ cov.documents }} docs, {{ cov.published }} published{% if cov.missing_content %} ? gaps: {{ cov.missing_content | join(', ') }}{% endif %}</li>
+  {% endfor %}</ul>
+  {% endif %}
+  <p><a href="/api/documents/{{ document.id }}/extract-topics">API: extract topics</a></p>
+</div>
+
 <div class="panel" id="publish-readiness">
   <h2>Publish safety</h2>
   {% set chk = publish_readiness.checks or {} %}

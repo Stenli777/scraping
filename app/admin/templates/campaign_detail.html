@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>{{ campaign.name }}</h2>
+  <p><span class="badge">{{ campaign.campaign_status }}</span> ? project #{{ campaign.project_id }}</p>
+  {% if campaign.description %}<p>{{ campaign.description }}</p>{% endif %}
+
+<div class="panel">
+  <h3>Coverage</h3>
+  <p>Documents: {{ coverage.documents }} ? published {{ coverage.published }} ? drafts {{ coverage.drafts }} ? planned {{ coverage.planned }}</p>
+  {% if coverage.missing_topics %}<p><strong>Missing topics:</strong> {{ coverage.missing_topics | join(', ') }}</p>{% endif %}
+  {% if coverage.duplicate_warnings %}
+  <p class="warn-box"><strong>Duplicate warnings:</strong>
+    {% for w in coverage.duplicate_warnings %}{{ w.message }}; {% endfor %}
+  </p>
+  {% endif %}
+
+{% if coverage.clusters %}
+<div class="panel"><h3>Clusters in campaign</h3>
+<ul>{% for cl in coverage.clusters %}<li><a href="/admin/clusters/{{ cl.cluster_id }}">{{ cl.cluster }}</a> ? {{ cl.documents }} docs</li>{% endfor %}</ul>
+
+{% endif %}
+<div class="panel">
+  <h3>Suggested articles (rule-based)</h3>
+  <ul>{% for s in suggestions %}<li><strong>{{ s.title }}</strong> ? <em>{{ s.reason }}</em></li>{% else %}<li>No suggestions</li>{% endfor %}</ul>
+
+<div class="panel">
+  <h3>Performance summary</h3>
+  <p>Top clusters: {{ performance.cluster_performance.top_performing | length }}</p>
+
+<p><a href="/admin/campaigns">? campaigns</a></p>
+{% endblock %}

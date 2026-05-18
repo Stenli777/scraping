@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>Content campaigns</h2>
+  <p>Operator-controlled editorial planning ? no autonomous publishing.</p>
+
+<table class="table">
+  <thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Project</th><th>Keywords</th><th></th></tr></thead>
+  <tbody>
+    {% for c in campaigns %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td>{{ c.name }}</td>
+      <td><span class="badge">{{ c.campaign_status }}</span></td>
+      <td>{{ c.project_id }}</td>
+      <td>{{ (c.target_keywords_json or [])|length }}</td>
+      <td><a href="/admin/campaigns/{{ c.id }}">open</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No campaigns yet ? create via API POST /api/campaigns</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

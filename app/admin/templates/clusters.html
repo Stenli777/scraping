@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel"><h2>Topic clusters</h2>
+<table class="table">
+  <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Keyword</th><th>Priority</th><th></th></tr></thead>
+  <tbody>
+    {% for c in clusters %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td>{{ c.name }}</td>
+      <td>{{ c.cluster_type }}</td>
+      <td>{{ c.primary_keyword or '?' }}</td>
+      <td>{{ c.priority }}</td>
+      <td><a href="/admin/clusters/{{ c.id }}">open</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No clusters ? create via API POST /api/clusters</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h2>{{ cluster.name }}</h2>
+  <p><code>{{ cluster.cluster_type }}</code> ? intent {{ cluster.search_intent or '?' }} ? priority {{ cluster.priority }}</p>
+  <p>Primary: <strong>{{ cluster.primary_keyword or '?' }}</strong></p>
+  {% if cluster.secondary_keywords_json %}<p>Secondary: {{ cluster.secondary_keywords_json | join(', ') }}</p>{% endif %}
+
+<div class="panel">
+  <h3>Coverage</h3>
+  <p>{{ coverage.documents }} documents ? published {{ coverage.published }} ? drafts {{ coverage.drafts }}</p>
+  {% if coverage.missing_content %}<p><strong>Gaps:</strong> {{ coverage.missing_content | join(', ') }}</p>{% endif %}
+
+<div class="panel">
+  <h3>Linked documents</h3>
+  <ul>{% for l in links %}<li><a href="/admin/documents/{{ l.document_id }}">Document #{{ l.document_id }}</a>{% if l.is_primary %} (primary){% endif %}</li>{% else %}<li>No links</li>{% endfor %}</ul>
+
+{% if performance %}
+<div class="panel"><h3>Performance</h3>
+<p>Score: {{ performance.avg_performance_score or '?' }} ? views: {{ performance.total_views or 0 }}</p>
+
+{% endif %}
+<p><a href="/admin/clusters">? clusters</a></p>
+{% endblock %}

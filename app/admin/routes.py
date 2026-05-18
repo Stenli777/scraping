@@ -30,6 +30,9 @@ from app.models.project import Project
 from app.models.discovered_url import DiscoveredUrl
 from app.models.publish_run import PublishRun
 from app.models.publish_target import PublishTarget
+from app.models.content_campaign import ContentCampaign
+from app.models.topic_cluster import TopicCluster
+from app.models.document_cluster_link import DocumentClusterLink
 from app.models.source_directory import SourceDirectory
 from app.models.review_result import ReviewResult
 from app.models.seo_metadata import SeoMetadata
@@ -62,6 +65,14 @@ from app.services.prompt_service import (
     list_prompt_versions,
 )
 from app.services.publish_readiness_service import get_publish_readiness
+from app.services.campaign_service import (
+    campaign_coverage,
+    campaign_performance_summary,
+    cluster_coverage,
+    cluster_performance_summary,
+    suggested_articles_for_campaign,
+    document_strategy_context,
+)
 from app.services.quality_service import get_latest_quality_score, run_quality_for_document
 from app.hermes.health import check_hermes_health
 from app.hermes.routing import list_hermes_aliases
@@ -187,6 +198,7 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
             "seo_record": seo_record,
             "pipeline_summary": pipeline_summary,
             "publish_readiness": publish_readiness,
+            "strategy_context": strategy_context,
             "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Задача #{task_id}",
@@ -238,6 +250,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
         build_pipeline_summary(db, task, document) if task else None
     )
     publish_readiness = get_publish_readiness(db, document_id)
+    strategy_context = document_strategy_context(db, document_id)
     quality_record = get_latest_quality_score(db, document_id)
     hermes_research = get_latest_hermes_result(db, document_id, "research_summary")
     hermes_critique = get_latest_hermes_result(db, document_id, "rewrite_critique")
@@ -287,6 +300,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "publish_runs": publish_runs,
             "publish_revision_numbers": publish_revision_numbers,
             "publish_readiness": publish_readiness,
+            "strategy_context": strategy_context,
             "pipeline_summary": pipeline_summary,
             "timeline": timeline,
             "revision_count": revision_count,
@@ -1058,3 +1072,66 @@ def admin_system(request: Request, db: Session = Depends(get_db)):
         },
     )
 
+@router.get("/admin/campaigns", response_class=HTMLResponse)
+def admin_campaigns(request: Request, db: Session = Depends(get_db)):
+    campaigns = db.query(ContentCampaign).order_by(ContentCampaign.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "campaigns.html",
+        {"request": request, "campaigns": campaigns, "title": "Campaigns"},
+    )
+
+
+@router.get("/admin/campaigns/{campaign_id}", response_class=HTMLResponse)
+def admin_campaign_detail(campaign_id: int, request: Request, db: Session = Depends(get_db)):
+    campaign = db.get(ContentCampaign, campaign_id)
+    if not campaign:
+        return RedirectResponse("/admin/campaigns", status_code=302)
+    coverage = campaign_coverage(db, campaign_id)
+    suggestions = suggested_articles_for_campaign(db, campaign_id)
+    performance = campaign_performance_summary(db, campaign_id)
+    return templates.TemplateResponse(
+        request,
+        "campaign_detail.html",
+        {
+            "request": request,
+            "campaign": campaign,
+            "coverage": coverage,
+            "suggestions": suggestions,
+            "performance": performance,
+            "title": f"Campaign {campaign.name}",
+        },
+    )
+
+
+@router.get("/admin/clusters", response_class=HTMLResponse)
+def admin_clusters(request: Request, db: Session = Depends(get_db)):
+    clusters = db.query(TopicCluster).order_by(TopicCluster.priority.desc(), TopicCluster.id.desc()).limit(100).all()
+    return templates.TemplateResponse(
+        request,
+        "clusters.html",
+        {"request": request, "clusters": clusters, "title": "Topic Clusters"},
+    )
+
+
+@router.get("/admin/clusters/{cluster_id}", response_class=HTMLResponse)
+def admin_cluster_detail(cluster_id: int, request: Request, db: Session = Depends(get_db)):
+    cluster = db.get(TopicCluster, cluster_id)
+    if not cluster:
+        return RedirectResponse("/admin/clusters", status_code=302)
+    coverage = cluster_coverage(db, cluster_id)
+    perf = cluster_performance_summary(db, project_id=cluster.project_id)
+    cluster_perf = next((r for r in perf["clusters"] if r["cluster_id"] == cluster_id), None)
+    links = db.query(DocumentClusterLink).filter(DocumentClusterLink.cluster_id == cluster_id).all()
+    return templates.TemplateResponse(
+        request,
+        "cluster_detail.html",
+        {
+            "request": request,
+            "cluster": cluster,
+            "coverage": coverage,
+            "performance": cluster_perf,
+            "links": links,
+            "title": f"Cluster {cluster.name}",
+        },
+    )
