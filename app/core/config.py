@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     enrichment_severe_stale_threshold: int = 3
     worker_enrichment_per_poll: int = 1
     topic_cleanup_timeout_seconds: int = 25
+    similarity_near_duplicate_threshold: int = 80
+    similarity_topic_overlap_threshold: int = 65
+    similarity_cannibalization_threshold: int = 75
+    enable_similarity_analysis: bool = True
     seo_enrich_timeout_seconds: int = 60
     quality_review_timeout_seconds: int = 90
     enable_project_profiles: bool = True
