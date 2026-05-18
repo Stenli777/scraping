@@ -26,6 +26,7 @@ class EnrichmentType:
     SEO_CLEANUP = "seo_cleanup"
     QUALITY_RECHECK = "quality_recheck"
     CLUSTER_SUGGESTION = "cluster_suggestion"
+    SIMILARITY_ANALYSIS = "similarity_analysis"
 
 
 class LlmEnrichmentJob(Base):

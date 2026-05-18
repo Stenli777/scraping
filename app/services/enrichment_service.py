@@ -59,6 +59,8 @@ def timeout_for_enrichment(enrichment_type: str) -> int:
         return settings.topic_cleanup_timeout_seconds
     if enrichment_type == EnrichmentType.SEO_CLEANUP:
         return settings.seo_enrich_timeout_seconds
+    if enrichment_type == EnrichmentType.SIMILARITY_ANALYSIS:
+        return settings.topic_cleanup_timeout_seconds
     if enrichment_type == EnrichmentType.QUALITY_RECHECK:
         return settings.quality_review_timeout_seconds
     return settings.topic_cleanup_timeout_seconds
@@ -101,6 +103,37 @@ def _load_document_context(db: Session, document_id: int) -> dict[str, Any]:
         "project_id": project_id,
         "profile_context": profile_context,
     }
+
+
+def queue_similarity_analysis_job(
+    db: Session,
+    *,
+    document_id: int,
+    project_id: int | None = None,
+    requested_by: str | None = "api",
+) -> LlmEnrichmentJob | None:
+    settings = get_settings()
+    if not settings.enable_similarity_analysis:
+        return None
+    existing = db.scalar(
+        select(LlmEnrichmentJob).where(
+            LlmEnrichmentJob.document_id == document_id,
+            LlmEnrichmentJob.enrichment_type == EnrichmentType.SIMILARITY_ANALYSIS,
+            LlmEnrichmentJob.status.in_([EnrichmentJobStatus.QUEUED, EnrichmentJobStatus.RUNNING]),
+        )
+    )
+    if existing:
+        return existing
+    job = LlmEnrichmentJob(
+        document_id=document_id,
+        project_id=project_id,
+        enrichment_type=EnrichmentType.SIMILARITY_ANALYSIS,
+        status=EnrichmentJobStatus.QUEUED,
+        requested_by=requested_by,
+    )
+    db.add(job)
+    db.flush()
+    return job
 
 
 def queue_topic_cleanup_job(
@@ -214,6 +247,14 @@ def _persist_topic_enrichment_result(
     db.flush()
 
 
+def process_similarity_analysis_job(db: Session, job: LlmEnrichmentJob) -> None:
+    from app.services.document_similarity_service import analyze_document_similarity
+
+    result = analyze_document_similarity(db, job.document_id, persist=True, deep=True)
+    job.result_json = result
+    job.status = EnrichmentJobStatus.SUCCESS
+
+
 def process_topic_cleanup_job(db: Session, job: LlmEnrichmentJob) -> None:
     from app.services.topic_extraction_service import run_llm_topic_cleanup
 
@@ -281,6 +322,8 @@ def process_enrichment_job(db: Session, job_id: int) -> None:
     try:
         if job.enrichment_type == EnrichmentType.TOPIC_CLEANUP:
             process_topic_cleanup_job(db, job)
+        elif job.enrichment_type == EnrichmentType.SIMILARITY_ANALYSIS:
+            process_similarity_analysis_job(db, job)
         else:
             job.status = EnrichmentJobStatus.SKIPPED
             job.error_message = f"unsupported enrichment_type: {job.enrichment_type}"

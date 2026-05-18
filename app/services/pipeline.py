@@ -138,6 +138,17 @@ class PipelineService:
             self._set_status(task, TaskStatus.SAVING)
             document = self._upsert_document(task, parsed, doc_hash, rewritten)
             self._create_version(document)
+            try:
+                from app.services.document_similarity_service import (
+                    quick_similarity_check,
+                    record_rewrite_lineage,
+                )
+
+                if rewrite_result.success:
+                    record_rewrite_lineage(self.db, document.id)
+                quick_similarity_check(self.db, document.id)
+            except Exception:
+                pass
 
             self._set_status(task, TaskStatus.SEO_ENRICHING)
             seo_content = rewritten or parsed.clean_text

@@ -229,6 +229,17 @@ def get_publish_readiness(
         checks["media"]["warnings"].append("preview_not_approved")
         warnings.append("preview_not_approved")
 
+    try:
+        from app.services.document_similarity_service import get_canonical_strategy_warnings
+
+        canonical_warnings = get_canonical_strategy_warnings(db, document_id)
+        for w in canonical_warnings:
+            if w not in warnings:
+                warnings.append(w)
+        checks["canonical_similarity_warnings"] = canonical_warnings
+    except Exception:
+        checks["canonical_similarity_warnings"] = []
+
     ready = len(missing) == 0
     return {
         "ready": ready,
