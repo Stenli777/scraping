@@ -215,3 +215,9 @@ curl -s http://127.0.0.1:8800/api/system/workspace
 - Retry: `POST /api/publish-runs/{id}/retry` when status is `failed_retryable`
 - Mock seed: `PYTHONPATH=/opt/scrap .venv/bin/python scripts/seed_crmflow24_mock_v2_target.py`
 - Integration tests: `PYTHONPATH=/opt/scrap .venv/bin/python scripts/test_4d_publish.py [document_id]`
+
+### Campaign operations (4E)
+
+- Tests: `PYTHONPATH=/opt/scrap .venv/bin/python scripts/test_4e_campaigns.py [doc_id]`
+- Smoke: `scripts/smoke/check_campaigns.py`
+

@@ -170,3 +170,7 @@ Readiness: `missing_preview_image` warning; publish allowed without media.
 
 After rewrite/SEO/review/quality/editorial: manual `publish-draft` sends `article_v1` or `article_v2` to configured target. Acknowledgment updates publication tracking. No auto-publish.
 
+### Strategy layer (4E)
+
+After rewrite/SEO: operator assigns clusters/campaigns, extracts topics, reviews coverage gaps. No auto-generation.
+

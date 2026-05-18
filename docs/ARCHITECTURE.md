@@ -1083,3 +1083,7 @@ publish_run (success, not dry) → publication_record → manual import → anal
 
 HTTP-only integration; Scrap builds `article_v2`, receives acknowledgment, tracks `PublicationRecord`. Mock receiver for tests. See `docs/CRMFLOW24_INTEGRATION.md`.
 
+### Stage 4E ? content strategy layer
+
+Topics ? clusters ? campaigns ? coverage ? analytics feedback. Deterministic heuristics only.
+

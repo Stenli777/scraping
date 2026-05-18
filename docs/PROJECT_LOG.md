@@ -236,3 +236,13 @@
 - Admin: publish runs/targets show payload version, retry chain, health
 - Docs: `CRMFLOW24_INTEGRATION.md`, API/ARCHITECTURE/OPERATIONS updates
 
+
+
+## 2026-05-18 ? Stage 4E: campaign planning and topic clusters
+
+- Models: `content_campaigns`, `topic_clusters`, link tables
+- Services: `clustering_service`, `campaign_service` (coverage, duplicates, suggestions)
+- API: campaigns/clusters CRUD, topic extraction, assign cluster/campaign, coverage, suggestions
+- Admin: `/admin/campaigns`, `/admin/clusters`, document strategy block
+- Automation hook: `campaign_analysis` (disabled)
+- Smoke: `scripts/smoke/check_campaigns.py`

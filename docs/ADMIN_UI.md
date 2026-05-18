@@ -77,3 +77,9 @@ Base: **https://scrap.crmflow24.ru/admin**
 - `/admin/publish-runs` ? payload version, retry chain, remote status
 - Document detail publish history ? payload version, retry parent, remote status
 
+### Campaign admin (4E)
+
+- `/admin/campaigns`, `/admin/campaigns/{id}` ? coverage, suggestions, duplicates
+- `/admin/clusters`, `/admin/clusters/{id}` ? linked docs, performance
+- Document detail ? strategy block (cluster, campaign, warnings)
+

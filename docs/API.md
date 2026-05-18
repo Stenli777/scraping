@@ -142,3 +142,10 @@ Requires `ENABLE_ANALYTICS=true`.
 - Mock (testing): `POST /api/mock-crmflow24/articles/import`, `GET /api/mock-crmflow24/articles`
 - Payload versions: `article_v1`, `article_v2` (see `docs/CRMFLOW24_INTEGRATION.md`)
 
+### Campaign planning (4E)
+
+- `GET/POST /api/campaigns`, `GET /api/campaigns/{id}/coverage`, `GET .../suggested-articles`
+- `GET/POST /api/clusters`, `GET /api/clusters/{id}/coverage`, `GET /api/clusters/suggest`
+- `POST /api/documents/{id}/extract-topics`, `assign-cluster`, `assign-campaign`
+- `GET /api/documents/{id}/strategy`, `duplicate-warnings`
+
