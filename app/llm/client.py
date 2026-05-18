@@ -36,6 +36,7 @@ class LLMClient:
         model_alias: str,
         messages: list[dict[str, str]],
         temperature: float = 0.3,
+        timeout_seconds: int | None = None,
     ) -> CompletionResult:
         route = resolve_model_route(model_alias)
         models_to_try = [route.upstream_model]
@@ -52,6 +53,7 @@ class LLMClient:
                     temperature=temperature,
                     alias=route.alias,
                     fallback_used=fallback_used,
+                    timeout_seconds=timeout_seconds,
                 )
             except Exception as exc:
                 last_error = exc
@@ -71,13 +73,14 @@ class LLMClient:
         temperature: float,
         alias: str,
         fallback_used: bool,
+        timeout_seconds: int | None = None,
     ) -> CompletionResult:
         payload: dict[str, Any] = {
             "model": upstream_model,
             "messages": messages,
             "temperature": temperature,
         }
-        timeout = self.settings.cliproxyapi_default_timeout
+        timeout = timeout_seconds if timeout_seconds is not None else self.settings.cliproxyapi_default_timeout
         max_retries = self.settings.cliproxyapi_max_retries
         started = time.perf_counter()
 

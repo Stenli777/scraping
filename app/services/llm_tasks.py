@@ -295,6 +295,7 @@ def run_json_prompt(
     project_id: int | None = None,
     task_id: int | None = None,
     document_id: int | None = None,
+    timeout_seconds: int | None = None,
 ) -> JsonPromptResult:
     if not model_alias or not model_alias.strip():
         return JsonPromptResult(
@@ -307,7 +308,11 @@ def run_json_prompt(
     client = LLMClient()
 
     try:
-        result = client.complete(model_alias=model_alias.strip(), messages=messages)
+        result = client.complete(
+            model_alias=model_alias.strip(),
+            messages=messages,
+            timeout_seconds=timeout_seconds,
+        )
         data = parse_llm_json(result.content)
         if not isinstance(data, dict):
             raise ValueError("LLM JSON response must be an object")

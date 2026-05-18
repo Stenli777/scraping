@@ -54,6 +54,14 @@ class Settings(BaseSettings):
     enable_llm_topic_cleanup: bool = True
     topic_cleanup_model_alias: str = "local/classifier-fast"
     min_topic_relevance_for_strategy: int = 60
+    enable_async_llm_enrichment: bool = True
+    enrichment_max_retries: int = 3
+    enrichment_stale_seconds: int = 180
+    enrichment_max_concurrent: int = 2
+    enrichment_batch_size: int = 3
+    topic_cleanup_timeout_seconds: int = 25
+    seo_enrich_timeout_seconds: int = 60
+    quality_review_timeout_seconds: int = 90
     enable_project_profiles: bool = True
     enable_publishing: bool = True
 
