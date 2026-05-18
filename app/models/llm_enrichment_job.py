@@ -40,6 +40,12 @@ class LlmEnrichmentJob(Base):
     model_alias: Mapped[str | None] = mapped_column(String(128), nullable=True)
     llm_run_id: Mapped[int | None] = mapped_column(ForeignKey("llm_runs.id", ondelete="SET NULL"), nullable=True)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    parent_enrichment_job_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_enrichment_jobs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    root_enrichment_job_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_enrichment_jobs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     payload_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     result_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
