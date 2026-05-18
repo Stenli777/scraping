@@ -17,6 +17,7 @@ from app.core.feature_flags import (
     is_quality_review_enabled,
 )
 from app.core.pipeline_states import PipelineStage
+from app.models.document_revision import DocumentRevision
 from app.models.parsed_document import ParsedDocument
 from app.models.project import Project
 from app.models.scraping_task import ScrapingTask
@@ -215,6 +216,8 @@ def publish_draft_for_document(
     force: bool = False,
     retry_parent_publish_run_id: int | None = None,
     retry_count: int = 0,
+    document_revision_id: int | None = None,
+    release_candidate_id: int | None = None,
 ) -> PublishDraftResult:
     document = db.get(ParsedDocument, document_id)
     if not document:
@@ -248,6 +251,8 @@ def publish_draft_for_document(
             validation_error=True,
         )
 
+    payload_format = (target.payload_format or PAYLOAD_VERSION_ARTICLE_V1).strip()
+
     if not force:
         existing = find_duplicate_publish_run(
             db,
@@ -267,7 +272,6 @@ def publish_draft_for_document(
                 validation_error=True,
             )
 
-    payload_format = (target.payload_format or PAYLOAD_VERSION_ARTICLE_V1).strip()
     if not is_supported_payload_format(payload_format):
         return PublishDraftResult(
             success=False,
@@ -276,7 +280,16 @@ def publish_draft_for_document(
         )
 
     media_block = build_media_block_for_publish(db, document.id)
-    revision = ensure_revision_for_publish(db, document)
+    if document_revision_id:
+        revision = db.get(DocumentRevision, document_revision_id)
+        if not revision or revision.document_id != document.id:
+            return PublishDraftResult(
+                success=False,
+                error_message="Invalid document_revision_id",
+                validation_error=True,
+            )
+    else:
+        revision = ensure_revision_for_publish(db, document)
     payload = build_publish_payload(
         payload_format,
         document=document,
@@ -343,6 +356,7 @@ def publish_draft_for_document(
         force_used=force,
         retry_parent_publish_run_id=retry_parent_publish_run_id,
         retry_count=retry_count,
+        release_candidate_id=release_candidate_id,
     )
     db.add(run)
     db.flush()
