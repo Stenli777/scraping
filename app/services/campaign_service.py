@@ -21,6 +21,7 @@ from app.models.scraping_task import ScrapingTask
 from app.models.seo_metadata import SeoMetadata
 from app.models.topic_cluster import CLUSTER_TYPES, TopicCluster
 from app.services.clustering_service import normalize_keyword, slugify, tokenize
+from app.services.strategy_gate_service import filter_strategy_document_ids
 
 DUPLICATE_TITLE_THRESHOLD = 0.82
 DUPLICATE_SLUG_THRESHOLD = 0.88
@@ -227,7 +228,12 @@ def _document_publish_state(db: Session, document_id: int) -> str:
     return "in_progress"
 
 
-def cluster_coverage(db: Session, cluster_id: int) -> dict[str, Any]:
+def cluster_coverage(
+    db: Session,
+    cluster_id: int,
+    *,
+    include_blocked: bool = False,
+) -> dict[str, Any]:
     cluster = db.get(TopicCluster, cluster_id)
     if not cluster:
         raise ValueError(f"Cluster {cluster_id} not found")
@@ -235,7 +241,10 @@ def cluster_coverage(db: Session, cluster_id: int) -> dict[str, Any]:
     links = db.scalars(
         select(DocumentClusterLink).where(DocumentClusterLink.cluster_id == cluster_id)
     ).all()
-    doc_ids = [lnk.document_id for lnk in links]
+    doc_ids_all = [lnk.document_id for lnk in links]
+    doc_ids, excluded_count, excluded_docs = filter_strategy_document_ids(
+        db, doc_ids_all, include_blocked=include_blocked
+    )
     published = drafts = in_progress = 0
     covered_keywords: set[str] = set()
 
@@ -273,10 +282,19 @@ def cluster_coverage(db: Session, cluster_id: int) -> dict[str, Any]:
         "missing_content": missing_content[:15],
         "missing_keywords": missing[:15],
         "document_ids": doc_ids,
+        "document_ids_all": doc_ids_all,
+        "excluded_strategy_count": excluded_count,
+        "excluded_strategy_documents": excluded_docs,
+        "include_blocked": include_blocked,
     }
 
 
-def campaign_coverage(db: Session, campaign_id: int) -> dict[str, Any]:
+def campaign_coverage(
+    db: Session,
+    campaign_id: int,
+    *,
+    include_blocked: bool = False,
+) -> dict[str, Any]:
     campaign = db.get(ContentCampaign, campaign_id)
     if not campaign:
         raise ValueError(f"Campaign {campaign_id} not found")
@@ -284,7 +302,10 @@ def campaign_coverage(db: Session, campaign_id: int) -> dict[str, Any]:
     links = db.scalars(
         select(CampaignDocumentLink).where(CampaignDocumentLink.campaign_id == campaign_id)
     ).all()
-    doc_ids = [lnk.document_id for lnk in links]
+    doc_ids_all = [lnk.document_id for lnk in links]
+    doc_ids, excluded_count, excluded_docs = filter_strategy_document_ids(
+        db, doc_ids_all, include_blocked=include_blocked
+    )
 
     published = drafts = planned = 0
     cluster_ids: set[int] = set()
@@ -331,6 +352,10 @@ def campaign_coverage(db: Session, campaign_id: int) -> dict[str, Any]:
         "missing_topics": missing_topics,
         "duplicate_warnings": duplicate_warnings[:15],
         "document_ids": doc_ids,
+        "document_ids_all": doc_ids_all,
+        "excluded_strategy_count": excluded_count,
+        "excluded_strategy_documents": excluded_docs,
+        "include_blocked": include_blocked,
     }
 
 
@@ -453,6 +478,16 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
         project_id = project.id if project else None
 
     warnings = detect_duplicate_topics(db, document_id=document_id, project_id=project_id)
+    topics_meta = (doc.metadata_json or {}).get("topics") if doc else {}
+    strategy_blocked = topics_meta.get("strategy_allowed") is False if topics_meta else False
+    if strategy_blocked:
+        enriched = []
+        for w in warnings:
+            if isinstance(w, dict):
+                enriched.append({**w, "strategy_ignored": True})
+            else:
+                enriched.append(w)
+        warnings = enriched
     suggested = None
     if project_id:
         from app.services.clustering_service import suggest_cluster
@@ -462,6 +497,17 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
             suggested = None
     coverage_blocks = [cluster_coverage(db, c.id) for c in clusters]
 
+    strategy_readiness = None
+    strategy_blocked_message = None
+    if doc:
+        from app.services.strategy_gate_service import get_strategy_readiness
+        strategy_readiness = get_strategy_readiness(db, document_id)
+        topics = (doc.metadata_json or {}).get("topics") or {}
+        if topics.get("strategy_allowed") is False:
+            strategy_blocked_message = (
+                "This document is blocked from strategy calculations."
+            )
+
     return {
         "clusters": [{"id": c.id, "name": c.name, "slug": c.slug, "cluster_type": c.cluster_type} for c in clusters],
         "campaigns": [{"id": c.id, "name": c.name, "slug": c.slug, "status": c.campaign_status} for c in campaigns],
@@ -469,4 +515,6 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
         "coverage_context": coverage_blocks,
         "topics": (doc.metadata_json or {}).get("topics") if doc else None,
         "suggested_cluster": suggested,
+        "strategy_readiness": strategy_readiness,
+        "strategy_blocked_message": strategy_blocked_message,
     }

@@ -136,9 +136,13 @@ def get_campaign(campaign_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/api/campaigns/{campaign_id}/coverage")
-def get_campaign_coverage(campaign_id: int, db: Session = Depends(get_db)):
+def get_campaign_coverage(
+    campaign_id: int,
+    include_blocked: bool = False,
+    db: Session = Depends(get_db),
+):
     try:
-        return campaign_coverage(db, campaign_id)
+        return campaign_coverage(db, campaign_id, include_blocked=include_blocked)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -214,9 +218,13 @@ def get_cluster(cluster_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/api/clusters/{cluster_id}/coverage")
-def get_cluster_coverage(cluster_id: int, db: Session = Depends(get_db)):
+def get_cluster_coverage(
+    cluster_id: int,
+    include_blocked: bool = False,
+    db: Session = Depends(get_db),
+):
     try:
-        return cluster_coverage(db, cluster_id)
+        return cluster_coverage(db, cluster_id, include_blocked=include_blocked)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
