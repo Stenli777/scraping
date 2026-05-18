@@ -135,6 +135,17 @@ def collect_readiness_checks() -> dict:
     }
     if scheduler_info is not None:
         result["scheduler"] = scheduler_info
+
+    try:
+        from app.services.enrichment_metrics_service import get_enrichment_health
+        with SessionLocal() as db:
+            enrichment_info = get_enrichment_health(db)
+        result["enrichment"] = enrichment_info
+        if enrichment_info.get("status") == "degraded":
+            ok = False
+    except Exception as exc:
+        result["enrichment"] = {"status": "error", "detail": str(exc)[:200]}
+
     return result
 
 
@@ -148,6 +159,8 @@ def health_ready():
     }
     if "scheduler" in data:
         out["scheduler"] = data["scheduler"]
+    if "enrichment" in data:
+        out["enrichment"] = data["enrichment"]
     return out
 
 

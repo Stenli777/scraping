@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     enrichment_stale_seconds: int = 180
     enrichment_max_concurrent: int = 2
     enrichment_batch_size: int = 3
+    enrichment_retention_days: int = 90
+    enrichment_degraded_queue_threshold: int = 50
+    enrichment_severe_stale_threshold: int = 3
+    worker_enrichment_per_poll: int = 1
     topic_cleanup_timeout_seconds: int = 25
     seo_enrich_timeout_seconds: int = 60
     quality_review_timeout_seconds: int = 90

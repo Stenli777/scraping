@@ -23,7 +23,8 @@ from app.models.llm_enrichment_job import (
 from app.models.parsed_document import ParsedDocument
 from app.models.seo_metadata import SeoMetadata
 from app.services.project_profile_service import build_profile_context, resolve_task_project
-from app.services.strategy_gate_service import apply_strategy_gate, merge_llm_topic_cleanup
+from app.services.enrichment_merge_policy import apply_enrichment_merge
+from app.services.strategy_gate_service import apply_strategy_gate
 from app.services.topic_quality_service import TOPIC_SCHEMA_VERSION
 
 logger = logging.getLogger(__name__)
@@ -144,7 +145,8 @@ def queue_topic_cleanup_job(
     return job
 
 
-def _conservative_merge_topics(
+def _conservative_merge_topics(  # uses enrichment_merge_policy
+
     db: Session,
     *,
     document: ParsedDocument,
@@ -154,7 +156,7 @@ def _conservative_merge_topics(
     text_sample: str,
     slug: str,
 ) -> dict[str, Any]:
-    merged = merge_llm_topic_cleanup(deterministic, llm_data)
+    merged = apply_enrichment_merge(deterministic, llm_data)
     # deterministic-first strategy gate
     final = apply_strategy_gate(
         db,
@@ -361,7 +363,7 @@ def pick_jobs_to_run(db: Session, limit: int) -> list[LlmEnrichmentJob]:
             .order_by(LlmEnrichmentJob.id.asc())
             .limit(limit)
         ).all()
-        if _retry_ready(j)
+        if _retry_ready(j) and j.retry_count < get_settings().enrichment_max_retries
     ]
     picked: list[LlmEnrichmentJob] = []
     for job in queued + retryable:
@@ -395,6 +397,34 @@ def _count_by_status(db: Session, status: str) -> int:
     return db.scalar(
         select(func.count()).select_from(LlmEnrichmentJob).where(LlmEnrichmentJob.status == status)
     ) or 0
+
+
+def replay_enrichment_job(
+    db: Session,
+    job_id: int,
+    *,
+    requested_by: str = "api",
+) -> LlmEnrichmentJob:
+    """Create new queued job linked to parent; does not mutate parent."""
+    parent = db.get(LlmEnrichmentJob, job_id)
+    if not parent:
+        raise ValueError("Job not found")
+    root_id = parent.root_enrichment_job_id or parent.id
+    new_job = LlmEnrichmentJob(
+        document_id=parent.document_id,
+        project_id=parent.project_id,
+        enrichment_type=parent.enrichment_type,
+        status=EnrichmentJobStatus.QUEUED,
+        requested_by=requested_by,
+        model_alias=parent.model_alias,
+        parent_enrichment_job_id=parent.id,
+        root_enrichment_job_id=root_id,
+        payload_json=dict(parent.payload_json or {}),
+    )
+    new_job.payload_json = {**(new_job.payload_json or {}), "replay_of": parent.id}
+    db.add(new_job)
+    db.flush()
+    return new_job
 
 
 def retry_enrichment_job(db: Session, job_id: int) -> LlmEnrichmentJob:
@@ -480,4 +510,6 @@ def job_to_dict(job: LlmEnrichmentJob) -> dict[str, Any]:
         "completed_at": job.completed_at.isoformat() if job.completed_at else None,
         "created_at": job.created_at.isoformat() if job.created_at else None,
         "updated_at": job.updated_at.isoformat() if job.updated_at else None,
+        "parent_enrichment_job_id": job.parent_enrichment_job_id,
+        "root_enrichment_job_id": job.root_enrichment_job_id,
     }
