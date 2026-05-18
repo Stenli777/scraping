@@ -125,3 +125,7 @@ Force publish on raw `/api/publish` remains for admin debug only.
 - Document #4, RC #5, publish_run #25.
 - ACK: `crmflow24_ack_v2`, draft URL `https://crmflow24.ru/admin/posts/...`
 - Публично не индексируется (blog/sitemap/rss check OK).
+
+## Manual publication boundary (4N)
+
+Scrap записывает результат ручной проверки draft (`draft_review_feedback`, `draft_review_status`). Scrap **не** меняет статус поста в CRMFlow24 и **не** выполняет public publish. Публичная публикация — только оператором в CRMFlow24 admin.

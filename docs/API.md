@@ -239,3 +239,15 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 | POST | `/api/release-candidates/{id}/reject` | Reject with reason |
 | POST | `/api/release-candidates/{id}/publish-draft` | Publish draft (approved only) |
 | GET | `/api/release-candidates/{id}/payload-preview` | article_v2 preview, no publish |
+
+### Draft review feedback
+
+| Method | Path | Описание |
+|--------|------|----------|
+| POST | `/api/release-candidates/{id}/draft-feedback` | Создать feedback (body: `review_status`, checklist, notes) |
+| GET | `/api/release-candidates/{id}/draft-feedback` | Список feedback |
+| POST | `/api/publications/{id}/draft-feedback` | То же по publication |
+| GET | `/api/publications/{id}/draft-feedback` | Список |
+| POST | `/api/publications/{id}/check-public-visibility` | GET-only проверка blog/sitemap/rss |
+
+`review_status`: `pending`, `accepted`, `needs_edits`, `rejected`, `archived`.

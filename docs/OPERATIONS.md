@@ -296,3 +296,11 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 
 ### Release runbook
 См. `docs/RELEASE_RUNBOOK.md`. Smoke: `scripts/test_4m_release_run.py` (без `--publish`).
+
+### Post-publish draft review
+
+1. После успешного publish draft открыть CRMFlow24 admin URL из publication/candidate.
+2. Проверить контент, SEO, медиа; убедиться, что статья не в blog/sitemap/rss.
+3. В Scrap: release candidate → Draft Review → отметить accepted / needs_edits / rejected.
+4. При accepted — ручная публикация в CRMFlow24 (вне Scrap).
+5. При needs_edits — правки в Scrap, новая revision/candidate; без auto-rerun rewrite.

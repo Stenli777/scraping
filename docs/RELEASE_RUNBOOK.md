@@ -66,3 +66,12 @@
 - **Release candidate #5**: QA score 79, `qa_passed` → `approved` → `published_draft`
 - **Publish run #25**: `crmflow24_ack_v2`, draft admin URL на crmflow24.ru
 - **Doc #8**: SEO восстановлен через `POST /api/documents/8/run-seo` после теста 4L
+
+## Post-publish phase (CRMFlow24 draft review)
+
+11. Open CRMFlow24 draft URL (from PublicationRecord / publish run).
+12. Check content, SEO, media in CRMFlow24 admin.
+13. Confirm article is **not** public (`Check public visibility` in Scrap or manual).
+14. Mark draft feedback in Scrap (accepted / needs_edits / rejected).
+15. If **accepted** — wait for manual public publish in CRMFlow24 (not from Scrap).
+16. If **needs_edits** — revise in Scrap, new revision + release candidate; re-publish draft when ready.

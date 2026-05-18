@@ -1158,3 +1158,11 @@ Document → QA checks → Release Candidate → operator approval → publish d
 - No ML / embeddings.
 
 Candidate snapshot is bound to `document_revision_id`; revision change requires new candidate.
+
+## Post-publish draft review (4N)
+
+После `publish_draft` в CRMFlow24 оператор проверяет draft в админке CRMFlow24 и фиксирует результат в Scrap:
+
+`CRMFlow24 draft` → `draft_review_feedback` → `draft_review_status` на candidate/publication → optional `editorial_status` / `pipeline_event`.
+
+Нет webhook, нет двусторонней синхронизации, нет public publish из Scrap.

@@ -326,3 +326,12 @@
 - `docs/RELEASE_RUNBOOK.md`, `scripts/test_4m_release_run.py`.
 - QA/publish: `needs_revision` при overall_score ≥ порога допускается для operator release.
 - Rewriter временно `cliproxy` для doc #4 (без mock-маркера в тексте).
+
+## 2026-05-18 — Этап 4N: CRMFlow24 draft review feedback loop
+
+- Миграция `021`: таблица `draft_review_feedback`, поля `draft_review_status` / `draft_reviewed_at` на `content_release_candidates` и `publication_records`, `final_operator_notes`.
+- Сервис `draft_feedback_service.py`: create/update/mark_*, public visibility check (GET `/blog`, `/sitemap.xml`, `/rss.xml`), pipeline events `stage=draft_feedback`.
+- API: `POST/GET /api/release-candidates/{id}/draft-feedback`, `POST/GET /api/publications/{id}/draft-feedback`, `POST /api/publications/{id}/check-public-visibility`.
+- Admin: панель **CRMFlow24 Draft Review** на release candidate detail, очередь `/admin/draft-reviews`.
+- Smoke: publication #7 / candidate #5 — accepted, needs_edits, rejected, visibility not public.
+- Граница: Scrap не публикует публично и не меняет CRMFlow24; feedback только вручную в Scrap.

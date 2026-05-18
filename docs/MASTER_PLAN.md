@@ -48,3 +48,5 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - [x] **4L** Release candidate QA pack — pre-publication checklist, approval, payload preview
 
 - [x] **4M** First CRMFlow24 release candidate production draft + RELEASE_RUNBOOK
+
+- [x] **4N** — CRMFlow24 draft review feedback loop (manual operator layer, visibility check, admin queue).

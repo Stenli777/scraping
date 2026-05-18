@@ -150,3 +150,8 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - `/admin/release-candidates`, detail with approve/reject/publish
 - Document detail: Release Candidates block
 - Editorial queue: RC status, QA score, blockers
+
+### Draft review (4N)
+
+- **Release candidate detail** — блок «CRMFlow24 Draft Review»: draft URL, checklist, notes, Mark accepted / needs edits / rejected, Check public visibility.
+- **`/admin/draft-reviews`** — очередь publications с `draft_review_status` pending / needs_edits.
