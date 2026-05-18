@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse, Response
 from sqlalchemy.orm import Session
@@ -50,8 +51,6 @@ def api_export_markdown(document_id: int, db: Session = Depends(get_db)):
         headers={"Content-Disposition": f'attachment; filename="document_{document_id}.md"'},
     )
 
-from pydantic import BaseModel
-
 from app.services.campaign_service import (
     assign_document_to_campaign,
     detect_duplicate_topics,
@@ -70,17 +69,41 @@ class AssignCampaignRequest(BaseModel):
     link_role: str = "planned"
 
 
+class ExtractTopicsRequest(BaseModel):
+    use_llm_cleanup: bool | None = None
+
+
 @router.post("/{document_id}/extract-topics")
-def api_extract_topics(document_id: int, db: Session = Depends(get_db)):
+def api_extract_topics(
+    document_id: int,
+    body: ExtractTopicsRequest | None = None,
+    db: Session = Depends(get_db),
+):
     document = db.get(ParsedDocument, document_id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     try:
-        result = extract_topics_for_document(db, document_id, persist_audit=True)
+        use_llm = body.use_llm_cleanup if body else None
+        result = extract_topics_for_document(
+            db,
+            document_id,
+            persist_audit=True,
+            use_llm_cleanup=use_llm,
+        )
         db.commit()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return result
+
+
+@router.get("/{document_id}/strategy-readiness")
+def api_strategy_readiness(document_id: int, db: Session = Depends(get_db)):
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    from app.services.strategy_gate_service import get_strategy_readiness
+
+    return get_strategy_readiness(db, document_id)
 
 
 @router.post("/{document_id}/assign-cluster")

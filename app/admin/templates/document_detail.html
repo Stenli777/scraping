@@ -30,9 +30,31 @@
     {% for c in strategy_context.campaigns %}<span class="badge"><a href="/admin/campaigns/{{ c.id }}">{{ c.name }}</a></span> {% endfor %}
   </p>
   {% endif %}
+
+  {% if strategy_context.strategy_blocked_message %}
+  <p class="warn-box"><strong>Strategy gate:</strong> {{ strategy_context.strategy_blocked_message }}</p>
+  {% endif %}
+  {% if strategy_context.topics %}
+  <p><strong>Strategy allowed:</strong> {{ strategy_context.topics.strategy_allowed }}
+    {% if strategy_context.topics.strategy_block_reason %}? block: {{ strategy_context.topics.strategy_block_reason }}{% endif %}
+    {% if strategy_context.topics.strategy_quality_score is not none %}? quality: {{ strategy_context.topics.strategy_quality_score }}{% endif %}
+    {% if strategy_context.topics.is_test_document %}? <span class="badge status-error">test document</span>{% endif %}
+  </p>
+  <p><strong>LLM cleanup:</strong> {{ strategy_context.topics.llm_cleanup_status or 'n/a' }}
+    {% if strategy_context.topics.topic_cleanup_model_alias %}? {{ strategy_context.topics.topic_cleanup_model_alias }}{% endif %}
+    {% if strategy_context.topics.llm_run_id %}? <a href="/admin/llm-runs?document_id={{ document.id }}">run #{{ strategy_context.topics.llm_run_id }}</a>{% endif %}
+  </p>
+  {% endif %}
+  {% if strategy_context.strategy_readiness %}
+  <p><strong>Strategy readiness:</strong>
+    {% if strategy_context.strategy_readiness.ready %}<span class="badge status-done">ready</span>{% else %}<span class="badge status-error">not ready</span>{% endif %}
+    {% if strategy_context.strategy_readiness.missing %}? missing: {{ strategy_context.strategy_readiness.missing | join(', ') }}{% endif %}
+    {% if strategy_context.strategy_readiness.warnings %}? {{ strategy_context.strategy_readiness.warnings | join(', ') }}{% endif %}
+  </p>
+  {% endif %}
   {% if strategy_context.duplicate_warnings %}
   <p class="warn-box"><strong>Duplicate warnings (non-blocking):</strong>
-    {% for w in strategy_context.duplicate_warnings %}{{ w.message }}; {% endfor %}
+    {% for w in strategy_context.duplicate_warnings %}{{ w.message }}{% if w.strategy_ignored %} (ignored for strategy){% endif %}; {% endfor %}
   </p>
   {% endif %}
   {% if strategy_context.topics %}

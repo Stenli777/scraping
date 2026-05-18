@@ -7,7 +7,7 @@
 
 <div class="panel">
   <h3>Coverage</h3>
-  <p>Documents: {{ coverage.documents }} ? published {{ coverage.published }} ? drafts {{ coverage.drafts }} ? planned {{ coverage.planned }}</p>
+  <p>Documents: {{ coverage.documents }}{% if coverage.excluded_strategy_count %} ? <span class="warn-box">{{ coverage.excluded_strategy_count }} excluded from strategy (blocked/test)</span>{% endif %} ? published {{ coverage.published }} ? drafts {{ coverage.drafts }} ? planned {{ coverage.planned }}</p>
   {% if coverage.missing_topics %}<p><strong>Missing topics:</strong> {{ coverage.missing_topics | join(', ') }}</p>{% endif %}
   {% if coverage.duplicate_warnings %}
   <p class="warn-box"><strong>Duplicate warnings:</strong>
