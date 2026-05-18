@@ -153,3 +153,11 @@ Requires `ENABLE_ANALYTICS=true`.
 
 `POST /api/documents/{id}/extract-topics` returns `schema_version: topic_v2` with `relevance_score`, `project_fit`, `rejected_terms`, `entities`, `warnings`.
 
+
+
+### Topic extraction & strategy (4G)
+
+- `POST /api/documents/{id}/extract-topics` — body optional: `{"use_llm_cleanup": true|false}` (default: feature flag `ENABLE_LLM_TOPIC_CLEANUP`).
+- `GET /api/documents/{id}/strategy-readiness` — readiness for campaign planning.
+- `GET /api/campaigns/{id}/coverage?include_blocked=false` — excludes `strategy_allowed=false` documents; returns `excluded_strategy_count`.
+- `GET /api/clusters/{id}/coverage?include_blocked=false` — same exclusion semantics.

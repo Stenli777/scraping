@@ -255,3 +255,16 @@
 - Topic extraction v2: `topic_quality_service`, relevance_score, rejected_terms, project_fit
 - Admin: topic quality block on document detail
 - Seed: `scripts/seed_crmflow24_production_v2_target.py`
+
+## 2026-05-18 — Этап 4G: LLM topic cleanup + strategy quality gate
+
+- `run_json_prompt` в `llm_tasks.py` (CLIProxy, audit `llm_runs`, robust JSON parse).
+- Промпт `topic_cleanup_v1` (code fallback + `build_topic_cleanup_messages`).
+- Оркестрация: `topic_extraction_service` — deterministic → optional LLM → `apply_strategy_gate`.
+- Strategy gate: `strategy_allowed`, `strategy_block_reason`, `strategy_quality_score`, smoke/test detector.
+- API: `POST /api/documents/{id}/extract-topics` body `use_llm_cleanup`; `GET .../strategy-readiness`.
+- Coverage: `campaign_coverage` / `cluster_coverage` исключают blocked docs (`excluded_strategy_count`).
+- Admin: strategy gate, LLM cleanup status, readiness, excluded count на campaign/cluster.
+- Env: `ENABLE_LLM_TOPIC_CLEANUP`, `TOPIC_CLEANUP_MODEL_ALIAS`, `MIN_TOPIC_RELEVANCE_FOR_STRATEGY`.
+- Reminder: smoke draft CRM https://crmflow24.ru/admin/posts/cmpats92t0006a2316na5xups — удалить вручную в CRM admin.
+- Тест doc #7: `strategy_allowed=false`, `strategy_block_reason=smoke_test`.

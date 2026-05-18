@@ -1087,3 +1087,7 @@ HTTP-only integration; Scrap builds `article_v2`, receives acknowledgment, track
 
 Topics ? clusters ? campaigns ? coverage ? analytics feedback. Deterministic heuristics only.
 
+
+### Strategy quality gate (4G)
+
+Pipeline: deterministic topic_v2 → optional LLM `topic_cleanup_v1` → server-side `apply_strategy_gate`. Smoke/test/internal documents blocked from campaign/cluster coverage and suggestions.

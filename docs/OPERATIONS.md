@@ -227,3 +227,11 @@ curl -s http://127.0.0.1:8800/api/system/workspace
 - Env on server only: `CRMFLOW24_PUBLISH_ENDPOINT`, `CRMFLOW24_PUBLISH_TOKEN`
 - Health: `GET /api/publish-targets/health`
 
+
+
+## CRMFlow24 smoke draft (stage 4F/4G)
+
+После smoke publish в CRMFlow24 остаётся черновик поста — удалить **вручную** в админке CRM:
+- https://crmflow24.ru/admin/posts/cmpats92t0006a2316na5xups
+- Это не публичный пост; не отображается в `/blog`, sitemap, RSS.
+- Из Scrap удалять не нужно.

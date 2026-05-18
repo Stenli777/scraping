@@ -83,3 +83,7 @@ Base: **https://scrap.crmflow24.ru/admin**
 - `/admin/clusters`, `/admin/clusters/{id}` ? linked docs, performance
 - Document detail ? strategy block (cluster, campaign, warnings)
 
+
+### Content strategy block (4G)
+
+Document detail shows: strategy_allowed, block reason, LLM cleanup status/model/llm_run, test document flag, strategy readiness. Campaign/cluster detail shows excluded_strategy_count.
