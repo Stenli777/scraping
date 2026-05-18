@@ -273,6 +273,32 @@ def score_pilot_candidate(
     }
 
 
+def _publication_post_draft_next_action(db: Session, document_id: int) -> str | None:
+    """Next step when CRMFlow24 draft already exists (publication record with admin URL)."""
+    pub = db.scalar(
+        select(PublicationRecord)
+        .where(PublicationRecord.document_id == document_id)
+        .order_by(PublicationRecord.id.desc())
+    )
+    if not pub or not pub.external_url:
+        return None
+    review_st = pub.draft_review_status or "pending"
+    if review_st in ("pending", "needs_edits", None):
+        return "review_crmflow24_draft"
+    if review_st == "rejected":
+        return "review_crmflow24_draft"
+    if not analytics_ready(pub):
+        if pub.public_visibility_status != "public":
+            return "manual_publish_in_crmflow24"
+        return "check_public_status"
+    snap = db.scalar(
+        select(AnalyticsSnapshot).where(AnalyticsSnapshot.publication_record_id == pub.id)
+    )
+    if not snap:
+        return "import_analytics"
+    return "done"
+
+
 def compute_next_action(
     db: Session,
     document_id: int,
@@ -283,18 +309,21 @@ def compute_next_action(
     if blockers is None:
         scored = score_pilot_candidate(db, document_id)
         blockers = scored["blockers"]
-        if blockers:
-            if "smoke_test_document" in blockers or "strategy_blocked" in blockers:
-                return "blocked"
-            return "fix_blockers"
 
     readiness = readiness or get_publish_readiness(db, document_id)
     doc = db.get(ParsedDocument, document_id)
     if not doc:
         return "blocked"
 
-    if blockers and any(b in blockers for b in ("smoke_test_document", "strategy_blocked", "editorial_rejected")):
+    hard_blockers = {"smoke_test_document", "strategy_blocked", "editorial_rejected"}
+    if blockers and any(b in hard_blockers for b in blockers):
         return "blocked"
+    if blockers and any(b in hard_blockers for b in (readiness.get("missing") or [])):
+        return "blocked"
+
+    post_draft = _publication_post_draft_next_action(db, document_id)
+    if post_draft:
+        return post_draft
 
     missing = readiness.get("missing") or []
     if "rewritten_text" in missing:
@@ -360,7 +389,7 @@ def refresh_pilot_item_status(db: Session, item_id: int) -> ContentPilotItem:
         raise PilotServiceError(f"Pilot item {item_id} not found")
     _link_item_refs(db, item)
     scored = score_pilot_candidate(db, item.document_id, project_id=item.pilot.project_id)
-    item.next_action = scored["next_action"]
+    item.next_action = compute_next_action(db, item.document_id, blockers=scored["blockers"], readiness=None)
     item.blockers_json = {
         "blockers": scored["blockers"],
         "warnings": scored["warnings"],
@@ -390,6 +419,10 @@ def _derive_item_status(db: Session, item: ContentPilotItem, scored: dict[str, A
     if pub and pub.public_confirmed_at:
         return "public_confirmed"
     rc = db.get(ContentReleaseCandidate, item.release_candidate_id) if item.release_candidate_id else None
+    if pub and pub.external_url:
+        if pub.draft_review_status == "accepted":
+            return "draft_reviewed"
+        return "draft_created"
     if rc and rc.status == RC_PUBLISHED_DRAFT:
         if pub and pub.draft_review_status == "accepted":
             return "draft_reviewed"
