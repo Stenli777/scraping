@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ dash.pilot.name }}</h1>
+<p>Slug <code>{{ dash.pilot.slug }}</code> · Status <code>{{ dash.pilot.status }}</code>
+  · Progress <strong>{{ dash.progress.done }}/{{ dash.progress.total }}</strong>
+  ({{ dash.progress.count }} items)</p>
+{% if dash.pilot.description %}<p>{{ dash.pilot.description }}</p>{% endif %}
+
+<form method="post" action="/admin/pilots/{{ dash.pilot.id }}/refresh" style="display:inline">
+  <button class="btn" type="submit">Refresh all statuses</button>
+</form>
+
+<h2>Pilot items</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Doc</th>
+      <th>Title</th>
+      <th>Score</th>
+      <th>Status</th>
+      <th>RC</th>
+      <th>Draft review</th>
+      <th>Public</th>
+      <th>Analytics</th>
+      <th>Next action</th>
+      <th>Blockers</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in dash.item_rows %}
+    <tr>
+      <td><a href="/admin/documents/{{ row.document_id }}">#{{ row.document_id }}</a></td>
+      <td>{{ row.title[:60] }}{% if row.title|length > 60 %}…{% endif %}</td>
+      <td>{{ row.score or '—' }}</td>
+      <td><code>{{ row.status }}</code></td>
+      <td>{% if row.release_candidate_id %}<a href="/admin/release-candidates/{{ row.release_candidate_id }}">{{ row.rc_status }}</a>{% else %}—{% endif %}</td>
+      <td><code>{{ row.draft_review_status or '—' }}</code></td>
+      <td><code>{{ row.public_status or '—' }}</code></td>
+      <td>{{ row.analytics_status }}</td>
+      <td><code>{{ row.next_action or '—' }}</code></td>
+      <td>{% if row.blockers %}<span class="warn-box">{{ row.blockers | join(', ') }}</span>{% else %}—{% endif %}</td>
+      <td class="actions-cell">
+        <a class="btn" href="/admin/documents/{{ row.document_id }}">Doc</a>
+        {% if not row.release_candidate_id %}
+        <form method="post" action="/admin/documents/{{ row.document_id }}/release-candidates/create" style="display:inline"><button class="btn" type="submit">Create RC</button></form>
+        {% else %}
+        <a class="btn" href="/admin/release-candidates/{{ row.release_candidate_id }}">RC</a>
+        {% endif %}
+        {% if row.publication_id %}
+        <a class="btn" href="/admin/publications/{{ row.publication_id }}">Pub</a>
+        <form method="post" action="/admin/publications/{{ row.publication_id }}/check-public-status" style="display:inline"><button class="btn" type="submit">Check public</button></form>
+        <a class="btn" href="/admin/publications/{{ row.publication_id }}/analytics/import">Metrics</a>
+        {% endif %}
+        <form method="post" action="/admin/pilots/{{ dash.pilot.id }}/remove-document" style="display:inline">
+          <input type="hidden" name="document_id" value="{{ row.document_id }}">
+          <button class="btn" type="submit">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="11">No items in pilot yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Suggested candidates</h2>
+<p>Top documents by pilot score (smoke/test excluded). Add manually only.</p>
+<table class="table">
+  <thead><tr><th>Doc</th><th>Title</th><th>Score</th><th>Next action</th><th>Warnings</th><th></th></tr></thead>
+  <tbody>
+    {% for c in candidates %}
+    <tr>
+      <td><a href="/admin/documents/{{ c.document_id }}">#{{ c.document_id }}</a></td>
+      <td>{{ c.title[:50] if c.title else '—' }}</td>
+      <td><strong>{{ c.score }}</strong></td>
+      <td><code>{{ c.next_action }}</code></td>
+      <td>{{ c.warnings | join('; ') if c.warnings else '—' }}</td>
+      <td>
+        <form method="post" action="/admin/pilots/{{ dash.pilot.id }}/add-document" style="display:inline">
+          <input type="hidden" name="document_id" value="{{ c.document_id }}">
+          <input type="hidden" name="priority" value="{{ c.score }}">
+          <button class="btn" type="submit">Add to pilot</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No candidates or all already in pilot.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

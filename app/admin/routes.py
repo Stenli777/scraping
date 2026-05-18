@@ -316,6 +316,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "doc_analytics_snapshots": doc_analytics_snapshots,
             "doc_analytics_ready": doc_analytics_ready,
             "doc_public_visibility": doc_public_visibility,
+            "pilot_memberships": get_document_pilot_membership(db, document_id),
             "publish_targets": publish_targets,
             "publish_runs": publish_runs,
             "publish_revision_numbers": publish_revision_numbers,
@@ -803,6 +804,7 @@ def admin_operations(request: Request, db: Session = Depends(get_db)):
             "smoke_safe_hint": ctx.get("smoke_safe_hint"),
             "smoke_production_hint": ctx.get("smoke_production_hint"),
             "post_publication": ctx.get("post_publication"),
+            "pilot_ops": ctx.get("pilot_ops"),
             "title": "Operations",
         },
     )
@@ -1597,3 +1599,7 @@ def admin_pub_mark_not_public(publication_id: int, db: Session = Depends(get_db)
 from app.admin.analytics_workflow_routes import router as analytics_workflow_router
 
 router.include_router(analytics_workflow_router)
+
+from app.admin.pilot_routes import router as pilot_admin_router
+
+router.include_router(pilot_admin_router)

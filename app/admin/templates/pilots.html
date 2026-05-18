@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Production pilots</h1>
+<p class="warn-box">Manual pilot control — documents are added by operator only (no auto-add).</p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Status</th>
+      <th>Progress</th>
+      <th>Items</th>
+      <th>Blocked</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>#{{ row.pilot.id }}</td>
+      <td><a href="/admin/pilots/{{ row.pilot.id }}">{{ row.pilot.name }}</a></td>
+      <td><code>{{ row.pilot.status }}</code></td>
+      <td>{{ row.progress }}</td>
+      <td>{{ row.item_count }}</td>
+      <td>{{ row.blocked_count }}</td>
+      <td><a class="btn" href="/admin/pilots/{{ row.pilot.id }}">Open</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No pilots yet. Seed via API or scripts/seed_pilot_first5.py</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

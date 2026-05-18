@@ -203,6 +203,20 @@
     
 
 {% if feature_flags.get('ENABLE_ANALYTICS') %}
+
+{% if pilot_memberships %}
+<div class="panel" id="pilot-membership">
+  <h2>Production pilot</h2>
+  <ul>
+    {% for m in pilot_memberships %}
+    <li><a href="/admin/pilots/{{ m.pilot_id }}">{{ m.pilot_name }}</a> вЂ” priority {{ m.priority }} вЂ” <code>{{ m.status }}</code> вЂ” next: <code>{{ m.next_action }}</code>
+      {% if m.blockers %}<span class="warn-box">{{ m.blockers | join(', ') }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 <div class="panel" id="analytics">
   <h2>Publication &amp; performance</h2>
   {% if doc_publication %}

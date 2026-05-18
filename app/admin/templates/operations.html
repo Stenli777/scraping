@@ -70,6 +70,22 @@
   {% else %}<p>None pending</p>{% endif %}
 </div>
 
+
+{% if pilot_ops and pilot_ops.active_count %}
+<div class="panel">
+  <h2>Production Pilot</h2>
+  <p>Active pilots: <strong>{{ pilot_ops.active_count }}</strong>
+    В· <a href="/admin/pilots">All pilots</a></p>
+  <ul>
+    {% for p in pilot_ops.active_pilots %}
+    <li><a href="/admin/pilots/{{ p.id }}">{{ p.name }}</a> вЂ” {{ p.progress.done }}/{{ p.progress.total }} done, {{ p.blocked }} blocked
+      {% if p.next_actions %} В· actions: {% for k,v in p.next_actions.items() %}<code>{{ k }}</code>={{ v }} {% endfor %}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% if post_publication %}
 <div class="panel">
   <h2>Post-publication tracking</h2>
