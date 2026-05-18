@@ -1,4 +1,9 @@
-#!/usr/bin/env python3
+"""Stage 4N draft feedback API smoke (writes feedback records only).
+
+Safety:
+- does not modify CRMFlow24
+- does not public publish
+- does not print secrets
 """Smoke tests for stage 4N draft review feedback."""
 
 import json

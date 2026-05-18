@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+"""Stage 4M release run checks (safe by default, --publish for production draft).
+
+Safety:
+- read-only by default
+- does not modify CRMFlow24 unless --publish
+- does not publish unless --publish is explicitly passed
+- does not print secrets
 """Stage 4M release run checks (safe by default, --publish for production draft)."""
 
 from __future__ import annotations
