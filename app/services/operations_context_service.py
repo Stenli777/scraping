@@ -13,6 +13,7 @@ from app.services.operations_service import get_dashboard_stats
 from app.services.release_operations_service import build_release_operations_summary
 from app.models.publish_target import PublishTarget
 from app.services.publish_target_safety_service import summarize_targets_safety
+from app.services.post_publication_tracking_service import build_post_publication_tracking_summary
 
 
 def _latest_backup_manifest() -> dict | None:
@@ -45,5 +46,6 @@ def build_operations_context(db: Session) -> dict:
         "target_safety": summarize_targets_safety(db.query(PublishTarget).order_by(PublishTarget.id.asc()).all()),
         "smoke_safe_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py",
         "smoke_production_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-production",
+        "post_publication": build_post_publication_tracking_summary(db),
         "paths": config.get("paths", {}),
     }

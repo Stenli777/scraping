@@ -15,6 +15,7 @@ from app.api.analytics import router as analytics_router
 from app.api.automation import router as automation_router
 from app.api.release_candidates import router as release_candidates_router
 from app.api.draft_feedback import router as draft_feedback_router
+from app.api.publication_confirmation import router as publication_confirmation_router
 from app.api.canonical_groups import router as canonical_groups_router
 from app.api.campaigns import router as campaigns_router
 from app.api.system import router as system_router
@@ -68,6 +69,7 @@ app.include_router(media_router)
 app.include_router(analytics_router)
 app.include_router(release_candidates_router)
 app.include_router(draft_feedback_router)
+app.include_router(publication_confirmation_router)
 app.include_router(canonical_groups_router)
 app.include_router(campaigns_router)
 app.include_router(automation_router)

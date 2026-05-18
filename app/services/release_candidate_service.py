@@ -594,6 +594,8 @@ def get_candidate_status(db: Session, candidate_id: int) -> dict[str, Any]:
         "status": candidate.status,
         "draft_review_status": candidate.draft_review_status,
         "draft_reviewed_at": candidate.draft_reviewed_at.isoformat() if candidate.draft_reviewed_at else None,
+        "public_status": candidate.public_status,
+        "public_confirmed_at": candidate.public_confirmed_at.isoformat() if candidate.public_confirmed_at else None,
         "qa_score": candidate.qa_score,
         "blocking_issues": candidate.blocking_issues_json or [],
         "warnings": candidate.warnings_json or [],
