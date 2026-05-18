@@ -91,3 +91,40 @@ Document detail shows: strategy_allowed, block reason, LLM cleanup status/model/
 ### Enrichment jobs (4H)
 
 `/admin/enrichment-jobs` — queue, status, retries, latency. Document detail shows latest job and history.
+
+
+## Deterministic-first orchestration (4I — see ADMIN_UI.md)
+
+```text
+Core pipeline (scrape → rewrite → publish)
+        ↓
+Deterministic extraction (sync, <3s) → strategy gate → topics in metadata
+        ↓
+Optional async enrichment (llm_enrichment_jobs) → conservative merge → topics enriched
+        ↓
+Editorial intelligence (review, quality)
+        ↓
+Campaign intelligence (coverage, clusters) — uses deterministic-first topics
+```
+
+### Boundaries
+
+- Enrichment is **optional**; failures do not block publish/rewrite/scraping.
+- Worker processes **scraping batch first**, then max 1 enrichment job per poll.
+- Scheduler runs enrichment tick **before** automation tick (isolated limits).
+- Campaign intelligence ignores failed/stale enrichment; uses `deterministic_result` until merge completes.
+
+### Enrichment job states
+
+`queued` → `running` → `completed` | `failed_retryable` | `failed_terminal` | `cancelled` | `skipped`
+
+Stale `running` jobs (heartbeat timeout) → `failed_retryable` with `[stale recovery]`.
+
+### Merge policy
+
+See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.
+
+### Enrichment dashboard (4I)
+
+- `/admin/enrichment-dashboard` — queue depth, latency, failures, health
+- `/admin/enrichment-jobs` — list with parent lineage column

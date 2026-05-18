@@ -1095,3 +1095,35 @@ Pipeline: deterministic topic_v2 → optional LLM `topic_cleanup_v1` → server-
 ### Deterministic-first + async enrichment (4H)
 
 Strategy uses deterministic extraction immediately; LLM topic_cleanup runs in `llm_enrichment_jobs` queue with isolated scheduler tick and per-task timeouts.
+
+
+## Deterministic-first orchestration (4I — see ARCHITECTURE.md)
+
+```text
+Core pipeline (scrape → rewrite → publish)
+        ↓
+Deterministic extraction (sync, <3s) → strategy gate → topics in metadata
+        ↓
+Optional async enrichment (llm_enrichment_jobs) → conservative merge → topics enriched
+        ↓
+Editorial intelligence (review, quality)
+        ↓
+Campaign intelligence (coverage, clusters) — uses deterministic-first topics
+```
+
+### Boundaries
+
+- Enrichment is **optional**; failures do not block publish/rewrite/scraping.
+- Worker processes **scraping batch first**, then max 1 enrichment job per poll.
+- Scheduler runs enrichment tick **before** automation tick (isolated limits).
+- Campaign intelligence ignores failed/stale enrichment; uses `deterministic_result` until merge completes.
+
+### Enrichment job states
+
+`queued` → `running` → `completed` | `failed_retryable` | `failed_terminal` | `cancelled` | `skipped`
+
+Stale `running` jobs (heartbeat timeout) → `failed_retryable` with `[stale recovery]`.
+
+### Merge policy
+
+See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.

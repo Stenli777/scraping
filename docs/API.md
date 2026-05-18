@@ -166,3 +166,42 @@ Requires `ENABLE_ANALYTICS=true`.
 
 - `POST /api/documents/{id}/extract-topics` → fast deterministic + optional `enrichment_job_id`.
 - `GET/POST /api/enrichment-jobs` — list, get, retry, cancel.
+
+
+## Deterministic-first orchestration (4I — see API.md)
+
+```text
+Core pipeline (scrape → rewrite → publish)
+        ↓
+Deterministic extraction (sync, <3s) → strategy gate → topics in metadata
+        ↓
+Optional async enrichment (llm_enrichment_jobs) → conservative merge → topics enriched
+        ↓
+Editorial intelligence (review, quality)
+        ↓
+Campaign intelligence (coverage, clusters) — uses deterministic-first topics
+```
+
+### Boundaries
+
+- Enrichment is **optional**; failures do not block publish/rewrite/scraping.
+- Worker processes **scraping batch first**, then max 1 enrichment job per poll.
+- Scheduler runs enrichment tick **before** automation tick (isolated limits).
+- Campaign intelligence ignores failed/stale enrichment; uses `deterministic_result` until merge completes.
+
+### Enrichment job states
+
+`queued` → `running` → `completed` | `failed_retryable` | `failed_terminal` | `cancelled` | `skipped`
+
+Stale `running` jobs (heartbeat timeout) → `failed_retryable` with `[stale recovery]`.
+
+### Merge policy
+
+See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.
+
+### Enrichment (4I)
+
+- `GET /api/enrichment-jobs/metrics` — aggregate metrics
+- `POST /api/enrichment-jobs/{id}/replay` — new job with lineage (parent/root)
+- `GET /health/ready` — includes `enrichment` section (degraded if queue/stale severe)
+- `scripts/cleanup_enrichment_jobs.py` — dry-run retention report by default

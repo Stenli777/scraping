@@ -182,3 +182,35 @@ Emits `topic_extraction` completed with strategy_allowed. Audit in `metadata_jso
 ### topic_extraction + enrichment (4H)
 
 Sync deterministic + gate; async merge updates `metadata_json.topic_extractions` with `merged_result` when job completes.
+
+
+## Deterministic-first orchestration (4I — see SCRAPING_PIPELINE.md)
+
+```text
+Core pipeline (scrape → rewrite → publish)
+        ↓
+Deterministic extraction (sync, <3s) → strategy gate → topics in metadata
+        ↓
+Optional async enrichment (llm_enrichment_jobs) → conservative merge → topics enriched
+        ↓
+Editorial intelligence (review, quality)
+        ↓
+Campaign intelligence (coverage, clusters) — uses deterministic-first topics
+```
+
+### Boundaries
+
+- Enrichment is **optional**; failures do not block publish/rewrite/scraping.
+- Worker processes **scraping batch first**, then max 1 enrichment job per poll.
+- Scheduler runs enrichment tick **before** automation tick (isolated limits).
+- Campaign intelligence ignores failed/stale enrichment; uses `deterministic_result` until merge completes.
+
+### Enrichment job states
+
+`queued` → `running` → `completed` | `failed_retryable` | `failed_terminal` | `cancelled` | `skipped`
+
+Stale `running` jobs (heartbeat timeout) → `failed_retryable` with `[stale recovery]`.
+
+### Merge policy
+
+See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.

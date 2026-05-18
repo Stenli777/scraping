@@ -239,3 +239,35 @@ curl -s http://127.0.0.1:8800/api/system/workspace
 ### LLM enrichment operations (4H)
 
 If CLIProxy slow/dead: enrichment jobs mark `failed_retryable`; retry via API/admin. `extract-topics` stays fast. Tune `TOPIC_CLEANUP_TIMEOUT_SECONDS`.
+
+
+## Deterministic-first orchestration (4I — see OPERATIONS.md)
+
+```text
+Core pipeline (scrape → rewrite → publish)
+        ↓
+Deterministic extraction (sync, <3s) → strategy gate → topics in metadata
+        ↓
+Optional async enrichment (llm_enrichment_jobs) → conservative merge → topics enriched
+        ↓
+Editorial intelligence (review, quality)
+        ↓
+Campaign intelligence (coverage, clusters) — uses deterministic-first topics
+```
+
+### Boundaries
+
+- Enrichment is **optional**; failures do not block publish/rewrite/scraping.
+- Worker processes **scraping batch first**, then max 1 enrichment job per poll.
+- Scheduler runs enrichment tick **before** automation tick (isolated limits).
+- Campaign intelligence ignores failed/stale enrichment; uses `deterministic_result` until merge completes.
+
+### Enrichment job states
+
+`queued` → `running` → `completed` | `failed_retryable` | `failed_terminal` | `cancelled` | `skipped`
+
+Stale `running` jobs (heartbeat timeout) → `failed_retryable` with `[stale recovery]`.
+
+### Merge policy
+
+See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.

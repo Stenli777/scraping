@@ -278,3 +278,14 @@
 - API: `/api/enrichment-jobs`, retry/cancel.
 - Admin: `/admin/enrichment-jobs`, статус enrichment на document detail.
 - CLIProxy degraded: API быстрый, jobs → failed_retryable, strategy/coverage без блокировки.
+
+## 2026-05-18 — Этап 4I: reconcile async enrichment + editorial intelligence stabilization
+
+- Architecture/docs reconciled: deterministic-first, optional async enrichment.
+- `enrichment_merge_policy.py`, `strategy_topics_service.py` for campaign intelligence.
+- Metrics service + `/admin/enrichment-dashboard`, `/api/enrichment-jobs/metrics`.
+- Health `/ready` enrichment section (degraded, not full failure).
+- Replay + lineage (`parent_enrichment_job_id`, `root_enrichment_job_id`, migration 017).
+- Retention: `scripts/cleanup_enrichment_jobs.py` (dry-run default).
+- State machine: failed_terminal after max retries; stale recovery hardened.
+- `docs/MASTER_PLAN.md` created.
