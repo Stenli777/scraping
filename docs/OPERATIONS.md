@@ -288,3 +288,8 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - Пороги: `SIMILARITY_NEAR_DUPLICATE_THRESHOLD` (80), `SIMILARITY_TOPIC_OVERLAP_THRESHOLD` (65), `SIMILARITY_CANNIBALIZATION_THRESHOLD` (75).
 - Sync quick check в pipeline после rewrite; deep — enrichment job `similarity_analysis`.
 - `scripts/test_4k_canonical.py` — ручной smoke.
+
+### Release candidate ops
+- `scripts/test_4l_release.py`
+- Flow: create → run-qa → approve → publish-draft
+- Low-level `POST /api/publish` remains for debug

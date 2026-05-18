@@ -110,3 +110,12 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/seed_crmflow24_production_v2_targ
 ```
 
 Delete test draft manually in CRMFlow24 admin after smoke.
+
+### Recommended publish flow (4L)
+
+1. Create release candidate (binds revision + `crmflow24-production-v2` when present).
+2. Run QA — validates article_v2 payload, target health, strategy, quality, editorial, smoke guard.
+3. Operator approve.
+4. `POST /api/release-candidates/{id}/publish-draft` — sets `publish_runs.release_candidate_id`.
+
+Force publish on raw `/api/publish` remains for admin debug only.

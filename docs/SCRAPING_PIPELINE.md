@@ -230,3 +230,6 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 
 После успешного rewrite pipeline вызывает `record_rewrite_lineage` и `quick_similarity_check` (non-blocking).
 Опционально: `POST /api/documents/{id}/analyze-similarity?queue_async=true` для enrichment queue.
+
+### Release candidate gate
+Production publish should use release candidate; pipeline_events `stage=release_candidate`.

@@ -310,3 +310,11 @@
 - Enrichment type `similarity_analysis` (async deep analysis).
 - Health `/health/ready`: секция `similarity`.
 - Env: `SIMILARITY_*_THRESHOLD`, `ENABLE_SIMILARITY_ANALYSIS`.
+
+## 2026-05-18 — Этап 4L: release candidate QA pack
+
+- Migration `020`: `content_release_candidates`, `publish_runs.release_candidate_id`.
+- `release_candidate_service.py`: deterministic QA checklist, qa_score, approve/reject, publish-draft (approved only).
+- API + admin `/admin/release-candidates`, document detail block, editorial queue RC columns.
+- Smoke/test documents blocked in QA; missing media = warning only.
+- Preferred production flow: create RC → run QA → approve → publish draft (no auto-publish).

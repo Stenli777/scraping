@@ -145,3 +145,8 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - `/admin/canonical-groups` — список групп, риск, число документов.
 - `/admin/canonical-groups/{id}` — linked docs, similarity links, lineage, strategy warnings.
 - Document detail: блок **Canonical / similarity** (group, near duplicates, cannibalization, lineage).
+
+### Release candidates
+- `/admin/release-candidates`, detail with approve/reject/publish
+- Document detail: Release Candidates block
+- Editorial queue: RC status, QA score, blockers

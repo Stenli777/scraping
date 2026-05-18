@@ -44,3 +44,5 @@ Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALI
 Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 
 - [x] **4K** Canonical content intelligence — groups, similarity links, lineage, duplicate-adjusted coverage, admin, API, health `similarity`.
+
+- [x] **4L** Release candidate QA pack — pre-publication checklist, approval, payload preview

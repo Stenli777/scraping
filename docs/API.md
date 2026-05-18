@@ -226,3 +226,16 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 | POST | `/api/documents/{id}/analyze-similarity` | Sync quick + optional `deep`, `queue_async` |
 | GET | `/api/canonical-groups` | Список групп (`?project_id=`) |
 | GET | `/api/canonical-groups/{id}` | Детали группы, graph, lineage |
+
+### Release candidates (4L)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/documents/{id}/release-candidates` | Create candidate |
+| GET | `/api/documents/{id}/release-candidates` | List candidates |
+| GET | `/api/release-candidates/{id}` | Status + checklist |
+| POST | `/api/release-candidates/{id}/run-qa` | Run QA pack |
+| POST | `/api/release-candidates/{id}/approve` | Approve (after QA pass) |
+| POST | `/api/release-candidates/{id}/reject` | Reject with reason |
+| POST | `/api/release-candidates/{id}/publish-draft` | Publish draft (approved only) |
+| GET | `/api/release-candidates/{id}/payload-preview` | article_v2 preview, no publish |

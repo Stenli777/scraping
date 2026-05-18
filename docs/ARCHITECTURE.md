@@ -1146,3 +1146,15 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - **Rewrite lineage** — immutable цепочка source → rewrite → revision.
 - **Cannibalization** — warnings при overlapping keywords/slug/published cluster; publish не блокируется.
 - **Coverage** — duplicate-adjusted count для кампаний.
+
+## Release candidate workflow (4L)
+
+Document → QA checks → Release Candidate → operator approval → publish draft to CRMFlow24.
+
+**QA score (deterministic, 0–100):**
+- Base = `RELEASE_QA_REQUIRED_PASS_BASE` (default 70) × (required checks passed / total required).
+- Bonus: up to +10 from quality score, +10 from review score.
+- Penalty: canonical duplicate (−15), source quality block (−10), smoke/test (−30), warnings (−2 each, max −10).
+- No ML / embeddings.
+
+Candidate snapshot is bound to `document_revision_id`; revision change requires new candidate.
