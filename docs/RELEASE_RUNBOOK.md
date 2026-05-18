@@ -1,0 +1,68 @@
+# Release Runbook — Scrap → CRMFlow24 (draft)
+
+Операторский сценарий первого production-like выпуска через **Release Candidate** (этап 4L/4M).
+
+## Standard article release flow
+
+1. Открыть **Editorial Queue**: `/admin/editorial-queue`
+2. Выбрать **safe document** (не smoke/debug, без `mock` в rewrite, strategy allowed)
+3. Проверить readiness: strategy, canonical warnings, source quality, publish readiness
+4. Довести pipeline при необходимости (API/admin):
+   - `POST /api/documents/{id}/run-review`
+   - `POST /api/documents/{id}/rerun-rewrite` (provider `cliproxy` для production-текста)
+   - `POST /api/documents/{id}/run-seo`
+   - `POST /api/documents/{id}/run-quality`
+   - `POST /api/documents/{id}/extract-topics`
+   - `POST /api/documents/{id}/analyze-similarity`
+   - Editorial: `operator-review` → `approve` → `ready-to-publish`
+   - Media: `POST .../media/generate-preview` с `{"provider":"placeholder","use_llm_prompt":false}` → approve media
+5. **Create Release Candidate**: `POST /api/documents/{id}/release-candidates` или кнопка в document detail
+6. **Run QA**: `POST /api/release-candidates/{id}/run-qa` — ожидание `qa_passed`, пустые blockers
+7. **Fix blockers** штатными действиями (см. ниже), не force
+8. **Payload preview**: `GET /api/release-candidates/{id}/payload-preview` — `valid=true`, `article_v2`, `status=draft`
+9. **Approve**: `POST /api/release-candidates/{id}/approve`
+10. **Publish draft**: `POST /api/release-candidates/{id}/publish-draft` → target `crmflow24-production-v2`
+11. Проверить `publish_runs` (`release_candidate_id` заполнен) и `publication_records`
+12. **Public check**: slug/title не в `/blog`, `/sitemap.xml`, `/rss.xml`
+
+## Common blockers
+
+| Blocker | Что делать |
+|---------|------------|
+| `smoke_test_blocked` | Не публиковать; другой документ или cliproxy rewrite без test markers |
+| `seo_metadata` / `seo_slug` | `POST .../run-seo` |
+| `quality_verdict` | `POST .../run-quality`; при score ≥ порога и `needs_revision` — operator approve после editorial |
+| `editorial_approved` | Editorial workflow до `ready_to_publish` |
+| `strategy_allowed` | `POST .../extract-topics`, проверить strategy readiness |
+| `canonical_duplicate` | Analyze similarity, merge/другой угол, другой документ |
+| `crmflow24_target_health` | Проверить target, токен, endpoint health |
+| `payload_validation` | Исправить SEO/rewrite/review, повторить QA |
+
+## Fix actions
+
+- SEO: `POST /api/documents/{id}/run-seo`
+- Quality: `POST /api/documents/{id}/run-quality`
+- Rewrite (production): `REWRITER_PROVIDER=cliproxy` + `POST .../rerun-rewrite`
+- Topics: `POST /api/documents/{id}/extract-topics`
+- Similarity: `POST /api/documents/{id}/analyze-similarity`
+- Editorial: `/api/documents/{id}/editorial/*`
+- Другой документ из editorial queue
+
+## Idempotency
+
+- Повторный `publish-draft` для candidate в статусе `published_draft` → **400** (нужен новый candidate после изменения revision).
+- Повторный publish того же `article_v2` на тот же target без force → **duplicate** в `publish_runs` (ожидаемо).
+
+## Never do
+
+- Force publish smoke/test документов
+- Прямые правки БД CRMFlow24
+- Public publish из Scrap (только draft)
+- Удаление audit (`pipeline_events`, `publish_runs`)
+
+## First production run (4M, 2026-05-18)
+
+- **Document #4**: «Настройка CRM Bitrix24: полное руководство»
+- **Release candidate #5**: QA score 79, `qa_passed` → `approved` → `published_draft`
+- **Publish run #25**: `crmflow24_ack_v2`, draft admin URL на crmflow24.ru
+- **Doc #8**: SEO восстановлен через `POST /api/documents/8/run-seo` после теста 4L
