@@ -27,6 +27,7 @@ CHECKS_DEFAULT = [
     "check_media.py",
     "check_publish.py",
     "check_scheduler.py",
+    "check_pilots.py",
 ]
 CHECKS_PRODUCTION = [
     "check_crmflow24_production_target.py",
