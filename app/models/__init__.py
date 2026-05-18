@@ -8,6 +8,10 @@ from app.models.automation_run import AutomationRun
 from app.models.scheduler_state import SchedulerState
 from app.models.analytics_snapshot import AnalyticsSnapshot
 from app.models.content_performance import ContentPerformance
+from app.models.campaign_document_link import CampaignDocumentLink
+from app.models.document_cluster_link import DocumentClusterLink
+from app.models.topic_cluster import TopicCluster
+from app.models.content_campaign import ContentCampaign
 from app.models.discovered_url import DiscoveredUrl
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
@@ -56,4 +60,5 @@ __all__ = [
     "AutomationRule",
     "AutomationRun",
     "SchedulerState",
+    "ContentCampaign",
 ]
