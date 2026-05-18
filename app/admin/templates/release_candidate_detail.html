@@ -25,7 +25,8 @@
 <form method="post" action="/admin/release-candidates/{{ detail.id }}/approve" style="display:inline"><button class="btn">Approve</button></form>
 <form method="post" action="/admin/release-candidates/{{ detail.id }}/reject" style="display:inline"><button class="btn">Reject</button></form>
 <form method="post" action="/admin/release-candidates/{{ detail.id }}/publish-draft" style="display:inline"><button class="btn">Publish draft</button></form>
-<a class="btn" href="/api/release-candidates/{{ detail.id }}/payload-preview" target="_blank">View payload preview</a>
+<a class="btn" href="/api/release-candidates/{{ detail.id }}/payload-preview" target="_blank">View payload preview (JSON)</a>
+<a class="btn" href="/api/publish-targets" target="_blank">Publish targets health</a>
 
 {% if detail.publish_runs %}
 <h2>Publish runs</h2>
