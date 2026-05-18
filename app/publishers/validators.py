@@ -138,7 +138,13 @@ def validate_quality_for_publish(
         return PublishValidationResult(valid=False, errors=errors)
 
     verdict = getattr(quality_score, "verdict", None) or ""
-    if verdict != "approved":
+    verdict_ok = verdict == "approved"
+    if not verdict_ok and verdict == "needs_revision":
+        try:
+            verdict_ok = int(getattr(quality_score, "overall_score", 0) or 0) >= min_score
+        except (TypeError, ValueError):
+            verdict_ok = False
+    if not verdict_ok:
         errors.append(
             ValidationIssue(
                 "quality_verdict",

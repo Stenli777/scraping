@@ -282,7 +282,22 @@ def _build_qa_checks(db: Session, candidate: ContentReleaseCandidate) -> list[QA
     quality = get_latest_quality_score(db, document.id)
     quality_enabled = is_quality_review_enabled()
     if quality_enabled:
-        add("quality_verdict", "Quality verdict approved", quality is not None and quality.verdict == "approved", True)
+        q_verdict_ok = False
+        if quality:
+            if quality.verdict == "approved":
+                q_verdict_ok = True
+            elif quality.verdict == "needs_revision" and quality.overall_score is not None:
+                try:
+                    q_verdict_ok = int(quality.overall_score) >= settings.min_quality_score_for_publish
+                except (TypeError, ValueError):
+                    q_verdict_ok = False
+        add(
+            "quality_verdict",
+            "Quality verdict approved",
+            q_verdict_ok,
+            True,
+            quality.verdict if quality and not q_verdict_ok else None,
+        )
         q_ok = False
         if quality and quality.overall_score is not None:
             try:
