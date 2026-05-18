@@ -178,3 +178,7 @@ After rewrite/SEO: operator assigns clusters/campaigns, extracts topics, reviews
 ### topic_extraction stage (4G)
 
 Emits `topic_extraction` completed with strategy_allowed. Audit in `metadata_json.topic_extractions[]`: deterministic_result, llm_cleanup_result, final_result, llm_run_id.
+
+### topic_extraction + enrichment (4H)
+
+Sync deterministic + gate; async merge updates `metadata_json.topic_extractions` with `merged_result` when job completes.

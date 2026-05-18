@@ -1091,3 +1091,7 @@ Topics ? clusters ? campaigns ? coverage ? analytics feedback. Deterministic heu
 ### Strategy quality gate (4G)
 
 Pipeline: deterministic topic_v2 → optional LLM `topic_cleanup_v1` → server-side `apply_strategy_gate`. Smoke/test/internal documents blocked from campaign/cluster coverage and suggestions.
+
+### Deterministic-first + async enrichment (4H)
+
+Strategy uses deterministic extraction immediately; LLM topic_cleanup runs in `llm_enrichment_jobs` queue with isolated scheduler tick and per-task timeouts.

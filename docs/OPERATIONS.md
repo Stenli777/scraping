@@ -235,3 +235,7 @@ curl -s http://127.0.0.1:8800/api/system/workspace
 - https://crmflow24.ru/admin/posts/cmpats92t0006a2316na5xups
 - Это не публичный пост; не отображается в `/blog`, sitemap, RSS.
 - Из Scrap удалять не нужно.
+
+### LLM enrichment operations (4H)
+
+If CLIProxy slow/dead: enrichment jobs mark `failed_retryable`; retry via API/admin. `extract-topics` stays fast. Tune `TOPIC_CLEANUP_TIMEOUT_SECONDS`.

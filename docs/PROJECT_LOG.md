@@ -268,3 +268,13 @@
 - Env: `ENABLE_LLM_TOPIC_CLEANUP`, `TOPIC_CLEANUP_MODEL_ALIAS`, `MIN_TOPIC_RELEVANCE_FOR_STRATEGY`.
 - Reminder: smoke draft CRM https://crmflow24.ru/admin/posts/cmpats92t0006a2316na5xups — удалить вручную в CRM admin.
 - Тест doc #7: `strategy_allowed=false`, `strategy_block_reason=smoke_test`.
+
+## 2026-05-18 — Этап 4H: async LLM enrichment + timeout hardening
+
+- Таблица `llm_enrichment_jobs` (миграция 016): queued/running/completed/failed_retryable/failed_terminal/cancelled/skipped.
+- `extract-topics`: deterministic sync (<3s), LLM cleanup через очередь (`enrichment_job_id`).
+- Scheduler + worker: отдельный tick enrichment (не блокирует automation/scraping).
+- Granular timeouts: `TOPIC_CLEANUP_TIMEOUT_SECONDS=25`, SEO 60s, quality 90s.
+- API: `/api/enrichment-jobs`, retry/cancel.
+- Admin: `/admin/enrichment-jobs`, статус enrichment на document detail.
+- CLIProxy degraded: API быстрый, jobs → failed_retryable, strategy/coverage без блокировки.

@@ -87,3 +87,7 @@ Base: **https://scrap.crmflow24.ru/admin**
 ### Content strategy block (4G)
 
 Document detail shows: strategy_allowed, block reason, LLM cleanup status/model/llm_run, test document flag, strategy readiness. Campaign/cluster detail shows excluded_strategy_count.
+
+### Enrichment jobs (4H)
+
+`/admin/enrichment-jobs` — queue, status, retries, latency. Document detail shows latest job and history.

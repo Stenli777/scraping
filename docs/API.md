@@ -161,3 +161,8 @@ Requires `ENABLE_ANALYTICS=true`.
 - `GET /api/documents/{id}/strategy-readiness` — readiness for campaign planning.
 - `GET /api/campaigns/{id}/coverage?include_blocked=false` — excludes `strategy_allowed=false` documents; returns `excluded_strategy_count`.
 - `GET /api/clusters/{id}/coverage?include_blocked=false` — same exclusion semantics.
+
+### Async enrichment (4H)
+
+- `POST /api/documents/{id}/extract-topics` → fast deterministic + optional `enrichment_job_id`.
+- `GET/POST /api/enrichment-jobs` — list, get, retry, cancel.
