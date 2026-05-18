@@ -12,6 +12,7 @@ from app.models.campaign_document_link import CampaignDocumentLink
 from app.models.document_cluster_link import DocumentClusterLink
 from app.models.topic_cluster import TopicCluster
 from app.models.content_campaign import ContentCampaign
+from app.models.content_pilot import ContentPilot, ContentPilotItem
 from app.models.discovered_url import DiscoveredUrl
 from app.models.source_quality_score import SourceQualityScore
 from app.models.domain_trust_registry import DomainTrustRegistry
@@ -77,4 +78,6 @@ __all__ = [
     "AutomationRun",
     "SchedulerState",
     "ContentCampaign",
+    "ContentPilot",
+    "ContentPilotItem",
 ]

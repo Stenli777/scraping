@@ -172,3 +172,4 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 - Release candidate detail — блок Public publication (4Q).
 - `/admin/operations` — Post-publication tracking counters.
 - `/admin/analytics-ready`, `/admin/publications/{id}/analytics/import`, performance history on publication detail.
+- `/admin/pilots`, `/admin/pilots/{id}` — progress, items, suggested candidates, safe action links.

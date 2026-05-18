@@ -267,3 +267,4 @@ Response includes per-target: `target_class`, `ignored_by_smoke`, `ignored_by_de
 
 `public_visibility_status`: unknown | not_public | public | inconsistent.
 - **Import:** `POST /api/publications/{id}/analytics/import` requires `analytics_ready`; fields include `import_notes`, `imported_by`. Validation: unique_visitors ≤ views, snapshot_date not far future.
+- **Pilots:** `GET/POST /api/pilots`, `GET /api/pilots/{id}`, `POST add-document`, `POST refresh`, `GET candidates`.

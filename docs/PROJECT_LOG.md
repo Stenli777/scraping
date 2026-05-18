@@ -361,3 +361,4 @@
 - **Граница:** Scrap не публикует public; только GET blog/sitemap/rss + фиксация в PublicationRecord.
 - **Следующий шаг:** оператор публикует в CRMFlow24 admin → check → confirm-public → analytics_ready.
 - **4R:** analytics ready queue, manual metrics import UI, validation, pipeline audit, performance history, insight labels, import script.
+- **4S:** production pilot dashboard (crmflow24-first-5), candidate scoring, next_action engine, check_pilot_state.py.

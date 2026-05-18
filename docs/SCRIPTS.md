@@ -80,3 +80,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 
 По умолчанию только check; `--confirm` требует явного флага.
 - `import_analytics_snapshot.py --publication-id ID --views N ...` ; `--sample` for test data.
+- `scripts/check_pilot_state.py` (read-only); `scripts/seed_pilot_first5.py`.
