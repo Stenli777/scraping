@@ -61,3 +61,4 @@ Public publication confirmation + post-publish tracking. Не реализова
 - **4R done:** post-publication analytics workflow (no GA/SC/Yandex APIs).
 - **4S done:** First 5 Articles Pilot control layer.
 - **4T:** practical pilot execution; dashboard validated with real draft.
+- **4U:** trusted source expansion; pilot 2/5 operational.

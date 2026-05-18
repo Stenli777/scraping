@@ -82,3 +82,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 - `import_analytics_snapshot.py --publication-id ID --views N ...` ; `--sample` for test data.
 - `scripts/check_pilot_state.py` (read-only); `scripts/seed_pilot_first5.py`.
 - `run_pilot_first5_check.py` — read-only pilot report; `--refresh` updates statuses.
+- Discovery: `run_discovery_test.py`; ops `/tmp/run_4u_ops.py` (discover|enqueue|pilot).

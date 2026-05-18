@@ -372,3 +372,12 @@
 - **Скрипт:** `scripts/run_pilot_first5_check.py` (--refresh, --json).
 - **Вручную в CRMFlow24:** опубликовать пост публично → в Scrap check-public-status → confirm-public → import metrics.
 - **Не делали:** public publish из Scrap, auto-add всех документов, повторный publish draft #4.
+## 2026-05-18 18:12 UTC — этап 4U (trusted source expansion + pilot fill)
+
+- **Discovery:** saltpro (#1), sotbit (#2), habr (#3) — max 12 URL/run; **+1** новый URL (habr/otus/1034388).
+- **Enqueued:** discovered #9 → task #13 (OTUS structured logging).
+- **Pipeline:** doc #5 (Bitrix24 chat-bot, habr/bitrix) — review take, cliproxy rewrite, SEO, quality 82; doc #7 excluded (ONEMIX off-topic); doc #9 excluded (review reject, logging).
+- **Pilot crmflow24-first-5:** **2/5** items — doc #4 (draft в CRMFlow24), doc #5 (RC #8 qa_failed — editorial needs_revision).
+- **Исключено:** doc #8 thin rewrite (452 chars) — убран из pilot; test URLs; spam/example; quality_blocked discovery rows.
+- **Fix:** `detect_test_document` — `debug`/`mock` только в title/slug; pilot relevance exception при review take + CRM topic + rel≥50; `find_safe_doc` расширен.
+- **До 5/5:** нужны ещё 3 сильных статьи (discovery даёт мало article URL — много blocked /tag /users).

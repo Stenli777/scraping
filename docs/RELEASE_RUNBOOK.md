@@ -105,3 +105,4 @@ Scrap never public-publishes. Production draft/publish only with explicit operat
 - Metrics import only when `analytics_ready`; use `--sample` only for tests.
 - First 5 pilot: add documents manually; follow next_action per item; no auto-add.
 - First 5 pilot: add safe docs manually; doc #4 at `manual_publish_in_crmflow24` after draft accepted.
+- Pilot fill: prefer 2–3 strong docs over 5 weak; doc #5 RC needs editorial before draft publish.
