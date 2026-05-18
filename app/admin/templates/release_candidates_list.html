@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Release candidates</h1>
+<table class="table">
+  <thead>
+    <tr><th>ID</th><th>Doc</th><th>Status</th><th>QA</th><th>Blockers</th><th>Created</th></tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td><a href="/admin/release-candidates/{{ item.id }}">#{{ item.id }}</a></td>
+      <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
+      <td><code>{{ item.status }}</code></td>
+      <td>{{ item.qa_score }}</td>
+      <td>{{ item.blocking_count }}</td>
+      <td>{{ item.created_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No candidates</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

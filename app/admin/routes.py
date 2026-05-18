@@ -203,6 +203,7 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
             "strategy_context": strategy_context,
             "similarity_summary": similarity_summary,
             "lineage_summary": lineage_summary,
+            "release_candidates": release_candidates,
             "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Задача #{task_id}",
@@ -259,6 +260,9 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
 
     similarity_summary = get_document_similarity_summary(db, document_id)
     lineage_summary = get_document_lineage(db, document_id)
+    from app.services.release_candidate_service import list_release_candidates_for_document
+
+    release_candidates = list_release_candidates_for_document(db, document_id, limit=5)
     quality_record = get_latest_quality_score(db, document_id)
     hermes_research = get_latest_hermes_result(db, document_id, "research_summary")
     hermes_critique = get_latest_hermes_result(db, document_id, "rewrite_critique")
@@ -1230,3 +1234,88 @@ def admin_canonical_group_detail(group_id: int, request: Request, db: Session = 
         "canonical_group_detail.html",
         {"request": request, "detail": detail, "title": f"Canonical #{group_id}"},
     )
+
+
+@router.get("/admin/release-candidates", response_class=HTMLResponse)
+def admin_release_candidates_list(request: Request, db: Session = Depends(get_db)):
+    from sqlalchemy import select
+    from app.models.content_release_candidate import ContentReleaseCandidate
+
+    rows = db.scalars(
+        select(ContentReleaseCandidate).order_by(ContentReleaseCandidate.id.desc()).limit(200)
+    ).all()
+    items = []
+    for r in rows:
+        items.append({
+            "id": r.id,
+            "document_id": r.document_id,
+            "status": r.status,
+            "qa_score": r.qa_score,
+            "blocking_count": len(r.blocking_issues_json or []),
+            "created_at": r.created_at,
+        })
+    return templates.TemplateResponse(
+        request,
+        "release_candidates_list.html",
+        {"request": request, "items": items, "title": "Release candidates"},
+    )
+
+
+@router.get("/admin/release-candidates/{candidate_id}", response_class=HTMLResponse)
+def admin_release_candidate_detail(candidate_id: int, request: Request, db: Session = Depends(get_db)):
+    from app.services.release_candidate_service import get_candidate_status
+
+    try:
+        detail = get_candidate_status(db, candidate_id)
+    except Exception:
+        return RedirectResponse("/admin/release-candidates", status_code=302)
+    return templates.TemplateResponse(
+        request,
+        "release_candidate_detail.html",
+        {"request": request, "detail": detail, "title": f"Release candidate #{candidate_id}"},
+    )
+
+
+@router.post("/admin/release-candidates/{candidate_id}/run-qa")
+def admin_rc_run_qa(candidate_id: int, db: Session = Depends(get_db)):
+    from app.services.release_candidate_service import run_release_qa
+
+    run_release_qa(db, candidate_id)
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/release-candidates/{candidate_id}/approve")
+def admin_rc_approve(candidate_id: int, db: Session = Depends(get_db)):
+    from app.services.release_candidate_service import approve_release_candidate
+
+    approve_release_candidate(db, candidate_id)
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/release-candidates/{candidate_id}/reject")
+def admin_rc_reject(candidate_id: int, db: Session = Depends(get_db)):
+    from app.services.release_candidate_service import reject_release_candidate
+
+    reject_release_candidate(db, candidate_id, reason="rejected via admin")
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/release-candidates/{candidate_id}/publish-draft")
+def admin_rc_publish(candidate_id: int, db: Session = Depends(get_db)):
+    from app.services.release_candidate_service import publish_draft_from_candidate
+
+    publish_draft_from_candidate(db, candidate_id)
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/documents/{document_id}/release-candidates/create")
+def admin_document_create_rc(document_id: int, db: Session = Depends(get_db)):
+    from app.services.release_candidate_service import create_release_candidate
+
+    c = create_release_candidate(db, document_id)
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{c.id}", status_code=303)

@@ -31,6 +31,10 @@ class EditorialQueueItem:
     quality_verdict: str | None
     publish_ready: bool
     publish_missing: list[str] = field(default_factory=list)
+    has_release_candidate: bool = False
+    release_candidate_status: str | None = None
+    release_candidate_qa_score: int | None = None
+    release_candidate_blocking_count: int = 0
 
 
 @dataclass
@@ -62,6 +66,7 @@ def _build_item(db: Session, doc: ParsedDocument) -> EditorialQueueItem | None:
         .order_by(DocumentRevision.revision_number.desc())
     )
     readiness = get_publish_readiness(db, doc.id)
+    rc = readiness.get("release_candidate") or {}
     rev_at = latest_rev.created_at.isoformat() if latest_rev and latest_rev.created_at else None
     return EditorialQueueItem(
         document_id=doc.id,
@@ -77,6 +82,10 @@ def _build_item(db: Session, doc: ParsedDocument) -> EditorialQueueItem | None:
         quality_verdict=quality.verdict if quality else None,
         publish_ready=readiness["ready"],
         publish_missing=readiness["missing"],
+        has_release_candidate=bool(rc.get("exists")),
+        release_candidate_status=rc.get("status"),
+        release_candidate_qa_score=rc.get("qa_score"),
+        release_candidate_blocking_count=len(rc.get("blocking_issues") or []),
     )
 
 

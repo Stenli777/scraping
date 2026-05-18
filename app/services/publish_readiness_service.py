@@ -240,10 +240,18 @@ def get_publish_readiness(
     except Exception:
         checks["canonical_similarity_warnings"] = []
 
+    try:
+        from app.services.release_candidate_service import get_latest_candidate_summary
+
+        release_candidate = get_latest_candidate_summary(db, document_id)
+    except Exception:
+        release_candidate = {"exists": False}
+
     ready = len(missing) == 0
     return {
         "ready": ready,
         "missing": missing,
         "warnings": warnings,
         "checks": checks,
+        "release_candidate": release_candidate,
     }

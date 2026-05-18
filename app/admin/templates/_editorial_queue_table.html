@@ -11,18 +11,23 @@
       <td>{{ item.project_slug or "—" }}</td>
       <td><code>{{ item.editorial_status }}</code></td>
       <td>{{ item.revision_number }}{% if item.latest_revision_at %}<br><small>{{ item.latest_revision_at[:16] }}</small>{% endif %}</td>
+      <td>{% if item.has_release_candidate %}<code>{{ item.release_candidate_status }}</code>{% else %}—{% endif %}</td>
+      <td>{{ item.release_candidate_qa_score or '—' }}{% if item.release_candidate_blocking_count %}<br><small>{{ item.release_candidate_blocking_count }} block</small>{% endif %}</td>
       <td>{{ item.review_score or "—" }}</td>
       <td>{{ item.quality_overall_score or "—" }} {% if item.quality_verdict %}({{ item.quality_verdict }}){% endif %}</td>
       <td>{% if item.publish_ready %}<span class="badge status-done">ready</span>{% else %}<span class="badge status-error">blocked</span>{% endif %}</td>
       <td class="export-links">
         <a class="btn" href="/admin/documents/{{ item.document_id }}">Open</a>
+        <form method="post" action="/admin/documents/{{ item.document_id }}/release-candidates/create" style="display:inline">
+          <button type="submit" class="btn">RC</button>
+        </form>
         <form method="post" action="/admin/documents/{{ item.document_id }}/run-quality" style="display:inline">
           <button type="submit" class="btn">QC</button>
         </form>
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="8">—</td></tr>
+    <tr><td colspan="10">—</td></tr>
     {% endfor %}
   </tbody>
 </table>
