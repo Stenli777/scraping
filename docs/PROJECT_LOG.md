@@ -360,3 +360,4 @@
 - **Результат:** publication #7 check → not_public (post not public in CRMFlow24 yet); confirm-public idempotent with force; smoke PASS after commit.
 - **Граница:** Scrap не публикует public; только GET blog/sitemap/rss + фиксация в PublicationRecord.
 - **Следующий шаг:** оператор публикует в CRMFlow24 admin → check → confirm-public → analytics_ready.
+- **4R:** analytics ready queue, manual metrics import UI, validation, pipeline audit, performance history, insight labels, import script.

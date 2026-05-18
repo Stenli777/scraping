@@ -329,3 +329,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-produc
 2. `scripts/check_public_publication.py --publication-id ID` или API check-public-status.
 3. При `status=public` — `confirm-public` (или `--confirm --confirmed-by operator`).
 4. `analytics_ready` для content_performance (без auto-import метрик).
+- After confirm-public: open analytics-ready queue → Import metrics → review `/admin/analytics`.

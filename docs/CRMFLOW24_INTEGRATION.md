@@ -138,3 +138,4 @@ Scrap записывает результат ручной проверки draf
 ## 2026-05-18 — этап 4Q
 
 Public route: `https://crmflow24.ru/blog/<slug>`. Scrap не мутирует CRMFlow24. Draft admin URL: `/admin/posts/{id}` — не public URL.
+- Metrics are manual operator entry in Scrap; CRMFlow24 is not mutated.

@@ -266,3 +266,4 @@ Response includes per-target: `target_class`, `ignored_by_smoke`, `ignored_by_de
 | POST | `/api/publications/{id}/mark-not-public` | Body: `notes` |
 
 `public_visibility_status`: unknown | not_public | public | inconsistent.
+- **Import:** `POST /api/publications/{id}/analytics/import` requires `analytics_ready`; fields include `import_notes`, `imported_by`. Validation: unique_visitors ≤ views, snapshot_date not far future.

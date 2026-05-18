@@ -58,3 +58,4 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 ## 2026-05-18 — этап 4Q — 4Q done
 
 Public publication confirmation + post-publish tracking. Не реализовано: auto-publish, webhooks, CRMFlow24 code changes, scheduled polling.
+- **4R done:** post-publication analytics workflow (no GA/SC/Yandex APIs).

@@ -102,3 +102,4 @@ Scrap never public-publishes. Production draft/publish only with explicit operat
 ## 2026-05-18 — этап 4Q
 
 Перед confirm-public: visibility check должен показать `public`, либо явный `force` с notes ≥10 символов. Повторный confirm-public идемпотентен.
+- Metrics import only when `analytics_ready`; use `--sample` only for tests.
