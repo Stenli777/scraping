@@ -1,4 +1,4 @@
-"""Mock crmflow24 inbound receiver ? testing only, not production CMS."""
+"""Mock crmflow24 inbound receiver — testing only, not production CMS."""
 
 import os
 import uuid
@@ -31,14 +31,18 @@ class MockImportResponse(BaseModel):
 
 
 def _check_auth(authorization: str | None) -> None:
-    expected = os.environ.get("CRMFLOW24_PUBLISH_TOKEN", "").strip()
+    """Mock auth is isolated from production CRMFLOW24_PUBLISH_TOKEN.
+
+    Uses MOCK_CRMFLOW24_PUBLISH_TOKEN only. If unset, mock import is open (smoke-safe).
+    """
+    expected = os.environ.get("MOCK_CRMFLOW24_PUBLISH_TOKEN", "").strip()
     if not expected:
         return
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Bearer token required")
+        raise HTTPException(status_code=401, detail="Bearer token required (mock)")
     token = authorization[7:].strip()
     if token != expected:
-        raise HTTPException(status_code=401, detail="Invalid bearer token")
+        raise HTTPException(status_code=401, detail="Invalid bearer token (mock)")
 
 
 def _validate_inbound_payload(payload: dict[str, Any]) -> None:
@@ -83,6 +87,7 @@ async def mock_import_article(
 
     if _MOCK_FAIL_MODE == "timeout":
         import asyncio
+
         await asyncio.sleep(120)
 
     if _MOCK_FAIL_MODE == "503":
