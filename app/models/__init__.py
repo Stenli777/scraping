@@ -19,6 +19,7 @@ from app.models.canonical_content_group import CanonicalContentGroup
 from app.models.document_similarity_link import DocumentSimilarityLink
 from app.models.rewrite_lineage import RewriteLineage
 from app.models.content_release_candidate import ContentReleaseCandidate
+from app.models.draft_review_feedback import DraftReviewFeedback
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
 from app.models.prompt_version import PromptVersion
@@ -63,6 +64,7 @@ __all__ = [
     "DocumentSimilarityLink",
     "RewriteLineage",
     "ContentReleaseCandidate",
+    "DraftReviewFeedback",
     "PromptTemplate",
     "PromptVersion",
     "ProjectPromptOverride",

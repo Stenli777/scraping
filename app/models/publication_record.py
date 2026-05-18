@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -29,6 +29,9 @@ class PublicationRecord(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+    draft_review_status: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    draft_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    final_operator_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     snapshots = relationship("AnalyticsSnapshot", back_populates="publication_record")
     performance = relationship("ContentPerformance", back_populates="publication_record", uselist=False)
