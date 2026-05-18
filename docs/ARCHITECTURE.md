@@ -1138,3 +1138,11 @@ discovery → deterministic quality scoring → quality_scored | quality_blocked
 Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
 
 Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
+
+## Canonical content intelligence (4K)
+
+- **Canonical groups** — кластер похожих документов (suggestion-only, без auto-delete).
+- **Similarity links** — детерминированные пары A↔B: `same_source`, `near_duplicate`, `topic_overlap`, `rewrite_family`, `campaign_overlap`, `cross_source_overlap`.
+- **Rewrite lineage** — immutable цепочка source → rewrite → revision.
+- **Cannibalization** — warnings при overlapping keywords/slug/published cluster; publish не блокируется.
+- **Coverage** — duplicate-adjusted count для кампаний.

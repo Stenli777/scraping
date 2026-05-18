@@ -282,3 +282,9 @@ discovery → deterministic quality scoring → quality_scored | quality_blocked
 Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
 
 Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
+
+### Similarity analysis ops
+
+- Пороги: `SIMILARITY_NEAR_DUPLICATE_THRESHOLD` (80), `SIMILARITY_TOPIC_OVERLAP_THRESHOLD` (65), `SIMILARITY_CANNIBALIZATION_THRESHOLD` (75).
+- Sync quick check в pipeline после rewrite; deep — enrichment job `similarity_analysis`.
+- `scripts/test_4k_canonical.py` — ручной smoke.

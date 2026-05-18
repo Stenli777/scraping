@@ -139,3 +139,9 @@ discovery → deterministic quality scoring → quality_scored | quality_blocked
 Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
 
 Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
+
+### Canonical groups (4K)
+
+- `/admin/canonical-groups` — список групп, риск, число документов.
+- `/admin/canonical-groups/{id}` — linked docs, similarity links, lineage, strategy warnings.
+- Document detail: блок **Canonical / similarity** (group, near duplicates, cannibalization, lineage).

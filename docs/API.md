@@ -216,3 +216,13 @@ discovery → deterministic quality scoring → quality_scored | quality_blocked
 Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
 
 Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
+
+### Canonical / similarity (4K)
+
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | `/api/documents/{id}/similarity` | Сводка similarity, near duplicates, warnings |
+| GET | `/api/documents/{id}/lineage` | Rewrite lineage + revisions |
+| POST | `/api/documents/{id}/analyze-similarity` | Sync quick + optional `deep`, `queue_async` |
+| GET | `/api/canonical-groups` | Список групп (`?project_id=`) |
+| GET | `/api/canonical-groups/{id}` | Детали группы, graph, lineage |

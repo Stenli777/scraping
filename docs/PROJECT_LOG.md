@@ -299,3 +299,14 @@
 - Enqueue quality gate; automation skips blocked URLs.
 - Admin: `/admin/source-quality`, quality columns on discovered URLs.
 - Health: `source_quality` section in `/health/ready`.
+
+## 2026-05-18 — Этап 4K: canonical content intelligence
+
+- Миграция `019`: `canonical_content_groups`, `document_similarity_links`, `rewrite_lineages`, `parsed_documents.canonical_group_id`.
+- `document_similarity_service.py`: deterministic similarity (title/slug/keywords/topics/headings/rewrite), cannibalization warnings, rewrite lineage.
+- API: `/api/documents/{id}/similarity`, `/lineage`, `POST .../analyze-similarity`; `/api/canonical-groups`.
+- Admin: `/admin/canonical-groups`, блок similarity на document detail.
+- Campaign coverage: `documents_unique`, `duplicate_adjusted_coverage`, `near_duplicate_pairs`.
+- Enrichment type `similarity_analysis` (async deep analysis).
+- Health `/health/ready`: секция `similarity`.
+- Env: `SIMILARITY_*_THRESHOLD`, `ENABLE_SIMILARITY_ANALYSIS`.
