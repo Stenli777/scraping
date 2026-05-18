@@ -39,6 +39,9 @@ class PublishRun(Base):
         ForeignKey("publish_runs.id", ondelete="SET NULL"), nullable=True, index=True
     )
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    release_candidate_id: Mapped[int | None] = mapped_column(
+        ForeignKey("content_release_candidates.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_retry_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     response_schema_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
