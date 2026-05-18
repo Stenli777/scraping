@@ -255,3 +255,14 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 ### GET /api/publish-targets/health
 
 Response includes per-target: `target_class`, `ignored_by_smoke`, `ignored_by_default_health`, `safety_issues`, `healthy_for_smoke` (aggregate).
+
+## 2026-05-18 — этап 4Q — Publication public confirmation
+
+| Method | Path | Описание |
+|--------|------|----------|
+| POST | `/api/publications/{id}/check-public-status` | GET blog/sitemap/rss, сохраняет visibility |
+| GET | `/api/publications/{id}/public-status` | Текущий статус подтверждения |
+| POST | `/api/publications/{id}/confirm-public` | Body: `confirmed_by`, `notes`, optional `force` |
+| POST | `/api/publications/{id}/mark-not-public` | Body: `notes` |
+
+`public_visibility_status`: unknown | not_public | public | inconsistent.

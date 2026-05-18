@@ -1166,3 +1166,7 @@ Candidate snapshot is bound to `document_revision_id`; revision change requires 
 `CRMFlow24 draft` → `draft_review_feedback` → `draft_review_status` на candidate/publication → optional `editorial_status` / `pipeline_event`.
 
 Нет webhook, нет двусторонней синхронизации, нет public publish из Scrap.
+
+## 2026-05-18 — этап 4Q — Public publication confirmation
+
+После ручной публикации в CRMFlow24 admin Scrap проверяет публичную видимость (blog, sitemap, rss) и по команде оператора подтверждает `publication_status=published`. Public URL: `https://crmflow24.ru/blog/<slug>` (из SEO slug). Admin/draft URL не считается public. `analytics_ready` = published + visibility public + `public_confirmed_at` set.

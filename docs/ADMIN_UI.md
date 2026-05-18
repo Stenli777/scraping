@@ -164,3 +164,10 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 
 `/admin/publish-targets` — target class (mock/test/production), safety warnings, smoke scope.
 `/admin/operations` — publish target safety summary, smoke command hints.
+
+## 2026-05-18 — этап 4Q
+
+- `/admin/publications` — колонки visibility, analytics ready.
+- `/admin/publications/{id}` — detail: check / confirm / mark not public.
+- Release candidate detail — блок Public publication (4Q).
+- `/admin/operations` — Post-publication tracking counters.

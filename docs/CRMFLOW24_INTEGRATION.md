@@ -134,3 +134,7 @@ Scrap записывает результат ручной проверки draf
 
 - **Mock receiver** (`/api/mock-crmflow24/*`): optional `MOCK_CRMFLOW24_PUBLISH_TOKEN` only. Does **not** read `CRMFLOW24_PUBLISH_TOKEN`.
 - **Production** (`crmflow24.ru/api/scrap/articles/import`): requires `CRMFLOW24_PUBLISH_TOKEN` (or configured env).
+
+## 2026-05-18 — этап 4Q
+
+Public route: `https://crmflow24.ru/blog/<slug>`. Scrap не мутирует CRMFlow24. Draft admin URL: `/admin/posts/{id}` — не public URL.

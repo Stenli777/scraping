@@ -322,3 +322,10 @@ Production target probe (no publish):
 ```bash
 PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-production
 ```
+
+## 2026-05-18 — этап 4Q — Post-publication tracking
+
+1. Оператор публикует пост в CRMFlow24 admin (вне Scrap).
+2. `scripts/check_public_publication.py --publication-id ID` или API check-public-status.
+3. При `status=public` — `confirm-public` (или `--confirm --confirmed-by operator`).
+4. `analytics_ready` для content_performance (без auto-import метрик).

@@ -352,3 +352,11 @@
 - `publish_target_safety_service.py`: mock/test/production classes + validation.
 - Smoke default skips production; `--include-production` for safe production probe script.
 - Disabled `crmflow24-test-bad-token` target.
+
+## 2026-05-18 — этап 4Q
+- **Что изменено:** post-publication confirmation (visibility check, manual confirm, analytics_ready), migration 022, admin + script.
+- **Файлы:** migration 022, publication_confirmation_service, publication_confirmation API, admin templates, check_public_publication.py.
+- **Команды:** alembic upgrade head; systemctl restart scrap-api; scripts/check_public_publication.py --publication-id 7.
+- **Результат:** publication #7 check → not_public (post not public in CRMFlow24 yet); confirm-public idempotent with force; smoke PASS after commit.
+- **Граница:** Scrap не публикует public; только GET blog/sitemap/rss + фиксация в PublicationRecord.
+- **Следующий шаг:** оператор публикует в CRMFlow24 admin → check → confirm-public → analytics_ready.

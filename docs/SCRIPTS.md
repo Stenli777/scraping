@@ -70,3 +70,12 @@ Stage regression tests (2x–4x). По умолчанию не трогают CR
 |--------|---------|------------|
 | `scripts/smoke/run_all.py` | mock-only, no production publish | `--include-production` adds `check_crmflow24_production_target.py` |
 | `scripts/smoke/check_crmflow24_production_target.py` | not in default suite | OPTIONS/HEAD probe, token env check, no draft |
+
+## check_public_publication.py
+
+```bash
+PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --publication-id 7
+PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --publication-id 7 --confirm --confirmed-by operator
+```
+
+По умолчанию только check; `--confirm` требует явного флага.

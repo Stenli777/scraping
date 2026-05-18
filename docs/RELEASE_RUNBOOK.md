@@ -98,3 +98,7 @@
 | **production** | Requires env token; never in default smoke; use `--include-production` |
 
 Scrap never public-publishes. Production draft/publish only with explicit operator action.
+
+## 2026-05-18 — этап 4Q
+
+Перед confirm-public: visibility check должен показать `public`, либо явный `force` с notes ≥10 символов. Повторный confirm-public идемпотентен.

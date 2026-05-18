@@ -54,3 +54,7 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - [x] **4O** — workspace cleanup, scripts inventory, release state checks, operations checkpoint.
 
 - [x] **4P** — smoke suite repair, publish target safety validation, mock/production isolation.
+
+## 2026-05-18 — этап 4Q — 4Q done
+
+Public publication confirmation + post-publish tracking. Не реализовано: auto-publish, webhooks, CRMFlow24 code changes, scheduled polling.
