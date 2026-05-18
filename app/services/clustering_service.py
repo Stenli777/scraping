@@ -78,35 +78,49 @@ def extract_topics_for_document(
     tags = list((seo.tags_json if seo else None) or [])
     text_sample = (document.rewritten_text or document.clean_text or "")[:2000]
 
-    tokens = tokenize(title) | tokenize(text_sample)
-    for tag in tags:
-        tokens |= tokenize(str(tag))
+    project_slug = None
+    if document.task:
+        from app.services.project_profile_service import resolve_task_project
+        project = resolve_task_project(db, document.task)
+        project_slug = project.slug if project else None
 
-    keywords = sorted(tokens, key=len, reverse=True)[:12]
-    primary = keywords[0] if keywords else normalize_keyword(title)[:80] or "general topic"
-    secondary = [k for k in keywords[1:6] if k != primary]
+    from app.services.topic_quality_service import build_topic_extraction_v2
 
-    # title-based primary topic (human readable)
-    primary_topic = title.strip() or primary.replace("-", " ").title()
-
-    search_intent = infer_search_intent([primary] + secondary + tags)
-
-    result = {
-        "primary_topic": primary_topic,
-        "secondary_topics": secondary,
-        "keywords": keywords[:10],
-        "search_intent": search_intent,
-        "extracted_at": datetime.now(timezone.utc).isoformat(),
-    }
+    result = build_topic_extraction_v2(
+        title=title,
+        tags=tags,
+        text_sample=text_sample,
+        project_slug=project_slug,
+    )
+    result["extracted_at"] = datetime.now(timezone.utc).isoformat()
+    result["payload_version"] = "topic_v2"
 
     if persist_audit:
         meta = dict(document.metadata_json or {})
+        if meta.get("topics"):
+            history = list(meta.get("topic_extractions") or [])
+            history.append(meta["topics"])
+            meta["topic_extractions"] = history[-20:]
         audits = list(meta.get("topic_extractions") or [])
         audits.append(result)
         meta["topic_extractions"] = audits[-20:]
         meta["topics"] = result
         document.metadata_json = meta
         db.flush()
+
+        if document.task_id:
+            from app.services.pipeline_event_service import emit_pipeline_event
+            emit_pipeline_event(
+                db,
+                document.task_id,
+                "topic_extraction",
+                status="completed",
+                payload={
+                    "document_id": document_id,
+                    "relevance_score": result.get("relevance_score"),
+                    "project_fit": result.get("project_fit"),
+                },
+            )
 
     return result
 
