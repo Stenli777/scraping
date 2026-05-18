@@ -1,6 +1,8 @@
 """Thin LLM task executors — typed requests, audit logging."""
 
 import logging
+from dataclasses import dataclass, field
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -270,4 +272,85 @@ def execute_seo_enrich(db: Session, request: SeoEnrichRequest) -> SeoEnrichRespo
             model_alias=request.model_alias,
             error_message=str(exc),
             warnings=[str(exc)],
+        )
+
+
+@dataclass
+class JsonPromptResult:
+    success: bool
+    data: dict[str, Any] = field(default_factory=dict)
+    llm_run_id: int | None = None
+    error_message: str | None = None
+    warnings: list[str] = field(default_factory=list)
+    model_alias: str = ""
+    upstream_model: str | None = None
+
+
+def run_json_prompt(
+    db: Session,
+    *,
+    prompt_key: str,
+    model_alias: str,
+    context: dict[str, Any],
+    project_id: int | None = None,
+    task_id: int | None = None,
+    document_id: int | None = None,
+) -> JsonPromptResult:
+    if not model_alias or not model_alias.strip():
+        return JsonPromptResult(
+            success=False,
+            error_message="model_alias is required",
+            warnings=["model_alias is required"],
+        )
+
+    messages, resolved = render_prompt(db, prompt_key, context, project_id=project_id)
+    client = LLMClient()
+
+    try:
+        result = client.complete(model_alias=model_alias.strip(), messages=messages)
+        data = parse_llm_json(result.content)
+        if not isinstance(data, dict):
+            raise ValueError("LLM JSON response must be an object")
+
+        run = record_llm_run(
+            db,
+            task_id=task_id,
+            project_id=project_id,
+            model_alias=model_alias,
+            upstream_model=result.upstream_model,
+            prompt_template=resolved.template_ref,
+            result=result,
+            success=True,
+        )
+        db.commit()
+        return JsonPromptResult(
+            success=True,
+            data=data,
+            llm_run_id=run.id,
+            model_alias=model_alias,
+            upstream_model=result.upstream_model,
+        )
+    except (LLMError, ValueError) as exc:
+        logger.warning(
+            "JSON prompt failed key=%s doc=%s: %s",
+            prompt_key,
+            document_id,
+            exc,
+        )
+        record_llm_run(
+            db,
+            task_id=task_id,
+            project_id=project_id,
+            model_alias=model_alias,
+            upstream_model=model_alias,
+            prompt_template=resolved.template_ref,
+            success=False,
+            error_message=str(exc),
+        )
+        db.commit()
+        return JsonPromptResult(
+            success=False,
+            error_message=str(exc),
+            warnings=[str(exc)],
+            model_alias=model_alias,
         )

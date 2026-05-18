@@ -19,6 +19,7 @@ PROMPT_KEYS = (
     "rewrite_article",
     "seo_enrich",
     "quality_review",
+    "topic_cleanup_v1",
 )
 
 CODE_FALLBACK_BUILDERS = {
@@ -42,6 +43,7 @@ CODE_FALLBACK_BUILDERS = {
         ctx.get("user_template", ""),
         ctx,
     ),
+    "topic_cleanup_v1": lambda ctx: code_prompts.build_topic_cleanup_messages(ctx),
 }
 
 
@@ -159,6 +161,14 @@ def _code_fallback(key: str) -> ResolvedPrompt:
             source="code_fallback",
             system=code_prompts.QUALITY_REVIEW_V1_SYSTEM,
             user_template=code_prompts.QUALITY_REVIEW_V1_USER,
+        )
+    if key == "topic_cleanup_v1":
+        return ResolvedPrompt(
+            key=key,
+            version="v1",
+            source="code_fallback",
+            system=code_prompts.TOPIC_CLEANUP_V1_SYSTEM,
+            user_template=code_prompts.TOPIC_CLEANUP_V1_USER,
         )
     raise ValueError(f"Unknown prompt key: {key}")
 
