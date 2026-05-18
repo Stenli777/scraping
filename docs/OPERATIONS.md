@@ -271,3 +271,14 @@ Stale `running` jobs (heartbeat timeout) → `failed_retryable` with `[stale rec
 ### Merge policy
 
 See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.
+
+## Source quality intelligence (4J)
+
+```text
+discovery → deterministic quality scoring → quality_scored | quality_blocked
+         → manual approve OR enqueue (never auto-enqueue blocked)
+```
+
+Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
+
+Guarantees: core pipeline never waits on quality scoring; URLs never deleted.

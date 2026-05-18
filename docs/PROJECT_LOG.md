@@ -289,3 +289,13 @@
 - Retention: `scripts/cleanup_enrichment_jobs.py` (dry-run default).
 - State machine: failed_terminal after max retries; stale recovery hardened.
 - `docs/MASTER_PLAN.md` created.
+
+## 2026-05-18 — Этап 4J: source quality intelligence + discovery hardening
+
+- `source_quality_scores`, `domain_trust_registry` (migration 018).
+- Deterministic scoring: thin content, AI-noise heuristics, trust domains, duplicate risk.
+- Discovery statuses: quality_pending/scored/blocked, manually_approved.
+- `POST /api/discovered-urls/{id}/approve-quality`, score-quality.
+- Enqueue quality gate; automation skips blocked URLs.
+- Admin: `/admin/source-quality`, quality columns on discovered URLs.
+- Health: `source_quality` section in `/health/ready`.

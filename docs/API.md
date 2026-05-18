@@ -205,3 +205,14 @@ See `app/services/enrichment_merge_policy.py` — deterministic source-of-truth.
 - `POST /api/enrichment-jobs/{id}/replay` — new job with lineage (parent/root)
 - `GET /health/ready` — includes `enrichment` section (degraded if queue/stale severe)
 - `scripts/cleanup_enrichment_jobs.py` — dry-run retention report by default
+
+## Source quality intelligence (4J)
+
+```text
+discovery → deterministic quality scoring → quality_scored | quality_blocked
+         → manual approve OR enqueue (never auto-enqueue blocked)
+```
+
+Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
+
+Guarantees: core pipeline never waits on quality scoring; URLs never deleted.

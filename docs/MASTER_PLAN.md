@@ -31,3 +31,14 @@ Avoid: autonomous AI agent, self-improving pipeline, autonomous strategy.
 - 4G: strategy quality gate
 - 4H: async enrichment queue
 - 4I: reconciliation, metrics, replay lineage, retention
+
+## Source quality intelligence (4J)
+
+```text
+discovery → deterministic quality scoring → quality_scored | quality_blocked
+         → manual approve OR enqueue (never auto-enqueue blocked)
+```
+
+Deterministic-first; no embeddings. Optional LLM review via `ENABLE_SOURCE_QUALITY_LLM_REVIEW` (off by default).
+
+Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
