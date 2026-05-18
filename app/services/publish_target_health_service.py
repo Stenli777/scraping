@@ -11,16 +11,29 @@ from app.core.config import get_crmflow24_publish_endpoint, get_crmflow24_publis
 from app.models.publish_target import PublishTarget
 from app.publishers.versions import SUPPORTED_PAYLOAD_FORMATS, is_supported_payload_format
 from app.services.publish_service import resolve_target_endpoint
+from app.services.publish_target_safety_service import (
+    TARGET_CLASS_MOCK,
+    TARGET_CLASS_PRODUCTION,
+    classify_publish_target,
+    should_ignore_in_default_health,
+    validate_publish_target_safety,
+)
 
 
 def _resolve_token(target: PublishTarget) -> tuple[bool, str]:
     if not target.auth_type or target.auth_type == "none":
         return True, "none"
     env_name = target.auth_token_env_name or ""
+    cls = classify_publish_target(target)
     names = [env_name] if env_name else []
-    for alt in get_crmflow24_publish_token_env_names():
-        if alt not in names:
-            names.append(alt)
+    if cls == TARGET_CLASS_PRODUCTION:
+        for alt in get_crmflow24_publish_token_env_names():
+            if alt not in names:
+                names.append(alt)
+    elif cls == TARGET_CLASS_MOCK:
+        if os.environ.get("MOCK_CRMFLOW24_PUBLISH_TOKEN", "").strip():
+            return True, "MOCK_CRMFLOW24_PUBLISH_TOKEN"
+        return True, "mock_auth_optional"
     for name in names:
         if name and os.environ.get(name, "").strip():
             return True, name
@@ -47,6 +60,8 @@ def _safe_probe(endpoint: str, headers: dict[str, str], timeout: int) -> tuple[b
 def check_publish_target_health(db: Session, target: PublishTarget) -> dict[str, Any]:
     settings = get_settings()
     endpoint, force_dry = resolve_target_endpoint(target)
+    safety = validate_publish_target_safety(target)
+    target_class = safety["target_class"]
 
     auth_configured, auth_detail = _resolve_token(target)
 
@@ -57,15 +72,16 @@ def check_publish_target_health(db: Session, target: PublishTarget) -> dict[str,
     reach_detail = "skipped"
     http_status: int | None = None
 
-    if force_dry or target.target_type == "mock":
+    if force_dry or target.target_type == "mock" or target_class == TARGET_CLASS_MOCK:
         reachable = True
         reach_detail = "dry_run_or_mock"
     elif endpoint:
         headers: dict[str, str] = {}
         if auth_configured and target.auth_type == "bearer":
-            for name in ([target.auth_token_env_name] if target.auth_token_env_name else []) + list(
-                get_crmflow24_publish_token_env_names()
-            ):
+            token_names = [target.auth_token_env_name] if target.auth_token_env_name else []
+            if target_class == TARGET_CLASS_PRODUCTION:
+                token_names.extend(get_crmflow24_publish_token_env_names())
+            for name in token_names:
                 tok = os.environ.get(name or "", "").strip()
                 if tok:
                     headers["Authorization"] = f"Bearer {tok}"
@@ -87,13 +103,17 @@ def check_publish_target_health(db: Session, target: PublishTarget) -> dict[str,
             )
 
     healthy = target.enabled and payload_supported and auth_configured and (reachable or force_dry)
+    if should_ignore_in_default_health(target):
+        healthy = True
+        reach_detail = f"{reach_detail}; ignored_by_default_health"
 
-    return {
+    result = {
         "target_id": target.id,
         "name": target.name,
         "healthy": healthy,
         "enabled": target.enabled,
         "target_type": target.target_type,
+        "target_class": target_class,
         "endpoint": endpoint or None,
         "dry_run": target.dry_run or force_dry,
         "payload_format": payload_format,
@@ -104,13 +124,20 @@ def check_publish_target_health(db: Session, target: PublishTarget) -> dict[str,
         "reachable": reachable,
         "reach_detail": reach_detail,
         "http_status": http_status,
+        "ignored_by_smoke": safety["ignored_by_smoke"],
+        "ignored_by_default_health": safety["ignored_by_default_health"],
+        "requires_production_flag": safety["requires_production_flag"],
+        "safety_issues": safety["issues"],
     }
+    return result
 
 
 def check_all_publish_targets_health(db: Session) -> dict[str, Any]:
     targets = db.query(PublishTarget).order_by(PublishTarget.id.asc()).all()
     checks = [check_publish_target_health(db, t) for t in targets]
+    smoke_scope = [c for c in checks if not c.get("ignored_by_smoke")]
     return {
-        "healthy": all(c["healthy"] for c in checks if c["name"] != "crmflow24-webhook-test") if checks else True,
+        "healthy": all(c["healthy"] for c in checks) if checks else True,
+        "healthy_for_smoke": all(c["healthy"] for c in smoke_scope) if smoke_scope else True,
         "targets": checks,
     }
