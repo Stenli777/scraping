@@ -41,7 +41,13 @@ def _resolve_auth_header(target: PublishTarget) -> dict[str, str]:
     if not target.auth_token_env_name:
         raise PublishAuthError("auth_token_env_name is required for authenticated targets")
 
-    token = os.environ.get(target.auth_token_env_name, "").strip()
+    token = os.environ.get(target.auth_token_env_name, "").strip() if target.auth_token_env_name else ""
+    if not token and not target.auth_token_env_name:
+        from app.core.config import get_crmflow24_publish_token_env_names
+        for alt in get_crmflow24_publish_token_env_names():
+            token = os.environ.get(alt, "").strip()
+            if token:
+                break
     if not token:
         raise PublishAuthError(f"Env variable {target.auth_token_env_name} is not set")
 

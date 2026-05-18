@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
+from app.core.config import get_crmflow24_publish_endpoint, get_settings
 from app.core.enums import PublishRunStatus
 from app.core.feature_flags import (
     is_auto_publish_enabled,
@@ -94,9 +94,10 @@ def _latest_review(db: Session, document_id: int) -> ReviewResult | None:
 def resolve_target_endpoint(target: PublishTarget) -> tuple[str, bool]:
     """Effective endpoint and whether HTTP should be skipped (dry-run)."""
     settings = get_settings()
-    endpoint = (target.endpoint_url or settings.crmflow24_publish_endpoint or "").strip()
-    if target.name == "crmflow24-draft-webhook" and not target.endpoint_url:
-        endpoint = settings.crmflow24_publish_endpoint.strip()
+    endpoint = (target.endpoint_url or "").strip()
+    if not endpoint and target.target_type != "mock":
+        if target.name in ("crmflow24-draft-webhook", "crmflow24-production-v2"):
+            endpoint = get_crmflow24_publish_endpoint()
     force_dry = target.dry_run or not endpoint
     return endpoint, force_dry
 

@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     crmflow24_export_api_key: str = ""
     crmflow24_publish_endpoint: str = ""
     crmflow24_publish_token: str = ""
+    scrap_crmflow24_import_url: str = ""
+    scrap_crmflow24_import_token: str = ""
     publish_default_timeout: int = 60
 
     enable_source_discovery: bool = True
@@ -113,3 +115,13 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def get_crmflow24_publish_endpoint() -> str:
+    s = get_settings()
+    return (s.scrap_crmflow24_import_url or s.crmflow24_publish_endpoint or "").strip()
+
+
+def get_crmflow24_publish_token_env_names() -> tuple[str, ...]:
+    """Env var names tried for bearer token (first match wins)."""
+    return ("SCRAP_CRMFLOW24_IMPORT_TOKEN", "CRMFLOW24_PUBLISH_TOKEN")
