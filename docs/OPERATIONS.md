@@ -331,3 +331,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-produc
 4. `analytics_ready` для content_performance (без auto-import метрик).
 - After confirm-public: open analytics-ready queue → Import metrics → review `/admin/analytics`.
 - Production Pilot block on `/admin/operations` with active pilots and progress.
+- **4T:** first 5 pilot run — 1 item (doc #4); discovery needed for 4 more; `run_pilot_first5_check.py`.

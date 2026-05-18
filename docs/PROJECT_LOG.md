@@ -362,3 +362,13 @@
 - **Следующий шаг:** оператор публикует в CRMFlow24 admin → check → confirm-public → analytics_ready.
 - **4R:** analytics ready queue, manual metrics import UI, validation, pipeline audit, performance history, insight labels, import script.
 - **4S:** production pilot dashboard (crmflow24-first-5), candidate scoring, next_action engine, check_pilot_state.py.
+## 2026-05-18 16:54 UTC — этап 4T (first 5 pilot execution)
+
+- **Pilot:** `crmflow24-first-5` (#1), active, target 5, **items: 1/5** (только doc #4).
+- **Почему <5:** `find_safe_doc.py` нашёл **один** non-test документ с rewrite+SEO+review take; остальные — smoke/test или не проходят strategy/quality gate. Нужен discovery + pipeline для ещё 4 статей.
+- **Doc #4:** RC #6 approved (QA 79), publish_run #25 success, publication #7, draft_url CRMFlow24 admin, draft_review **accepted**, public **not_public**.
+- **Исправлено:** `compute_next_action` — при существующем CRMFlow24 draft не возвращать `run_quality`/`fix_blockers`; next_action → `manual_publish_in_crmflow24`, status `draft_reviewed`.
+- **Blockers (информационные):** quality/editorial verdict `needs_revision` в scoring; оператор может rerun quality / approve editorial или оставить как есть — draft уже в CRMFlow24.
+- **Скрипт:** `scripts/run_pilot_first5_check.py` (--refresh, --json).
+- **Вручную в CRMFlow24:** опубликовать пост публично → в Scrap check-public-status → confirm-public → import metrics.
+- **Не делали:** public publish из Scrap, auto-add всех документов, повторный publish draft #4.

@@ -60,3 +60,4 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 Public publication confirmation + post-publish tracking. Не реализовано: auto-publish, webhooks, CRMFlow24 code changes, scheduled polling.
 - **4R done:** post-publication analytics workflow (no GA/SC/Yandex APIs).
 - **4S done:** First 5 Articles Pilot control layer.
+- **4T:** practical pilot execution; dashboard validated with real draft.
