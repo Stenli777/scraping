@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 from difflib import SequenceMatcher
+
+from app.core.config import get_settings
 from typing import Any
 
 from sqlalchemy import func, select
@@ -137,6 +139,42 @@ def _document_title_slug(db: Session, document_id: int) -> tuple[str, str, set[s
     kw = tokenize(title) | tokenize(slug) | {normalize_keyword(k) for k in topics + tags}
     return title, slug, kw
 
+
+
+
+def _canonical_unique_document_ids(db: Session, doc_ids: list[int]) -> list[int]:
+    """One representative per canonical group for coverage counting."""
+    seen_groups: set[int] = set()
+    unique: list[int] = []
+    for did in doc_ids:
+        doc = db.get(ParsedDocument, did)
+        gid = doc.canonical_group_id if doc else None
+        if gid:
+            if gid in seen_groups:
+                continue
+            seen_groups.add(gid)
+        unique.append(did)
+    return unique
+
+
+def _near_duplicate_pairs_in_set(db: Session, doc_ids: list[int]) -> int:
+    if len(doc_ids) < 2:
+        return 0
+    settings = get_settings()
+    from app.models.document_similarity_link import DocumentSimilarityLink
+
+    count = 0
+    id_set = set(doc_ids)
+    links = db.scalars(
+        select(DocumentSimilarityLink).where(
+            DocumentSimilarityLink.document_id_a.in_(id_set),
+            DocumentSimilarityLink.document_id_b.in_(id_set),
+        )
+    ).all()
+    for link in links:
+        if link.similarity_score >= settings.similarity_near_duplicate_threshold:
+            count += 1
+    return count
 
 def detect_duplicate_topics(
     db: Session,
@@ -341,6 +379,10 @@ def campaign_coverage(
     for did in doc_ids[:20]:
         duplicate_warnings.extend(detect_duplicate_topics(db, document_id=did, project_id=campaign.project_id))
 
+    unique_doc_ids = _canonical_unique_document_ids(db, doc_ids)
+    near_duplicate_pairs = _near_duplicate_pairs_in_set(db, doc_ids)
+    duplicate_adjusted_documents = len(unique_doc_ids)
+
     return {
         "campaign_id": campaign.id,
         "campaign": campaign.name,
@@ -352,6 +394,10 @@ def campaign_coverage(
         "clusters": clusters_summary,
         "missing_topics": missing_topics,
         "duplicate_warnings": duplicate_warnings[:15],
+        "documents_unique": duplicate_adjusted_documents,
+        "documents_raw": len(doc_ids),
+        "duplicate_adjusted_coverage": duplicate_adjusted_documents,
+        "near_duplicate_pairs": near_duplicate_pairs,
         "document_ids": doc_ids,
         "document_ids_all": doc_ids_all,
         "excluded_strategy_count": excluded_count,

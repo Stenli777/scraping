@@ -152,6 +152,54 @@ def api_document_strategy(document_id: int, db: Session = Depends(get_db)):
     return document_strategy_context(db, document_id)
 
 
+@router.get("/{document_id}/similarity")
+def api_document_similarity(document_id: int, db: Session = Depends(get_db)):
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    from app.services.document_similarity_service import get_document_similarity_summary
+
+    return get_document_similarity_summary(db, document_id)
+
+
+@router.get("/{document_id}/lineage")
+def api_document_lineage(document_id: int, db: Session = Depends(get_db)):
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    from app.services.document_similarity_service import get_document_lineage
+
+    return get_document_lineage(db, document_id)
+
+
+@router.post("/{document_id}/analyze-similarity")
+def api_analyze_similarity(
+    document_id: int,
+    deep: bool = False,
+    queue_async: bool = False,
+    db: Session = Depends(get_db),
+):
+    document = db.get(ParsedDocument, document_id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    from app.services.document_similarity_service import analyze_document_similarity, quick_similarity_check
+    from app.services.enrichment_service import queue_similarity_analysis_job
+    from app.services.project_profile_service import resolve_task_project
+
+    quick = quick_similarity_check(db, document_id)
+    if queue_async and not deep:
+        project = resolve_task_project(db, document.task) if document.task else None
+        job = queue_similarity_analysis_job(db, document_id=document_id, project_id=project.id if project else None)
+        db.commit()
+        return {"queued": True, "job_id": job.id if job else None, "quick": quick}
+    result = analyze_document_similarity(db, document_id, persist=True, deep=deep)
+    if not deep:
+        project = resolve_task_project(db, document.task) if document.task else None
+        queue_similarity_analysis_job(db, document_id=document_id, project_id=project.id if project else None)
+    db.commit()
+    return {"quick": quick, "analysis": result}
+
+
 @router.get("/{document_id}/duplicate-warnings")
 def api_duplicate_warnings(document_id: int, db: Session = Depends(get_db)):
     document = db.get(ParsedDocument, document_id)

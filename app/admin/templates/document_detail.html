@@ -512,3 +512,53 @@
   <pre class="content html">{{ (document.raw_html or "—")[:8000] }}{% if document.raw_html and document.raw_html|length > 8000 %}…{% endif %}</pre>
 </details>
 {% endblock %}
+
+<section class="card" id="canonical-similarity">
+  <h2>Canonical / similarity</h2>
+  {% if similarity_summary.canonical_group %}
+  <p><strong>Группа:</strong>
+    <a href="/admin/canonical-groups/{{ similarity_summary.canonical_group.id }}">
+      #{{ similarity_summary.canonical_group.id }} — {{ similarity_summary.canonical_group.canonical_title }}
+    </a>
+    (риск: {{ similarity_summary.canonical_group.duplicate_risk_level }})
+  </p>
+  {% else %}
+  <p>Canonical group: не назначена</p>
+  {% endif %}
+  {% if similarity_summary.near_duplicates %}
+  <h3>Near duplicates</h3>
+  <ul>
+    {% for nd in similarity_summary.near_duplicates %}
+    <li><a href="/admin/documents/{{ nd.document_id }}">#{{ nd.document_id }}</a>
+      — {{ nd.similarity_type }} ({{ nd.similarity_score }}) → {{ nd.strategy_action }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if similarity_summary.cannibalization_warnings %}
+  <h3>Cannibalization</h3>
+  <ul class="warnings">
+    {% for w in similarity_summary.cannibalization_warnings %}
+    <li>{{ w.message or w.type }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if similarity_summary.strategy_warnings %}
+  <h3>Strategy</h3>
+  <ul>
+    {% for w in similarity_summary.strategy_warnings %}
+    <li>{{ w }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  <form method="post" action="/api/documents/{{ document.id }}/analyze-similarity?deep=false" style="margin-top:0.5rem">
+    <button type="submit">Analyze similarity (API)</button>
+  </form>
+  {% if lineage_summary.lineage_entries %}
+  <h3>Lineage</h3>
+  <ul>
+    {% for e in lineage_summary.lineage_entries %}
+    <li>{{ e.lineage_type }} gen={{ e.rewrite_generation }} root=#{{ e.root_source_document_id }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>

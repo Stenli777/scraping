@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Canonical content groups</h1>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Project</th>
+      <th>Slug</th>
+      <th>Title</th>
+      <th>Risk</th>
+      <th>Docs</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for g in groups %}
+    <tr>
+      <td>{{ g.id }}</td>
+      <td>{{ g.project_id }}</td>
+      <td>{{ g.canonical_slug }}</td>
+      <td>{{ g.canonical_title }}</td>
+      <td>{{ g.duplicate_risk_level }}</td>
+      <td>{{ g.document_count }}</td>
+      <td><a href="/admin/canonical-groups/{{ g.id }}">open</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No groups yet</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

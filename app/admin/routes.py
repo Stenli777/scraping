@@ -201,6 +201,8 @@ def admin_task_detail(task_id: int, request: Request, db: Session = Depends(get_
             "pipeline_summary": pipeline_summary,
             "publish_readiness": publish_readiness,
             "strategy_context": strategy_context,
+            "similarity_summary": similarity_summary,
+            "lineage_summary": lineage_summary,
             "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Задача #{task_id}",
@@ -253,6 +255,10 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
     )
     publish_readiness = get_publish_readiness(db, document_id)
     strategy_context = document_strategy_context(db, document_id)
+    from app.services.document_similarity_service import get_document_lineage, get_document_similarity_summary
+
+    similarity_summary = get_document_similarity_summary(db, document_id)
+    lineage_summary = get_document_lineage(db, document_id)
     quality_record = get_latest_quality_score(db, document_id)
     hermes_research = get_latest_hermes_result(db, document_id, "research_summary")
     hermes_critique = get_latest_hermes_result(db, document_id, "rewrite_critique")
@@ -1196,4 +1202,31 @@ def admin_cluster_detail(cluster_id: int, request: Request, db: Session = Depend
             "links": links,
             "title": f"Cluster {cluster.name}",
         },
+    )
+
+
+@router.get("/admin/canonical-groups", response_class=HTMLResponse)
+def admin_canonical_groups(request: Request, db: Session = Depends(get_db)):
+    from app.services.canonical_content_service import list_canonical_groups
+
+    groups = list_canonical_groups(db, limit=200)
+    return templates.TemplateResponse(
+        request,
+        "canonical_groups_list.html",
+        {"request": request, "groups": groups, "title": "Canonical groups"},
+    )
+
+
+@router.get("/admin/canonical-groups/{group_id}", response_class=HTMLResponse)
+def admin_canonical_group_detail(group_id: int, request: Request, db: Session = Depends(get_db)):
+    from app.services.canonical_content_service import get_canonical_group_detail
+
+    try:
+        detail = get_canonical_group_detail(db, group_id)
+    except ValueError:
+        return RedirectResponse("/admin/canonical-groups", status_code=302)
+    return templates.TemplateResponse(
+        request,
+        "canonical_group_detail.html",
+        {"request": request, "detail": detail, "title": f"Canonical #{group_id}"},
     )

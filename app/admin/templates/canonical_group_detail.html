@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Canonical group #{{ detail.group.id }}</h1>
+<p><strong>Slug:</strong> {{ detail.group.canonical_slug }}</p>
+<p><strong>Title:</strong> {{ detail.group.canonical_title }}</p>
+<p><strong>Risk:</strong> {{ detail.group.duplicate_risk_level }} | <strong>Status:</strong> {{ detail.group.strategy_status }}</p>
+{% if detail.group.notes %}<p>{{ detail.group.notes }}</p>{% endif %}
+
+<h2>Documents</h2>
+<ul>
+  {% for d in detail.documents %}
+  <li><a href="/admin/documents/{{ d.id }}">#{{ d.id }}</a> — {{ d.source_url }}</li>
+  {% endfor %}
+</ul>
+
+<h2>Similarity graph</h2>
+<p>Links: {{ detail.similarity_graph_summary.link_count }}, max score: {{ detail.similarity_graph_summary.max_score }},
+  high risk: {{ detail.similarity_graph_summary.high_risk_links }}</p>
+<ul>
+  {% for l in detail.similarity_links %}
+  <li>#{{ l.document_id_a }} ↔ #{{ l.document_id_b }} — {{ l.similarity_type }} ({{ l.similarity_score }}) — {{ l.strategy_action }}</li>
+  {% endfor %}
+</ul>
+
+{% if detail.strategy_warnings %}
+<h2>Warnings</h2>
+<ul>{% for w in detail.strategy_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+{% endif %}
+
+<h2>Lineage</h2>
+<ul>
+  {% for ln in detail.lineage %}
+  <li>{{ ln.lineage_type }} root=#{{ ln.root_source_document_id }} → #{{ ln.derived_document_id }} gen={{ ln.rewrite_generation }}</li>
+  {% endfor %}
+</ul>
+<p>Campaign overlap links: {{ detail.campaign_overlap_count }}</p>
+{% endblock %}

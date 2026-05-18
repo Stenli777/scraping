@@ -152,6 +152,13 @@ def collect_readiness_checks() -> dict:
             result["source_quality"] = get_source_quality_health(db)
     except Exception as exc:
         result["source_quality"] = {"status": "error", "detail": str(exc)[:200]}
+    try:
+        from app.services.similarity_metrics_service import get_similarity_health
+
+        with SessionLocal() as sim_db:
+            result["similarity"] = get_similarity_health(sim_db)
+    except Exception as exc:
+        result["similarity"] = {"status": "error", "detail": str(exc)[:200]}
 
     return result
 
@@ -170,6 +177,8 @@ def health_ready():
         out["enrichment"] = data["enrichment"]
     if "source_quality" in data:
         out["source_quality"] = data["source_quality"]
+    if "similarity" in data:
+        out["similarity"] = data["similarity"]
     return out
 
 
