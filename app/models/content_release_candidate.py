@@ -39,6 +39,8 @@ class ContentReleaseCandidate(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     draft_review_status: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     draft_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    public_status: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    public_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     document: Mapped["ParsedDocument"] = relationship()
     document_revision: Mapped["DocumentRevision"] = relationship()

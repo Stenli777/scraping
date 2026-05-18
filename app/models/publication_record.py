@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,6 +32,15 @@ class PublicationRecord(Base):
     draft_review_status: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     draft_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     final_operator_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    public_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    public_visibility_status: Mapped[str] = mapped_column(String(32), default="unknown", index=True)
+    public_visibility_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    public_visible_in_blog: Mapped[bool] = mapped_column(Boolean, default=False)
+    public_visible_in_sitemap: Mapped[bool] = mapped_column(Boolean, default=False)
+    public_visible_in_rss: Mapped[bool] = mapped_column(Boolean, default=False)
+    public_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    public_confirmed_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    public_confirmation_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     snapshots = relationship("AnalyticsSnapshot", back_populates="publication_record")
     performance = relationship("ContentPerformance", back_populates="publication_record", uselist=False)
