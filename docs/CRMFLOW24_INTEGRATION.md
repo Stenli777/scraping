@@ -119,3 +119,9 @@ Delete test draft manually in CRMFlow24 admin after smoke.
 4. `POST /api/release-candidates/{id}/publish-draft` — sets `publish_runs.release_candidate_id`.
 
 Force publish on raw `/api/publish` remains for admin debug only.
+
+### First production draft (4M)
+
+- Document #4, RC #5, publish_run #25.
+- ACK: `crmflow24_ack_v2`, draft URL `https://crmflow24.ru/admin/posts/...`
+- Публично не индексируется (blog/sitemap/rss check OK).

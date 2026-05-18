@@ -318,3 +318,11 @@
 - API + admin `/admin/release-candidates`, document detail block, editorial queue RC columns.
 - Smoke/test documents blocked in QA; missing media = warning only.
 - Preferred production flow: create RC → run QA → approve → publish draft (no auto-publish).
+
+## 2026-05-18 — Этап 4M: первый production release run
+
+- Восстановлен SEO doc #8 (`POST /api/documents/8/run-seo`).
+- Production-like выпуск doc #4 через RC #5 → publish_run #25 (`crmflow24-production-v2`, `article_v2`, draft).
+- `docs/RELEASE_RUNBOOK.md`, `scripts/test_4m_release_run.py`.
+- QA/publish: `needs_revision` при overall_score ≥ порога допускается для operator release.
+- Rewriter временно `cliproxy` для doc #4 (без mock-маркера в тексте).

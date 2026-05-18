@@ -293,3 +293,6 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - `scripts/test_4l_release.py`
 - Flow: create → run-qa → approve → publish-draft
 - Low-level `POST /api/publish` remains for debug
+
+### Release runbook
+См. `docs/RELEASE_RUNBOOK.md`. Smoke: `scripts/test_4m_release_run.py` (без `--publish`).

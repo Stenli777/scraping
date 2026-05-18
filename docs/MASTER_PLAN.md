@@ -46,3 +46,5 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 - [x] **4K** Canonical content intelligence — groups, similarity links, lineage, duplicate-adjusted coverage, admin, API, health `similarity`.
 
 - [x] **4L** Release candidate QA pack — pre-publication checklist, approval, payload preview
+
+- [x] **4M** First CRMFlow24 release candidate production draft + RELEASE_RUNBOOK
