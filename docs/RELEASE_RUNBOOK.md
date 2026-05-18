@@ -75,3 +75,16 @@
 14. Mark draft feedback in Scrap (accepted / needs_edits / rejected).
 15. If **accepted** — wait for manual public publish in CRMFlow24 (not from Scrap).
 16. If **needs_edits** — revise in Scrap, new revision + release candidate; re-publish draft when ready.
+
+## Post-draft review phase (checklist)
+
+1. Open CRMFlow24 draft URL from Scrap publication/candidate.
+2. Check content in CRMFlow24 admin.
+3. Check SEO (title, slug, meta).
+4. Check media.
+5. Run **Check public visibility** in Scrap (`POST /api/publications/{id}/check-public-visibility`).
+6. Mark **accepted** / **needs edits** / **rejected** in Scrap draft review panel.
+7. If **accepted** — public publish **only manually** inside CRMFlow24 admin.
+8. If **needs edits** — revise in Scrap, new revision + release candidate, re-publish draft when ready.
+
+> **Warning:** Scrap never publishes publicly. CRMFlow24 admin remains the final public publishing boundary.

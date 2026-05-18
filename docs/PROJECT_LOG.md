@@ -335,3 +335,12 @@
 - Admin: панель **CRMFlow24 Draft Review** на release candidate detail, очередь `/admin/draft-reviews`.
 - Smoke: publication #7 / candidate #5 — accepted, needs_edits, rejected, visibility not public.
 - Граница: Scrap не публикует публично и не меняет CRMFlow24; feedback только вручную в Scrap.
+
+## 2026-05-18 — Этап 4O: workspace cleanup + release ops checkpoint
+
+- Удалены временные debug scripts (`inspect_doc4`, `list_all_docs`, `pick_release_doc`).
+- Закоммичены `find_safe_doc.py`, `run_4m_ops.py` с safety headers.
+- `scripts/check_release_state.py` — read-only release/draft consistency (PASS/WARN/FAIL).
+- `docs/SCRIPTS.md` — inventory scripts.
+- `/admin/operations` — блок Release Operations.
+- Post-draft review checklist в RELEASE_RUNBOOK.

@@ -304,3 +304,9 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 3. В Scrap: release candidate → Draft Review → отметить accepted / needs_edits / rejected.
 4. При accepted — ручная публикация в CRMFlow24 (вне Scrap).
 5. При needs_edits — правки в Scrap, новая revision/candidate; без auto-rerun rewrite.
+
+### Release operations checkpoint
+
+- `PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_release_state.py`
+- `docs/SCRIPTS.md` — полный inventory
+- `/admin/operations` — release summary (drafts, missing feedback, smoke warnings)

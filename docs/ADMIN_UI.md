@@ -155,3 +155,7 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 
 - **Release candidate detail** — блок «CRMFlow24 Draft Review»: draft URL, checklist, notes, Mark accepted / needs edits / rejected, Check public visibility.
 - **`/admin/draft-reviews`** — очередь publications с `draft_review_status` pending / needs_edits.
+
+### Operations — Release Operations block (4O)
+
+Read-only summary: latest `published_draft` candidates, publications missing feedback, needs_edits/rejected counts, smoke/test warnings. Links to draft reviews and release candidates.
