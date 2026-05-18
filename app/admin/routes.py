@@ -773,6 +773,8 @@ def admin_operations(request: Request, db: Session = Depends(get_db)):
             "latest_manifest": ctx["latest_manifest"],
             "smoke_hint": ctx["smoke_hint"],
             "backup_hint": ctx["backup_hint"],
+            "release_state_hint": ctx.get("release_state_hint"),
+            "release_ops": ctx.get("release_ops"),
             "title": "Operations",
         },
     )
@@ -1403,14 +1405,14 @@ def admin_draft_feedback_accepted(
     checked_media: bool = Form(False),
     db: Session = Depends(get_db),
 ):
-    from app.services.draft_feedback_service import get_or_create_feedback_for_candidate, mark_accepted
+    from app.services.draft_feedback_service import STATUS_ACCEPTED, create_feedback
 
-    fb = get_or_create_feedback_for_candidate(db, candidate_id)
-    mark_accepted(
+    create_feedback(
         db,
-        fb.id,
-        notes=notes or None,
+        release_candidate_id=candidate_id,
+        review_status=STATUS_ACCEPTED,
         reviewer_name=reviewer_name,
+        notes=notes or None,
         checked_public_visibility=checked_public_visibility,
         checked_seo=checked_seo,
         checked_content=checked_content,
@@ -1428,12 +1430,12 @@ def admin_draft_feedback_needs_edits(
     apply_editorial: bool = Form(True),
     db: Session = Depends(get_db),
 ):
-    from app.services.draft_feedback_service import get_or_create_feedback_for_candidate, mark_needs_edits
+    from app.services.draft_feedback_service import STATUS_NEEDS_EDITS, create_feedback
 
-    fb = get_or_create_feedback_for_candidate(db, candidate_id)
-    mark_needs_edits(
+    create_feedback(
         db,
-        fb.id,
+        release_candidate_id=candidate_id,
+        review_status=STATUS_NEEDS_EDITS,
         notes=notes or None,
         required_changes=_parse_required_changes(required_changes),
         apply_editorial_needs_revision=apply_editorial,
@@ -1449,10 +1451,15 @@ def admin_draft_feedback_rejected(
     apply_editorial_reject: bool = Form(False),
     db: Session = Depends(get_db),
 ):
-    from app.services.draft_feedback_service import get_or_create_feedback_for_candidate, mark_rejected
+    from app.services.draft_feedback_service import STATUS_REJECTED, create_feedback
 
-    fb = get_or_create_feedback_for_candidate(db, candidate_id)
-    mark_rejected(db, fb.id, notes=notes or None, apply_editorial_reject=apply_editorial_reject)
+    create_feedback(
+        db,
+        release_candidate_id=candidate_id,
+        review_status=STATUS_REJECTED,
+        notes=notes or None,
+        apply_editorial_reject=apply_editorial_reject,
+    )
     db.commit()
     return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
 

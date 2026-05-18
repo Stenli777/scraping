@@ -14,6 +14,62 @@
 </div>
 
 <div class="panel">
+  <h2>Release Operations</h2>
+  <p class="warn-box"><strong>Boundary:</strong> Scrap never publishes publicly. CRMFlow24 admin is the final public publishing boundary.</p>
+  <p>
+    <a class="btn" href="/admin/draft-reviews">Draft reviews</a>
+    <a class="btn" href="/admin/release-candidates">Release candidates</a>
+  </p>
+  <ul>
+    <li>Needs edits: <strong>{{ release_ops.needs_edits_count }}</strong></li>
+    <li>Rejected: <strong>{{ release_ops.rejected_count }}</strong></li>
+  </ul>
+
+  <h3>Latest published_draft candidates</h3>
+  {% if release_ops.latest_published_draft_candidates %}
+  <table class="table">
+    <thead><tr><th>ID</th><th>Doc</th><th>Draft review</th><th>Test?</th></tr></thead>
+    <tbody>
+      {% for c in release_ops.latest_published_draft_candidates %}
+      <tr>
+        <td><a href="/admin/release-candidates/{{ c.id }}">#{{ c.id }}</a></td>
+        <td><a href="/admin/documents/{{ c.document_id }}">#{{ c.document_id }}</a></td>
+        <td><code>{{ c.draft_review_status or 'pending' }}</code></td>
+        <td>{% if c.is_test %}<span class="warn-box">smoke/test</span>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>None</p>{% endif %}
+
+  {% if release_ops.smoke_test_draft_warnings %}
+  <h3>Smoke/test draft warnings</h3>
+  <ul class="warnings">
+    {% for c in release_ops.smoke_test_draft_warnings %}
+    <li>Candidate <a href="/admin/release-candidates/{{ c.id }}">#{{ c.id }}</a> (doc #{{ c.document_id }})</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h3>Publications missing draft feedback</h3>
+  {% if release_ops.publications_missing_feedback %}
+  <table class="table">
+    <thead><tr><th>Pub</th><th>Doc</th><th>Status</th><th>Draft URL</th></tr></thead>
+    <tbody>
+      {% for p in release_ops.publications_missing_feedback %}
+      <tr>
+        <td>#{{ p.publication_id }}</td>
+        <td>#{{ p.document_id }}</td>
+        <td><code>{{ p.draft_review_status }}</code></td>
+        <td>{% if p.draft_url %}<a href="{{ p.draft_url }}" target="_blank" rel="noopener">open</a>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>None pending</p>{% endif %}
+</div>
+
+<div class="panel">
   <h2>Config validation</h2>
   <p><strong>OK:</strong> {{ 'yes' if config.ok else 'no' }}</p>
   {% if config.errors %}
@@ -47,6 +103,7 @@
 <div class="panel">
   <h2>Operational hints</h2>
   <p><strong>Smoke:</strong> <code>{{ smoke_hint }}</code></p>
+  <p><strong>Release state:</strong> <code>{{ release_state_hint }}</code></p>
   <p><strong>Backup:</strong> <code>{{ backup_hint }}</code></p>
   <p><strong>Verify:</strong> <code>bash scripts/verify_backup.sh</code></p>
   <p><strong>Storage integrity:</strong> <code>.venv/bin/python scripts/check_storage_integrity.py</code></p>

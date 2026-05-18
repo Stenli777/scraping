@@ -10,6 +10,7 @@ from app.core.config_validator import validate_config_summary
 from app.api.health import collect_readiness_checks
 from app.scheduler.status import build_scheduler_status
 from app.services.operations_service import get_dashboard_stats
+from app.services.release_operations_service import build_release_operations_summary
 
 
 def _latest_backup_manifest() -> dict | None:
@@ -37,5 +38,7 @@ def build_operations_context(db: Session) -> dict:
         "latest_manifest": _latest_backup_manifest(),
         "smoke_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py",
         "backup_hint": "bash scripts/backup_postgres.sh && bash scripts/backup_storage.sh",
+        "release_state_hint": "PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_release_state.py",
+        "release_ops": build_release_operations_summary(db),
         "paths": config.get("paths", {}),
     }
