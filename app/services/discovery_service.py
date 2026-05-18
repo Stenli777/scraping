@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.enums import DiscoveredUrlStatus, DiscoveryMode, DiscoverySource
-from app.core.feature_flags import is_source_discovery_enabled
+from app.core.feature_flags import is_discovery_quality_scoring_enabled, is_source_discovery_enabled
 from app.models.discovered_url import DiscoveredUrl
 from app.models.parsed_document import ParsedDocument
 from app.models.scraping_task import ScrapingTask
@@ -186,6 +186,15 @@ def _process_candidate(
         existing_document_id=existing_doc.id if existing_doc else None,
     )
     db.add(record)
+    db.flush()
+    if is_discovery_quality_scoring_enabled() and status == DiscoveredUrlStatus.DISCOVERED.value:
+        record.status = DiscoveredUrlStatus.QUALITY_PENDING.value
+        try:
+            from app.services.source_quality_service import score_discovered_url
+            score_discovered_url(db, record.id, fetch_preview=True)
+        except Exception as exc:
+            logger.warning("quality scoring failed url=%s: %s", record.id, exc)
+            record.status = DiscoveredUrlStatus.DISCOVERED.value
 
 
 def dry_run_record_exists(db: Session, normalized: str) -> bool:
@@ -199,12 +208,17 @@ def enqueue_discovered_url(db: Session, discovered_url_id: int) -> DiscoveredUrl
     if not is_source_discovery_enabled():
         raise ValueError("Source discovery is disabled")
 
+    from app.services.source_quality_service import can_enqueue_by_quality
+
     record = db.get(DiscoveredUrl, discovered_url_id)
     if not record:
         raise ValueError(f"Discovered URL {discovered_url_id} not found")
 
     if record.status == DiscoveredUrlStatus.IGNORED.value:
         raise ValueError("Cannot enqueue ignored URL")
+    ok, reason = can_enqueue_by_quality(db, record)
+    if not ok:
+        raise ValueError(f"Quality gate blocked enqueue: {reason}")
     if record.status == DiscoveredUrlStatus.BLOCKED.value:
         raise ValueError("Cannot enqueue blocked URL")
     if record.status == DiscoveredUrlStatus.ENQUEUED.value and record.existing_task_id:

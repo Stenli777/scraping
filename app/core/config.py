@@ -78,6 +78,15 @@ class Settings(BaseSettings):
     publish_default_timeout: int = 60
 
     enable_source_discovery: bool = True
+    enable_discovery_quality_scoring: bool = True
+    discovery_quality_fetch_preview: bool = True
+    discovery_quality_fetch_timeout: int = 15
+    min_source_quality_score: int = 50
+    min_source_relevance_score: int = 40
+    max_spam_score_block: int = 70
+    max_thin_content_score_block: int = 75
+    max_duplicate_risk_block: int = 85
+    enable_source_quality_llm_review: bool = False
     discovery_default_max_urls: int = 50
     discovery_default_timeout: int = 30
 

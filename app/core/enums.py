@@ -50,6 +50,10 @@ class DiscoveredUrlStatus(str, Enum):
     ENQUEUED = "enqueued"
     FAILED = "failed"
     BLOCKED = "blocked"
+    QUALITY_PENDING = "quality_pending"
+    QUALITY_SCORED = "quality_scored"
+    QUALITY_BLOCKED = "quality_blocked"
+    MANUALLY_APPROVED = "manually_approved"
 
 
 class DiscoverySource(str, Enum):

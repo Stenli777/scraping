@@ -392,7 +392,15 @@ def _run_enqueue(db: Session, rule, cfg, run, affected) -> None:
     batch = int(cfg.get("batch_size", 10))
     q = (
         select(DiscoveredUrl)
-        .where(DiscoveredUrl.status == DiscoveredUrlStatus.DISCOVERED.value)
+        .where(
+            DiscoveredUrl.status.in_(
+                [
+                    DiscoveredUrlStatus.QUALITY_SCORED.value,
+                    DiscoveredUrlStatus.MANUALLY_APPROVED.value,
+                    DiscoveredUrlStatus.DISCOVERED.value,
+                ]
+            )
+        )
         .order_by(DiscoveredUrl.id.asc())
         .limit(batch)
     )
@@ -407,6 +415,11 @@ def _run_enqueue(db: Session, rule, cfg, run, affected) -> None:
         if is_cancel_requested(db, run.id):
             break
         try:
+            from app.services.source_quality_service import can_enqueue_by_quality
+            ok, reason = can_enqueue_by_quality(db, record)
+            if not ok:
+                log_event(run, "info", f"enqueue skip quality {record.id}: {reason}")
+                continue
             enqueue_discovered_url(db, record.id)
             enqueued.append(record.id)
             run.created_tasks += 1

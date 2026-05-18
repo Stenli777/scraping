@@ -69,6 +69,14 @@ def is_source_discovery_enabled() -> bool:
 
 
 @lru_cache
+def is_discovery_quality_scoring_enabled() -> bool:
+    return (
+        get_settings().enable_source_discovery
+        and get_settings().enable_discovery_quality_scoring
+    )
+
+
+@lru_cache
 def is_quality_review_enabled() -> bool:
     return get_settings().enable_quality_review
 
@@ -121,6 +129,7 @@ def all_flags() -> dict[str, bool]:
         "ENABLE_PROJECT_PROFILES": is_project_profiles_enabled(),
         "ENABLE_PUBLISHING": is_publishing_enabled(),
         "ENABLE_SOURCE_DISCOVERY": is_source_discovery_enabled(),
+        "ENABLE_DISCOVERY_QUALITY_SCORING": is_discovery_quality_scoring_enabled(),
         "ENABLE_QUALITY_REVIEW": is_quality_review_enabled(),
         "ENABLE_EDITORIAL_WORKFLOW": is_editorial_workflow_enabled(),
         "ENABLE_MEDIA_PIPELINE": is_media_pipeline_enabled(),
