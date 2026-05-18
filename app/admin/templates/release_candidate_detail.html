@@ -32,4 +32,65 @@
 <h2>Publish runs</h2>
 <ul>{% for r in detail.publish_runs %}<li>#{{ r.id }} — {{ r.status }} (dry_run={{ r.dry_run }})</li>{% endfor %}</ul>
 {% endif %}
+
+<section class="draft-review-panel">
+<h2>CRMFlow24 Draft Review</h2>
+{% if draft_review.draft_url %}
+<p>Draft URL: <a href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
+{% else %}
+<p class="warn-box">No draft URL on publication / publish run yet.</p>
+{% endif %}
+
+<p>Review status: <code>{{ draft_review.draft_review_status or 'pending' }}</code>
+  {% if draft_review.draft_reviewed_at %} | reviewed {{ draft_review.draft_reviewed_at }}{% endif %}</p>
+
+{% if draft_review.latest_feedback %}
+<p>Latest feedback #{{ draft_review.latest_feedback.id }} — <code>{{ draft_review.latest_feedback.review_status }}</code></p>
+{% endif %}
+
+<form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/notes">
+  <label>Reviewer <input name="reviewer_name" value="{{ draft_review.latest_feedback.reviewer_name if draft_review.latest_feedback else 'operator' }}"></label>
+  <label>Notes <textarea name="notes" rows="3">{{ draft_review.latest_feedback.notes if draft_review.latest_feedback else '' }}</textarea></label>
+  <label>Required changes <input name="required_changes" placeholder="comma-separated"></label>
+  <fieldset>
+    <legend>Checklist</legend>
+    <label><input type="checkbox" name="checked_public_visibility" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_public_visibility %}checked{% endif %}> Public visibility checked</label>
+    <label><input type="checkbox" name="checked_seo" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_seo %}checked{% endif %}> SEO checked</label>
+    <label><input type="checkbox" name="checked_content" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_content %}checked{% endif %}> Content checked</label>
+    <label><input type="checkbox" name="checked_media" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_media %}checked{% endif %}> Media checked</label>
+  </fieldset>
+  <button class="btn" type="submit">Save notes</button>
+</form>
+
+<div style="margin:1rem 0">
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn">Mark accepted</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn">Mark needs edits</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn">Mark rejected</button></form>
+</div>
+{% if draft_review.publication_id %}
+<form method="post" action="/admin/publications/{{ draft_review.publication_id }}/check-visibility" style="display:inline;margin-left:0.5rem">
+  <button class="btn" type="submit">Check public visibility</button>
+</form>
+{% endif %}
+</div>
+
+{% if draft_review.visibility %}
+<h3>Public visibility</h3>
+<p>Checked at: {{ draft_review.visibility.checked_at }}</p>
+<ul>
+  <li>Blog: {% if draft_review.visibility.visible_in_blog %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
+  <li>Sitemap: {% if draft_review.visibility.visible_in_sitemap %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
+  <li>RSS: {% if draft_review.visibility.visible_in_rss %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
+</ul>
+{% endif %}
+
+{% if draft_review.feedback_history %}
+<h3>Feedback history</h3>
+<ul>
+  {% for fb in draft_review.feedback_history %}
+  <li>#{{ fb.id }} — <code>{{ fb.review_status }}</code> — {{ fb.created_at }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+</section>
 {% endblock %}

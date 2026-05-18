@@ -1236,6 +1236,65 @@ def admin_canonical_group_detail(group_id: int, request: Request, db: Session = 
     )
 
 
+
+def _load_draft_review_context(db: Session, candidate_id: int) -> dict:
+    from sqlalchemy import select
+    from app.models.content_release_candidate import ContentReleaseCandidate
+    from app.models.publication_record import PublicationRecord
+    from app.models.publish_run import PublishRun
+    from app.services.draft_feedback_service import get_feedback_for_candidate, get_or_create_feedback_for_candidate
+    from app.services.release_candidate_service import get_candidate_status
+
+    detail = get_candidate_status(db, candidate_id)
+    cand = db.get(ContentReleaseCandidate, candidate_id)
+    run = db.scalar(
+        select(PublishRun).where(PublishRun.release_candidate_id == candidate_id).order_by(PublishRun.id.desc())
+    )
+    pub = None
+    if run:
+        pub = db.scalar(
+            select(PublicationRecord).where(PublicationRecord.publish_run_id == run.id).order_by(PublicationRecord.id.desc())
+        )
+    if not pub and cand:
+        pub = db.scalar(
+            select(PublicationRecord)
+            .where(PublicationRecord.document_id == cand.document_id)
+            .order_by(PublicationRecord.id.desc())
+        )
+    latest = get_or_create_feedback_for_candidate(db, candidate_id)
+    history = get_feedback_for_candidate(db, candidate_id)
+    visibility = None
+    vis_json = latest.visibility_check_json if latest else None
+    if not vis_json and pub and pub.metadata_json:
+        vis_json = (pub.metadata_json or {}).get("visibility_check")
+    if vis_json:
+        paths = vis_json.get("paths") or {}
+        visibility = {
+            "checked_at": vis_json.get("checked_at"),
+            "visible_in_blog": bool((paths.get("/blog") or {}).get("visible")),
+            "visible_in_sitemap": bool((paths.get("/sitemap.xml") or {}).get("visible")),
+            "visible_in_rss": bool((paths.get("/rss.xml") or {}).get("visible")),
+        }
+    draft_url = (pub.external_url if pub else None) or (run.draft_url if run else None)
+    return {
+        "detail": detail,
+        "draft_review": {
+            "draft_url": draft_url,
+            "draft_review_status": cand.draft_review_status if cand else None,
+            "draft_reviewed_at": cand.draft_reviewed_at.isoformat() if cand and cand.draft_reviewed_at else None,
+            "publication_id": pub.id if pub else None,
+            "latest_feedback": latest,
+            "feedback_history": history,
+            "visibility": visibility,
+        },
+    }
+
+
+def _parse_required_changes(raw: str | None) -> list[str]:
+    if not raw or not raw.strip():
+        return []
+    return [p.strip() for p in raw.split(",") if p.strip()]
+
 @router.get("/admin/release-candidates", response_class=HTMLResponse)
 def admin_release_candidates_list(request: Request, db: Session = Depends(get_db)):
     from sqlalchemy import select
@@ -1266,13 +1325,13 @@ def admin_release_candidate_detail(candidate_id: int, request: Request, db: Sess
     from app.services.release_candidate_service import get_candidate_status
 
     try:
-        detail = get_candidate_status(db, candidate_id)
+        ctx = _load_draft_review_context(db, candidate_id)
     except Exception:
         return RedirectResponse("/admin/release-candidates", status_code=302)
     return templates.TemplateResponse(
         request,
         "release_candidate_detail.html",
-        {"request": request, "detail": detail, "title": f"Release candidate #{candidate_id}"},
+        {"request": request, "title": f"Release candidate #{candidate_id}", **ctx},
     )
 
 
@@ -1319,3 +1378,102 @@ def admin_document_create_rc(document_id: int, db: Session = Depends(get_db)):
     c = create_release_candidate(db, document_id)
     db.commit()
     return RedirectResponse(f"/admin/release-candidates/{c.id}", status_code=303)
+
+
+@router.get("/admin/draft-reviews", response_class=HTMLResponse)
+def admin_draft_reviews_list(request: Request, db: Session = Depends(get_db)):
+    from app.services.draft_feedback_service import list_draft_review_queue
+
+    items = list_draft_review_queue(db)
+    return templates.TemplateResponse(
+        request,
+        "draft_reviews_list.html",
+        {"request": request, "items": items, "title": "Draft reviews"},
+    )
+
+
+@router.post("/admin/release-candidates/{candidate_id}/draft-feedback/accepted")
+def admin_draft_feedback_accepted(
+    candidate_id: int,
+    reviewer_name: str = Form("operator"),
+    notes: str = Form(""),
+    checked_public_visibility: bool = Form(False),
+    checked_seo: bool = Form(False),
+    checked_content: bool = Form(False),
+    checked_media: bool = Form(False),
+    db: Session = Depends(get_db),
+):
+    from app.services.draft_feedback_service import get_or_create_feedback_for_candidate, mark_accepted
+
+    fb = get_or_create_feedback_for_candidate(db, candidate_id)
+    mark_accepted(
+        db,
+        fb.id,
+        notes=notes or None,
+        reviewer_name=reviewer_name,
+        checked_public_visibility=checked_public_visibility,
+        checked_seo=checked_seo,
+        checked_content=checked_content,
+        checked_media=checked_media,
+    )
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/release-candidates/{candidate_id}/draft-feedback/needs-edits")
+def admin_draft_feedback_needs_edits(
+    candidate_id: int,
+    notes: str = Form(""),
+    required_changes: str = Form(""),
+    apply_editorial: bool = Form(True),
+    db: Session = Depends(get_db),
+):
+    from app.services.draft_feedback_service import get_or_create_feedback_for_candidate, mark_needs_edits
+
+    fb = get_or_create_feedback_for_candidate(db, candidate_id)
+    mark_needs_edits(
+        db,
+        fb.id,
+        notes=notes or None,
+        required_changes=_parse_required_changes(required_changes),
+        apply_editorial_needs_revision=apply_editorial,
+    )
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/release-candidates/{candidate_id}/draft-feedback/rejected")
+def admin_draft_feedback_rejected(
+    candidate_id: int,
+    notes: str = Form(""),
+    apply_editorial_reject: bool = Form(False),
+    db: Session = Depends(get_db),
+):
+    from app.services.draft_feedback_service import get_or_create_feedback_for_candidate, mark_rejected
+
+    fb = get_or_create_feedback_for_candidate(db, candidate_id)
+    mark_rejected(db, fb.id, notes=notes or None, apply_editorial_reject=apply_editorial_reject)
+    db.commit()
+    return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
+
+
+@router.post("/admin/publications/{publication_id}/check-visibility")
+def admin_check_public_visibility(publication_id: int, db: Session = Depends(get_db)):
+    from app.models.publish_run import PublishRun
+    from app.models.publication_record import PublicationRecord
+    from app.services.draft_feedback_service import check_public_visibility, get_or_create_feedback_for_candidate
+
+    pub = db.get(PublicationRecord, publication_id)
+    feedback_id = None
+    redirect_cid = None
+    if pub and pub.publish_run_id:
+        run = db.get(PublishRun, pub.publish_run_id)
+        if run and run.release_candidate_id:
+            fb = get_or_create_feedback_for_candidate(db, run.release_candidate_id)
+            feedback_id = fb.id
+            redirect_cid = run.release_candidate_id
+    check_public_visibility(db, publication_id, save_to_feedback_id=feedback_id)
+    db.commit()
+    if redirect_cid:
+        return RedirectResponse(f"/admin/release-candidates/{redirect_cid}", status_code=303)
+    return RedirectResponse("/admin/draft-reviews", status_code=303)
