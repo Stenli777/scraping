@@ -13,6 +13,8 @@ from app.models.document_cluster_link import DocumentClusterLink
 from app.models.topic_cluster import TopicCluster
 from app.models.content_campaign import ContentCampaign
 from app.models.discovered_url import DiscoveredUrl
+from app.models.source_quality_score import SourceQualityScore
+from app.models.domain_trust_registry import DomainTrustRegistry
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
 from app.models.prompt_version import PromptVersion
@@ -51,6 +53,8 @@ __all__ = [
     "PublishTarget",
     "PublishRun",
     "DiscoveredUrl",
+    "SourceQualityScore",
+    "DomainTrustRegistry",
     "PromptTemplate",
     "PromptVersion",
     "ProjectPromptOverride",
