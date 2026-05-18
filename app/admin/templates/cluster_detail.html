@@ -8,7 +8,7 @@
 
 <div class="panel">
   <h3>Coverage</h3>
-  <p>{{ coverage.documents }} documents ? published {{ coverage.published }} ? drafts {{ coverage.drafts }}</p>
+  <p>{{ coverage.documents }} documents{% if coverage.excluded_strategy_count %} — <span class="warn-box">{{ coverage.excluded_strategy_count }} excluded from strategy</span>{% endif %} ? published {{ coverage.published }} ? drafts {{ coverage.drafts }}</p>
   {% if coverage.missing_content %}<p><strong>Gaps:</strong> {{ coverage.missing_content | join(', ') }}</p>{% endif %}
 
 <div class="panel">
