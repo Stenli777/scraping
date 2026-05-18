@@ -20,6 +20,7 @@ from app.models.document_revision import DocumentRevision
 from app.models.document_version import DocumentVersion
 from app.models.export import Export
 from app.models.llm_run import LLMRun
+from app.models.llm_enrichment_job import LlmEnrichmentJob
 from app.models.parsed_document import ParsedDocument
 from app.models.pipeline_event import PipelineEvent
 from app.models.project import Project
@@ -43,6 +44,7 @@ __all__ = [
     "Project",
     "SourceDirectory",
     "LLMRun",
+    "LlmEnrichmentJob",
     "PipelineEvent",
     "ReviewResult",
     "SeoMetadata",
