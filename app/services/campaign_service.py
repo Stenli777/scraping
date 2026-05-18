@@ -453,6 +453,13 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
         project_id = project.id if project else None
 
     warnings = detect_duplicate_topics(db, document_id=document_id, project_id=project_id)
+    suggested = None
+    if project_id:
+        from app.services.clustering_service import suggest_cluster
+        try:
+            suggested = suggest_cluster(db, project_id=project_id, document_id=document_id)
+        except Exception:
+            suggested = None
     coverage_blocks = [cluster_coverage(db, c.id) for c in clusters]
 
     return {
@@ -461,4 +468,5 @@ def document_strategy_context(db: Session, document_id: int) -> dict[str, Any]:
         "duplicate_warnings": warnings,
         "coverage_context": coverage_blocks,
         "topics": (doc.metadata_json or {}).get("topics") if doc else None,
+        "suggested_cluster": suggested,
     }

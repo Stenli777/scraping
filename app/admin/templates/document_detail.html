@@ -36,9 +36,25 @@
   </p>
   {% endif %}
   {% if strategy_context.topics %}
-  <p><strong>Topics:</strong> {{ strategy_context.topics.primary_topic }}
-    {% if strategy_context.topics.keywords %}<br><small>{{ strategy_context.topics.keywords | join(', ') }}</small>{% endif %}
-  </p>
+  <p><strong>Primary topic:</strong> {{ strategy_context.topics.primary_topic }}</p>
+  <p><strong>Intent:</strong> {{ strategy_context.topics.search_intent or '?' }}
+    ? <strong>Relevance:</strong> {{ strategy_context.topics.relevance_score if strategy_context.topics.relevance_score is not none else '?' }}
+    ? <strong>Fit:</strong> {{ strategy_context.topics.project_fit or '?' }}</p>
+  {% if strategy_context.topics.secondary_topics %}
+  <p><strong>Secondary:</strong> {{ strategy_context.topics.secondary_topics | join(' ? ') }}</p>
+  {% endif %}
+  {% if strategy_context.topics.keywords %}
+  <p><strong>Keywords:</strong> <small>{{ strategy_context.topics.keywords | join(', ') }}</small></p>
+  {% endif %}
+  {% if strategy_context.topics.entities %}
+  <p><strong>Entities:</strong> {{ strategy_context.topics.entities | join(', ') }}</p>
+  {% endif %}
+  {% if strategy_context.topics.rejected_terms %}
+  <p class="warn-box"><strong>Rejected terms:</strong> {{ strategy_context.topics.rejected_terms | join(', ') }}</p>
+  {% endif %}
+  {% if strategy_context.topics.warnings %}
+  <p class="warn-box"><strong>Topic warnings:</strong> {{ strategy_context.topics.warnings | join(', ') }}</p>
+  {% endif %}
   {% endif %}
   {% if strategy_context.coverage_context %}
   <h3>Cluster coverage</h3>
