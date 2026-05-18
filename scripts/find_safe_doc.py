@@ -49,18 +49,26 @@ def main() -> int:
             is_test, _ = detect_test_document(title=title, text=d.rewritten_text or "", slug=slug)
             if is_test:
                 continue
-            ok, block, _ = document_strategy_allowed(db, d.id)
+            ok, block, topics = document_strategy_allowed(db, d.id)
             score = 0
             if seo and seo.slug:
                 score += 2
             if review and review.take is True:
-                score += 2
+                score += 3
             if qc and qc.verdict == "approved":
                 score += 3
+            elif qc and qc.overall_score and qc.overall_score >= 70:
+                score += 2
             if d.approved_for_publish:
                 score += 2
             if ok:
                 score += 2
+            elif review and review.take is True:
+                rel = int((topics or {}).get("relevance_score") or 0)
+                if rel >= 50:
+                    score += 1
+            if score < 4:
+                continue
             candidates.append(
                 (score, d.id, title[:60], bool(seo), review.take if review else None, qc.verdict if qc else None, d.editorial_status)
             )

@@ -472,6 +472,8 @@ def suggest_pilot_candidates(db: Session, project_id: int, *, limit: int = 10) -
         row = score_pilot_candidate(db, doc.id, project_id=project_id)
         if "smoke_test_document" in row["blockers"]:
             continue
+        if row["score"] < 40:
+            continue
         seo = _latest_seo(db, doc.id)
         title = (seo.seo_title if seo else None) or doc.source_url or f"Document #{doc.id}"
         row["title"] = title

@@ -39,8 +39,16 @@ STRATEGY_BLOCK_REASONS = frozenset({
 
 
 def detect_test_document(*, title: str, text: str, slug: str = "") -> tuple[bool, str | None]:
+    import re
+
     blob = f"{title}\n{text}\n{slug}".lower()
+    title_slug = f"{title}\n{slug}".lower()
+    boundary_markers = frozenset({"mock", "debug", "placeholder"})
     for marker, reason in TEST_MARKERS:
+        if marker in boundary_markers:
+            if re.search(rf"\b{re.escape(marker)}\b", title_slug):
+                return True, reason
+            continue
         if marker in blob:
             return True, reason
     return False, None
@@ -135,7 +143,22 @@ def apply_strategy_gate(
             if fit and fit != "crmflow24":
                 block_reason = "low_relevance"
             elif int(result.get("relevance_score") or 0) < threshold:
-                block_reason = "low_relevance"
+                rel = int(result.get("relevance_score") or 0)
+                topic_blob = " ".join(
+                    [
+                        str(result.get("primary_topic") or ""),
+                        " ".join(str(t) for t in (result.get("secondary_topics") or [])),
+                        " ".join(str(k) for k in (result.get("keywords") or [])),
+                    ]
+                ).lower()
+                crm_hint = any(
+                    t in topic_blob
+                    for t in ("bitrix", "битрикс", "crm", "воронк", "лид", "продаж", "телефон")
+                )
+                if take is True and rel >= 50 and crm_hint:
+                    block_reason = None
+                else:
+                    block_reason = "low_relevance"
 
         if block_reason is None:
             llm_block = result.get("strategy_block_reason")
