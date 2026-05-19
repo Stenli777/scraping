@@ -20,6 +20,7 @@ CHECKS_DEFAULT = [
     "check_workspace.py",
     "check_repo_safety.py",
     "check_health.py",
+    "check_admin_discovered.py",
     "check_ready.py",
     "check_db.py",
     "check_cliproxy.py",

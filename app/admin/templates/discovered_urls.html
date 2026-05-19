@@ -1,118 +1,111 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set status_labels = {
+  'discovered': 'Обнаружен',
+  'duplicate': 'Дубликат',
+  'enqueued': 'В очереди',
+  'ignored': 'Игнор',
+  'quality_scored': 'Оценён',
+  'quality_blocked': 'Заблокирован',
+  'manually_approved': 'Одобрен вручную',
+} %}
 
-<p class="export-links">
+<div class="page-header">
+  <p class="page-subtitle">Очередь URL, найденных discovery-процессом. Отфильтруйте по статусу и управляйте каждой записью.</p>
+</div>
 
-  <a class="btn" href="/admin/discovered-urls">All</a>
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Здесь отображаются URL из source directories и ручного intake после discovery и quality scoring.</p>
+  <p class="help-block-title">Действия</p>
+  <ul>
+    <li><strong>В очередь</strong> — создаёт scrape task и запускает pipeline.</li>
+    <li><strong>Игнор</strong> — исключает URL из дальнейшей обработки.</li>
+    <li><strong>Approve quality</strong> — только если URL нужно пропустить quality-gate вручную.</li>
+  </ul>
+  <p class="field-help">Таблица широкая — используйте горизонтальную прокрутку.</p>
+</aside>
 
-  <a class="btn" href="/admin/discovered-urls?status=discovered">Discovered</a>
+<nav class="tabs" aria-label="Фильтр по статусу">
+  <a class="tab{% if not filter_status %} active{% endif %}" href="/admin/discovered-urls">Все</a>
+  <a class="tab{% if filter_status == 'discovered' %} active{% endif %}" href="/admin/discovered-urls?status=discovered">Обнаруженные</a>
+  <a class="tab{% if filter_status == 'duplicate' %} active{% endif %}" href="/admin/discovered-urls?status=duplicate">Дубликаты</a>
+  <a class="tab{% if filter_status == 'enqueued' %} active{% endif %}" href="/admin/discovered-urls?status=enqueued">В очереди</a>
+  <a class="tab{% if filter_status == 'ignored' %} active{% endif %}" href="/admin/discovered-urls?status=ignored">Игнор</a>
+</nav>
 
-  <a class="btn" href="/admin/discovered-urls?status=duplicate">Duplicate</a>
-
-  <a class="btn" href="/admin/discovered-urls?status=enqueued">Enqueued</a>
-
-  <a class="btn" href="/admin/discovered-urls?status=ignored">Ignored</a>
-
-</p>
-
-<table class="table">
-
-  <thead>
-
-    <tr>
-
-      <th>ID</th><th>URL</th><th>Project</th><th>Dir</th><th>Status</th>
-
-      <th>Quality</th><th>Rel</th><th>Spam</th><th>Thin</th><th>Trust</th><th>Dup</th><th>Source</th><th>Task</th><th>Doc</th><th>Discovered</th><th>Actions</th>
-
-    </tr>
-
-  </thead>
-
-  <tbody>
-
-    {% for u in urls %}
-
-    <tr>
-
-      <td>{{ u.id }}</td>
-
-      <td class="url"><a href="{{ u.url }}" target="_blank">{{ u.normalized_url[:80] }}{% if u.normalized_url|length > 80 %}…{% endif %}</a></td>
-
-      <td>
-
-        {% set p = projects.get(u.project_id) %}
-
-        {% if p %}<a href="/admin/projects/{{ p.id }}">{{ p.slug }}</a>{% else %}{{ u.project_id }}{% endif %}
-
-      </td>
-
-      <td>
-
-        {% set d = directories.get(u.source_directory_id) %}
-
-        <a href="/admin/source-directories/{{ u.source_directory_id }}">{% if d %}{{ d.name }}{% else %}#{{ u.source_directory_id }}{% endif %}</a>
-
-      </td>
-
-      <td><span class="badge status-{{ u.status }}">{{ u.status }}</span></td>
-
-      {% set q = quality_map.get(u.id) %}
-      <td>{% if q %}{{ q.quality_score }}{% if not q.strategy_allowed %}<span class="warn-box">blocked</span>{% endif %}{% else %}—{% endif %}</td>
-      <td>{% if q %}{{ q.relevance_score }}{% else %}—{% endif %}</td>
-      <td>{% if q %}{{ q.spam_score }}{% else %}—{% endif %}</td>
-      <td>{% if q %}{{ q.thin_content_score }}{% else %}—{% endif %}</td>
-      <td>{% if q %}{{ q.trust_score }}{% else %}—{% endif %}</td>
-      <td>{% if q %}{{ q.duplicate_risk_score }}{% else %}—{% endif %}</td>
-      <td>{{ u.discovery_source }}</td>
-
-      <td>{% if u.existing_task_id %}<a href="/admin/tasks/{{ u.existing_task_id }}">#{{ u.existing_task_id }}</a>{% else %}—{% endif %}</td>
-
-      <td>{% if u.existing_document_id %}<a href="/admin/documents/{{ u.existing_document_id }}">#{{ u.existing_document_id }}</a>{% else %}—{% endif %}</td>
-
-      <td>{{ u.discovered_at }}</td>
-
-      <td>
-
-        {% if u.status in ('discovered', 'quality_scored', 'manually_approved') %}
-
-        <form method="post" action="/admin/discovered-urls/{{ u.id }}/enqueue" style="display:inline">
-
-          <button type="submit" class="btn">Enqueue</button>
-
-        </form>
-
-        {% if u.status == 'quality_blocked' %}
-        <form method="post" action="/admin/discovered-urls/{{ u.id }}/approve-quality" style="display:inline">
-          <button type="submit" class="btn">Approve quality</button>
-        </form>
-        {% endif %}
-        <form method="post" action="/admin/discovered-urls/{{ u.id }}/ignore" style="display:inline">
-
-          <button type="submit" class="btn">Ignore</button>
-
-        </form>
-
-        {% elif u.status == 'enqueued' and u.existing_task_id %}
-
-        <a class="btn" href="/admin/tasks/{{ u.existing_task_id }}">Open task</a>
-
-        {% else %}—{% endif %}
-
-      </td>
-
-    </tr>
-
-    {% else %}
-
-    <tr><td colspan="16">Нет discovered URLs{% if filter_status %} (filter: {{ filter_status }}){% endif %}</td></tr>
-
-    {% endfor %}
-
-  </tbody>
-
-</table>
-
+<div class="table-scroll">
+  <table class="table compact">
+    <thead>
+      <tr>
+        <th class="nowrap">ID</th>
+        <th>URL</th>
+        <th>Проект</th>
+        <th>Источник</th>
+        <th>Статус</th>
+        <th class="numeric-cell">Качество</th>
+        <th class="numeric-cell">Релев.</th>
+        <th class="numeric-cell">Спам</th>
+        <th class="numeric-cell">Thin</th>
+        <th class="numeric-cell">Доверие</th>
+        <th class="numeric-cell">Дубль</th>
+        <th>Источник URL</th>
+        <th>Задача</th>
+        <th>Документ</th>
+        <th class="nowrap">Найден</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in urls %}
+      <tr>
+        <td class="nowrap">{{ u.id }}</td>
+        <td class="url"><a href="{{ u.url }}" target="_blank" rel="noopener noreferrer">{{ u.normalized_url[:80] }}{% if u.normalized_url|length > 80 %}…{% endif %}</a></td>
+        <td>
+          {% set p = projects.get(u.project_id) %}
+          {% if p %}<a href="/admin/projects/{{ p.id }}">{{ p.slug }}</a>{% else %}{{ u.project_id }}{% endif %}
+        </td>
+        <td>
+          {% set d = directories.get(u.source_directory_id) %}
+          <a href="/admin/source-directories/{{ u.source_directory_id }}">{% if d %}{{ d.name }}{% else %}#{{ u.source_directory_id }}{% endif %}</a>
+        </td>
+        <td><span class="badge status-{{ u.status }}">{{ status_labels.get(u.status, u.status) }}</span></td>
+        {% set q = quality_map.get(u.id) %}
+        <td class="numeric-cell">{% if q %}{{ q.quality_score }}{% if not q.strategy_allowed %} <span class="badge status-blocked">blocked</span>{% endif %}{% else %}—{% endif %}</td>
+        <td class="numeric-cell">{% if q %}{{ q.relevance_score }}{% else %}—{% endif %}</td>
+        <td class="numeric-cell">{% if q %}{{ q.spam_score }}{% else %}—{% endif %}</td>
+        <td class="numeric-cell">{% if q %}{{ q.thin_content_score }}{% else %}—{% endif %}</td>
+        <td class="numeric-cell">{% if q %}{{ q.trust_score }}{% else %}—{% endif %}</td>
+        <td class="numeric-cell">{% if q %}{{ q.duplicate_risk_score }}{% else %}—{% endif %}</td>
+        <td>{{ u.discovery_source }}</td>
+        <td>{% if u.existing_task_id %}<a href="/admin/tasks/{{ u.existing_task_id }}">#{{ u.existing_task_id }}</a>{% else %}—{% endif %}</td>
+        <td>{% if u.existing_document_id %}<a href="/admin/documents/{{ u.existing_document_id }}">#{{ u.existing_document_id }}</a>{% else %}—{% endif %}</td>
+        <td class="nowrap">{{ u.discovered_at }}</td>
+        <td class="action-cell">
+          <div class="btn-row">
+            {% if u.status in ('discovered', 'quality_scored', 'manually_approved') %}
+            <form method="post" action="/admin/discovered-urls/{{ u.id }}/enqueue" style="display:inline">
+              <button type="submit" class="btn btn-primary btn-small">В очередь</button>
+            </form>
+            {% if u.status == 'quality_blocked' %}
+            <form method="post" action="/admin/discovered-urls/{{ u.id }}/approve-quality" style="display:inline">
+              <button type="submit" class="btn btn-secondary btn-small">Approve quality</button>
+            </form>
+            {% endif %}
+            <form method="post" action="/admin/discovered-urls/{{ u.id }}/ignore" style="display:inline">
+              <button type="submit" class="btn btn-danger btn-small">Игнор</button>
+            </form>
+            {% elif u.status == 'enqueued' and u.existing_task_id %}
+            <a class="btn btn-secondary btn-small" href="/admin/tasks/{{ u.existing_task_id }}">Открыть задачу</a>
+            {% else %}—{% endif %}
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="16" class="empty-state">Нет discovered URLs{% if filter_status %} (фильтр: {{ filter_status }}){% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}
-

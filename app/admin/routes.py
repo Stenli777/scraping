@@ -598,10 +598,10 @@ def admin_discovered_urls(
     status: str | None = None,
     db: Session = Depends(get_db),
 ):
-    q = db.query(DiscoveredUrl).order_by(DiscoveredUrl.id.desc()).limit(200)
+    q = db.query(DiscoveredUrl)
     if status:
         q = q.filter(DiscoveredUrl.status == status)
-    urls = q.limit(200).all()
+    urls = q.order_by(DiscoveredUrl.id.desc()).limit(200).all()
     projects = {p.id: p for p in db.query(Project).all()}
     directories = {d.id: d for d in db.query(SourceDirectory).all()}
     from app.services.source_quality_service import latest_quality_for_discovered, quality_to_dict
