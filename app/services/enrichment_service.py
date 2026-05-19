@@ -528,7 +528,9 @@ def enrichment_history(db: Session, document_id: int, limit: int = 10) -> list[L
     )
 
 
-def job_to_dict(job: LlmEnrichmentJob) -> dict[str, Any]:
+def job_to_dict(job: LlmEnrichmentJob | None) -> dict[str, Any] | None:
+    if job is None:
+        return None
     latency_ms = None
     if job.started_at and job.completed_at:
         s, c = job.started_at, job.completed_at

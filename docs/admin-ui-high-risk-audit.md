@@ -168,7 +168,7 @@ grep -nE '<form|action=|method=|name=|value=|button|submit|href=' app/admin/temp
 
 ### D. Финальная проверка Batch 5
 
-1. **Предусловие:** fix GET `/admin/documents/{id}` 500 (`job_to_dict` None) — иначе smoke document detail невозможен.
+1. ~~**Предусловие:** fix GET `/admin/documents/{id}` 500~~ — **выполнено** в Stage 4C (`admin-ui-document-detail-fix-stage-4b`).
 2. **Предусловие (желательно):** перенести RC/Canonical секции **выше** `{% endblock %}` — structural, отдельный commit.
 3. `scripts/smoke/run_all.py` + новый `check_admin_document_detail.py` (опционально).
 4. curl: URLs из раздела Smoke checklist ниже.
@@ -198,7 +198,7 @@ grep -nE '<form|action=|method=|name=|value=|button|submit|href=' app/admin/temp
 
 | Сущность | Пример ID | URL | HTTP (audit) |
 |----------|-----------|-----|--------------|
-| Document | **13** (editorial-queue), также 1, 4, 5 | `http://127.0.0.1:8800/admin/documents/13` | **500** (pre-existing backend) |
+| Document | **13** (editorial-queue), также 1, 4, 5 | `http://127.0.0.1:8800/admin/documents/13` | **200** после Stage 4C (`job_to_dict` None guard) |
 | Release candidate | **9** | `http://127.0.0.1:8800/admin/release-candidates/9` | **200** |
 | Task | **17** | `http://127.0.0.1:8800/admin/tasks/17` | **200** |
 

@@ -65,6 +65,7 @@ from app.services.prompt_service import (
     list_prompt_versions,
 )
 from app.services.publish_readiness_service import get_publish_readiness
+from app.services.pilot_service import get_document_pilot_membership
 from app.services.campaign_service import (
     campaign_coverage,
     campaign_performance_summary,
@@ -318,6 +319,9 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "publish_revision_numbers": publish_revision_numbers,
             "publish_readiness": publish_readiness,
             "strategy_context": strategy_context,
+            "similarity_summary": similarity_summary,
+            "lineage_summary": lineage_summary,
+            "release_candidates": release_candidates,
             "pipeline_summary": pipeline_summary,
             "timeline": timeline,
             "revision_count": revision_count,

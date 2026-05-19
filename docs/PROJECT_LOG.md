@@ -247,3 +247,19 @@
 - **Smoke IDs:** document **13** (500), release candidate **9** (200), task **17** (200)
 - **Ошибки:** document detail 500 — pre-existing backend, не регрессия Batch 4
 - **Следующий шаг:** Batch 5 display-only русификация по `docs/admin-ui-high-risk-audit.md`; предварительно — fix document detail 500 + structural template fixes (endblock/duplicates) отдельным bugfix
+
+---
+
+## 2026-05-19 — Admin UI Stage 4C: document detail backend fix
+
+- **Ветка:** `admin-ui-document-detail-fix-stage-4b`
+- **Base commit:** `17a40ea` (merge Batch 4 audit)
+- **Проблема:** GET `/admin/documents/{id}` → 500
+- **Root cause:** `document_strategy_context` вызывал `job_to_dict(latest_enrichment_for_document(...))`, когда enrichment job отсутствует (`None`); `job_to_dict` обращался к `job.started_at` без guard
+- **Исправление (backend):** `enrichment_service.job_to_dict(None)` → `None`; import `get_document_pilot_membership` в `routes.py`; в context добавлены `similarity_summary`, `lineage_summary`, `release_candidates` (вычислялись, но не передавались)
+- **Исправление (template syntax hotfix):** `document_detail.html` — закрыт `grid-meta`, удалены дублирующие orphan-блоки analytics/Hermes (без изменения `action`/`method`/`name`/`value`); иначе Jinja `TemplateSyntaxError` / `UndefinedError`
+- **Файлы:** `enrichment_service.py`, `routes.py`, `document_detail.html` (syntax only), smoke, docs
+- **Не менялось:** `release_candidate_detail.html`, CSS, route paths, form attributes
+- **Smoke ID:** document **13** (и любой существующий id из БД)
+- **Restart:** `systemctl restart scrap-api.service` (если uvicorn держал старый код)
+- **Следующий шаг:** merge Stage 4C → master; финальный Batch 5 high-risk display-only polish
