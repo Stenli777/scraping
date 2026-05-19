@@ -21,7 +21,7 @@
         <li><strong>Статус RC:</strong> <code>{{ detail.status }}</code></li>
         <li><strong>QA:</strong> {% if detail.qa_score is not none %}<strong>{{ detail.qa_score }}</strong>{% else %}не запускался{% endif %}</li>
         <li><strong>Публикация:</strong> {% if publish_ok %}<span class="badge status-done">можно</span>{% else %}<span class="badge status-error">нельзя</span>{% endif %}</li>
-        <li><strong>Draft URL:</strong> {% if draft_review.draft_url %}<a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">есть</a>{% else %}<span class="warn-box">нет</span>{% endif %}</li>
+        <li><strong>URL черновика:</strong> {% if draft_review.draft_url %}<a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">есть</a>{% else %}<span class="warn-box">нет</span>{% endif %}</li>
       </ul>
     </div>
     <div class="next-action-panel">
@@ -33,7 +33,7 @@
       {% elif not draft_review.draft_url %}
       <p>QA выполнен. Опубликуйте черновик, когда блокировок нет.</p>
       {% else %}
-      <p>Проверьте черновик по ссылке и заполните feedback в блоке «Проверка черновика».</p>
+      <p>Проверьте черновик по ссылке и заполните обратную связь в блоке «Проверка черновика».</p>
       {% endif %}
     </div>
   </div>
@@ -88,16 +88,16 @@
 <section class="draft-review-panel panel" id="draft-review">
 <h2>Проверка черновика</h2>
 {% if draft_review.draft_url %}
-<p>Draft URL: <a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
+<p>URL черновика: <a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
 {% else %}
-<p class="warn-box">Draft URL ещё нет (publication / publish run).</p>
+<p class="warn-box">URL черновика ещё нет (publication / publish run).</p>
 {% endif %}
 
-<p>Статус проверки: <code>{{ draft_review.draft_review_status or 'pending' }}</code>
+<p>Статус проверки: <code>{{ draft_review.draft_review_status or 'ожидает' }}</code>
   {% if draft_review.draft_reviewed_at %} | проверено {{ draft_review.draft_reviewed_at }}{% endif %}</p>
 
 {% if draft_review.latest_feedback %}
-<p>Последний feedback #{{ draft_review.latest_feedback.id }} — <code>{{ draft_review.latest_feedback.review_status }}</code></p>
+<p>Последний отзыв #{{ draft_review.latest_feedback.id }} — <code>{{ draft_review.latest_feedback.review_status }}</code></p>
 {% endif %}
 
 <p class="field-help">Поля <code>reviewer_name</code>, <code>notes</code> и <code>required_changes</code> сохраняются как feedback при нажатии «Сохранить заметки» или кнопок вердикта.</p>
@@ -121,7 +121,7 @@
 <div class="btn-row stacked-actions" style="margin:1rem 0">
   <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn primary" type="submit">Принят</button></form>
   <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn" type="submit">Нужны правки</button></form>
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn" type="submit">Отклонить (feedback)</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn" type="submit">Отклонить (отзыв)</button></form>
 {% if draft_review.publication_id %}
 <form method="post" action="/admin/publications/{{ draft_review.publication_id }}/check-visibility" style="display:inline;margin-left:0.5rem">
   <button class="btn" type="submit">Проверить видимость (legacy)</button>
@@ -130,7 +130,7 @@
 </div>
 
 {% if draft_review.feedback_history %}
-<h3>История feedback</h3>
+<h3>История отзывов</h3>
 <ul>
   {% for fb in draft_review.feedback_history %}
   <li>#{{ fb.id }} — <code>{{ fb.review_status }}</code> — {{ fb.created_at }}</li>

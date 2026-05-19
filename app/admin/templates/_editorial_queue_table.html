@@ -1,7 +1,9 @@
 <table class="table compact">
   <thead>
     <tr>
-      <th>Документ</th><th>Проект</th><th>Статус</th><th>Ревизия</th><th>Review</th><th>QC</th><th>Публикация</th><th>Действия</th>
+      <th>Документ</th><th>Проект</th><th>Статус</th><th>Ревизия</th>
+      <th>RC</th><th>QA</th><th>Review</th><th>Качество</th>
+      <th title="Готовность к публикации">Готовность</th><th>Действия</th>
     </tr>
   </thead>
   <tbody>
@@ -12,18 +14,18 @@
       <td><span class="badge status-{{ item.editorial_status }}">{{ item.editorial_status }}</span></td>
       <td>{{ item.revision_number }}{% if item.latest_revision_at %}<br><small class="muted">{{ item.latest_revision_at[:16] }}</small>{% endif %}</td>
       <td>{% if item.has_release_candidate %}<code>{{ item.release_candidate_status }}</code>{% else %}—{% endif %}</td>
-      <td class="numeric-cell">{{ item.release_candidate_qa_score or '—' }}{% if item.release_candidate_blocking_count %}<br><small class="muted">{{ item.release_candidate_blocking_count }} block</small>{% endif %}</td>
+      <td class="numeric-cell">{{ item.release_candidate_qa_score or '—' }}{% if item.release_candidate_blocking_count %}<br><small class="muted">{{ item.release_candidate_blocking_count }} блок.</small>{% endif %}</td>
       <td class="numeric-cell">{{ item.review_score or "—" }}</td>
       <td class="numeric-cell">{{ item.quality_overall_score or "—" }}{% if item.quality_verdict %} <small class="muted">({{ item.quality_verdict }})</small>{% endif %}</td>
-      <td>{% if item.publish_ready %}<span class="badge status-done">ready</span>{% else %}<span class="badge status-error">blocked</span>{% endif %}</td>
+      <td>{% if item.publish_ready %}<span class="badge status-done" title="Публикация разрешена">готов</span>{% else %}<span class="badge status-error" title="Блокировка публикации">заблокирован</span>{% endif %}</td>
       <td class="action-cell">
         <div class="btn-row">
           <a class="btn btn-secondary btn-small" href="/admin/documents/{{ item.document_id }}">Открыть</a>
           <form method="post" action="/admin/documents/{{ item.document_id }}/release-candidates/create" style="display:inline">
-            <button type="submit" class="btn btn-secondary btn-small" title="Создать release candidate">RC</button>
+            <button type="submit" class="btn btn-secondary btn-small" title="Создать release candidate">Создать RC</button>
           </form>
           <form method="post" action="/admin/documents/{{ item.document_id }}/run-quality" style="display:inline">
-            <button type="submit" class="btn btn-secondary btn-small" title="Запустить quality check">QC</button>
+            <button type="submit" class="btn btn-secondary btn-small" title="Запустить проверку качества">QC</button>
           </form>
         </div>
       </td>

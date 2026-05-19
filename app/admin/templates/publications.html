@@ -4,9 +4,21 @@
   <p class="page-subtitle">Опубликованные и черновые записи: статус, видимость, ссылки на CRM и публичный URL.</p>
 </div>
 
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Публикации: черновики и публичные URL, статус видимости и аналитика.</p>
+  <p class="help-block-title">Что делать</p>
+  <ul>
+    <li>Откройте запись публикации и проверьте draft/public URL.</li>
+    <li>При ошибках — <a href="/admin/failed-items">Сбои и зависшие</a>.</li>
+  </ul>
+</aside>
+
+<p class="next-step"><strong>Следующий шаг:</strong> Здесь проверяется результат публикации. При сбоях откройте <a href="/admin/failed-items">Сбои и зависшие</a>.</p>
+
 <div class="table-scroll">
 <table class="table">
-  <thead><tr><th>ID</th><th>Док.</th><th>Статус публ.</th><th>Видимость</th><th>Analytics</th><th>Черновик</th><th>Публичный</th><th></th></tr></thead>
+  <thead><tr><th>ID</th><th>Док.</th><th>Статус публ.</th><th>Видимость</th><th>Аналитика</th><th>Черновик</th><th>Публичный</th><th></th></tr></thead>
   <tbody>
     {% for row in rows %}
     <tr>
@@ -14,9 +26,9 @@
       <td><a href="/admin/documents/{{ row.record.document_id }}">#{{ row.record.document_id }}</a></td>
       <td><span class="badge">{{ row.record.publication_status }}</span></td>
       <td><code>{{ row.record.public_visibility_status }}</code></td>
-      <td>{% if row.analytics_ready %}<span class="badge status-done">ready</span>{% else %}—{% endif %}</td>
-      <td class="url">{% if row.record.external_url %}<a href="{{ row.record.external_url }}" target="_blank">admin</a>{% else %}—{% endif %}</td>
-      <td class="url">{% if row.record.public_url %}<a href="{{ row.record.public_url }}" target="_blank">blog</a>{% else %}—{% endif %}</td>
+      <td>{% if row.analytics_ready %}<span class="badge status-done">готов</span>{% else %}—{% endif %}</td>
+      <td class="url">{% if row.record.external_url %}<a href="{{ row.record.external_url }}" target="_blank">админ</a>{% else %}—{% endif %}</td>
+      <td class="url">{% if row.record.public_url %}<a href="{{ row.record.public_url }}" target="_blank">блог</a>{% else %}—{% endif %}</td>
       <td><a href="/admin/publications/{{ row.record.id }}">Открыть</a></td>
     </tr>
     {% else %}

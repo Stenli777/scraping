@@ -5,10 +5,22 @@
   <p class="page-subtitle">Список RC перед публикацией: статус, QA-оценка и блокеры.</p>
 </div>
 
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Очередь релиз-кандидатов (RC) перед публикацией: QA, блокеры и статус готовности.</p>
+  <p class="help-block-title">Что делать</p>
+  <ul>
+    <li>Откройте RC по ссылке ID, проверьте блокеры и запустите QA.</li>
+    <li>После одобрения переходите к <a href="/admin/publications">публикациям</a>.</li>
+  </ul>
+</aside>
+
+<p class="next-step"><strong>Следующий шаг:</strong> После одобрения переходите к <a href="/admin/publications">публикациям</a>.</p>
+
 <div class="table-scroll">
 <table class="table">
   <thead>
-    <tr><th>ID</th><th>Док.</th><th>Статус</th><th>QA</th><th>Блокеры</th><th>Создано</th></tr>
+    <tr><th>ID</th><th>Документ</th><th>Статус</th><th>QA</th><th>Заблокировано</th><th>Дата создания</th><th></th></tr>
   </thead>
   <tbody>
     {% for item in items %}
@@ -19,6 +31,7 @@
       <td>{{ item.qa_score }}</td>
       <td>{{ item.blocking_count }}</td>
       <td>{{ item.created_at }}</td>
+      <td><a href="/admin/release-candidates/{{ item.id }}">Открыть</a></td>
     </tr>
     {% else %}
     <tr><td colspan="6">Нет кандидатов</td></tr>
