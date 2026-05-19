@@ -388,3 +388,39 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 - Migration **024**: `projects.description`.
 - `prompt_service`: source `global` | `project_override` | `code_fallback`.
 - Скрипт: `scripts/check_project_agent_admin.py`.
+
+---
+
+## 2026-05-19 — Этап 4Y: CRMFlow24 agent overrides + LLM proof
+
+### Профиль проекта id=1 (crmflow24)
+- Заполнены tone, audience, content/rewrite/seo/review rules, allowed/blocked topics (через admin service).
+
+### Project overrides (version `p1-crmflow24-v1`)
+| Agent key | Override |
+|-----------|----------|
+| review_article | да |
+| rewrite_article | да |
+| seo_enrich | да |
+| quality_review | да |
+| topic_cleanup_v1 | global/code_fallback (без override) |
+
+### Effective prompt API
+Все 4 ключа: `source=project_override`, system начинается с «Ты Агент-… для проекта CRMFlow24».
+
+### LLM proof
+- Документ **#5** (pilot, RC approved), действие: `run_quality_for_document`.
+- **llm_run #78**: `quality_review:p1-crmflow24-v1#project_override`, `project_id=1`, model `local/qc-reviewer`, success.
+- До override: quality score **82** (needs_revision), рекомендации общие.
+- После override: score **6** (needs_revision), рекомендации про бизнес-ценность CRMFlow24 — видно, что промпт применился.
+
+### Pilot
+- Doc #5: `next_action=publish_draft` (RC approved).
+- Кандидаты: doc #10 score 100, Autobit #11/#13.
+
+### Код
+- `prompt_service.template_ref` → `{key}:{version}#{source}` для аудита в `llm_runs`.
+
+### Скрипт настройки (ops)
+- `/tmp/4y_setup.py` на сервере (повторяемый сид профиля+override).
+

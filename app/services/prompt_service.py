@@ -58,7 +58,7 @@ class ResolvedPrompt:
 
     @property
     def template_ref(self) -> str:
-        return f"{self.key}:{self.version}"
+        return f"{self.key}:{self.version}#{self.source}"
 
 
 def _parse_content(content_md: str) -> tuple[str, str]:

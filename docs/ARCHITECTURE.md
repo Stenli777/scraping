@@ -1172,3 +1172,4 @@ Candidate snapshot is bound to `document_revision_id`; revision change requires 
 После ручной публикации в CRMFlow24 admin Scrap проверяет публичную видимость (blog, sitemap, rss) и по команде оператора подтверждает `publication_status=published`. Public URL: `https://crmflow24.ru/blog/<slug>` (из SEO slug). Admin/draft URL не считается public. `analytics_ready` = published + visibility public + `public_confirmed_at` set.
 - **4R flow:** public confirmed → analytics_ready → manual snapshot import → content_performance + campaign/cluster summaries (read-time).
 - **4S:** `content_pilots` / `content_pilot_items`; deterministic pilot scoring; manual add only.
+- LLM audit: llm_runs.prompt_template = key:version#source (global|project_override|code_fallback)
