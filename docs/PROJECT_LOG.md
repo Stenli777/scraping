@@ -276,3 +276,12 @@
 - **Команды:** smoke PASS; curl `/admin/documents/13`, `/admin/release-candidates/9` → 200
 - **Restart:** не потребовался (только templates)
 - **Следующий шаг:** merge Batch 5 в master; финальный manual browser check; закрытие UI/UX-задачи
+
+---
+
+## 2026-05-19 — Admin UI: visual polish track closed (Batch 5 merged)
+
+- **Merge:** Batch 5 `admin-ui-final-high-risk-polish-stage-5` → `master`
+- **Smoke/curl:** PASS после merge (`/admin/documents/13`, `/admin/release-candidates/9`, task 17)
+- **Статус:** UI/UX admin visual polish **завершён**
+- **Known technical debt (не блокирует):** дубликат панели Media на document detail; raw enum/status в `<code>`; смещение колонок publish history table

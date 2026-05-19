@@ -8,7 +8,7 @@
 > **Stage 4 Batch 4 (audit-only):** high-risk templates audit — [admin-ui-high-risk-audit.md](./admin-ui-high-risk-audit.md).  
 > **Stage 4C (backend fix):** ветка `admin-ui-document-detail-fix-stage-4b` — `/admin/documents/{id}` 500 → `job_to_dict(None)` guard.  
 > **Batch 5 выполнен** (ветка `admin-ui-final-high-risk-polish-stage-5`): display-only polish high-risk detail pages.  
-> **Следующий шаг:** merge Batch 5 → master, smoke, manual check; **UI/UX-задача готова к закрытию** после merge.  
+> **Статус:** UI/UX visual polish track closed after Batch 5 merge.
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
