@@ -21,7 +21,7 @@
         <li><strong>Статус RC:</strong> <code>{{ detail.status }}</code></li>
         <li><strong>QA:</strong> {% if detail.qa_score is not none %}<strong>{{ detail.qa_score }}</strong>{% else %}не запускался{% endif %}</li>
         <li><strong>Публикация:</strong> {% if publish_ok %}<span class="badge status-done">можно</span>{% else %}<span class="badge status-error">нельзя</span>{% endif %}</li>
-        <li><strong>Draft URL:</strong> {% if draft_review.draft_url %}<a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">есть</a>{% else %}<span class="warn-box">нет</span>{% endif %}</li>
+        <li><strong>URL черновика:</strong> {% if draft_review.draft_url %}<a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">есть</a>{% else %}<span class="warn-box">нет</span>{% endif %}</li>
       </ul>
     </div>
     <div class="next-action-panel">
@@ -88,12 +88,12 @@
 <section class="draft-review-panel panel" id="draft-review">
 <h2>Проверка черновика</h2>
 {% if draft_review.draft_url %}
-<p>Draft URL: <a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
+<p>URL черновика: <a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
 {% else %}
-<p class="warn-box">Draft URL ещё нет (publication / publish run).</p>
+<p class="warn-box">URL черновика ещё нет (publication / publish run).</p>
 {% endif %}
 
-<p>Статус проверки: <code>{{ draft_review.draft_review_status or 'pending' }}</code>
+<p>Статус проверки: <code>{{ draft_review.draft_review_status or 'ожидает' }}</code>
   {% if draft_review.draft_reviewed_at %} | проверено {{ draft_review.draft_reviewed_at }}{% endif %}</p>
 
 {% if draft_review.latest_feedback %}

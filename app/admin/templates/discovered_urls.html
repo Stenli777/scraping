@@ -15,6 +15,8 @@
   <p class="page-subtitle">Очередь URL, найденных discovery-процессом. Отфильтруйте по статусу и управляйте каждой записью.</p>
 </div>
 
+<p class="next-step"><strong>Следующий шаг:</strong> После отправки URL в очередь откройте задачу из таблицы или проверьте <a href="/admin/editorial-queue">редактуру</a>.</p>
+
 <aside class="help-block">
   <p class="help-block-title">О странице</p>
   <p>Здесь отображаются URL из source directories и ручного intake после discovery и quality scoring.</p>
@@ -22,7 +24,7 @@
   <ul>
     <li><strong>В очередь</strong> — создаёт scrape task и запускает pipeline.</li>
     <li><strong>Игнор</strong> — исключает URL из дальнейшей обработки.</li>
-    <li><strong>Approve quality</strong> — только если URL нужно пропустить quality-gate вручную.</li>
+    <li><strong>Одобрить качество</strong> — только если URL нужно пропустить quality-gate вручную.</li>
   </ul>
   <p class="field-help">Таблица широкая — используйте горизонтальную прокрутку.</p>
 </aside>
@@ -72,7 +74,7 @@
         </td>
         <td><span class="badge status-{{ u.status }}">{{ status_labels.get(u.status, u.status) }}</span></td>
         {% set q = quality_map.get(u.id) %}
-        <td class="numeric-cell">{% if q %}{{ q.quality_score }}{% if not q.strategy_allowed %} <span class="badge status-blocked">blocked</span>{% endif %}{% else %}—{% endif %}</td>
+        <td class="numeric-cell">{% if q %}{{ q.quality_score }}{% if not q.strategy_allowed %} <span class="badge status-blocked">заблок.</span>{% endif %}{% else %}—{% endif %}</td>
         <td class="numeric-cell">{% if q %}{{ q.relevance_score }}{% else %}—{% endif %}</td>
         <td class="numeric-cell">{% if q %}{{ q.spam_score }}{% else %}—{% endif %}</td>
         <td class="numeric-cell">{% if q %}{{ q.thin_content_score }}{% else %}—{% endif %}</td>
@@ -90,7 +92,7 @@
             </form>
             {% if u.status == 'quality_blocked' %}
             <form method="post" action="/admin/discovered-urls/{{ u.id }}/approve-quality" style="display:inline">
-              <button type="submit" class="btn btn-secondary btn-small">Approve quality</button>
+              <button type="submit" class="btn btn-secondary btn-small">Одобрить качество</button>
             </form>
             {% endif %}
             <form method="post" action="/admin/discovered-urls/{{ u.id }}/ignore" style="display:inline">
@@ -103,7 +105,7 @@
         </td>
       </tr>
       {% else %}
-      <tr><td colspan="16" class="empty-state">Нет discovered URLs{% if filter_status %} (фильтр: {{ filter_status }}){% endif %}</td></tr>
+      <tr><td colspan="16" class="empty-state">Нет найденных URL{% if filter_status %} (фильтр: {{ filter_status }}){% endif %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -301,3 +301,12 @@
 - **Не менялось:** routes, services, models, migrations, `action`/`method`/`name`/`value` форм, enum/status в БД
 - **Media duplicate:** вторая панель свёрнута в `<details>` legacy (формы сохранены)
 - **Проверки:** smoke detail PASS; curl 200 (doc 13, RC 9, task 17); marker grep PASS
+
+---
+
+## 2026-05-19 — Admin UI: i18n workflow pages (display-only)
+
+- **Ветка:** `admin-ui-i18n-workflow-pages` (от `ad611b4`)
+- **Scope:** переводы и help/next-step на task_new, source_directories, discovered_urls, editorial_queue, release_candidates_list, publications, publication_detail, review_queue; правки document_detail/RC detail (display)
+- **Не менялось:** routes, services, models, form action/method/name/value
+- **Словарь:** `docs/admin-ui-i18n-workflow-pages.md`

@@ -1,62 +1,72 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Publication #{{ pub.id }}</h1>
-<p>Document <a href="/admin/documents/{{ pub.document_id }}">#{{ pub.document_id }}</a>
-  | Status <code>{{ pub.publication_status }}</code>
-  | Visibility <code>{{ pub.public_visibility_status }}</code>
-  {% if status.analytics_ready %}<span class="badge status-done">analytics ready</span>{% endif %}
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Карточка публикации: черновик и публичный URL, видимость на сайте, подтверждение и метрики.</p>
+  <p class="help-block-title">Что делать</p>
+  <ul>
+    <li>Проверьте draft и public URL, при необходимости подтвердите публичность.</li>
+    <li>При сбоях — раздел «Сбои и зависшие» и логи.</li>
+  </ul>
+</aside>
+
+<h1>Публикация #{{ pub.id }}</h1>
+<p>Документ <a href="/admin/documents/{{ pub.document_id }}">#{{ pub.document_id }}</a>
+  | Статус <code>{{ pub.publication_status }}</code>
+  | Видимость <code>{{ pub.public_visibility_status }}</code>
+  {% if status.analytics_ready %}<span class="badge status-done">аналитика готова</span>{% endif %}
 </p>
 
 <dl>
-  <dt>Draft URL (CRMFlow24 admin)</dt><dd>{% if pub.external_url %}<a href="{{ pub.external_url }}" target="_blank">{{ pub.external_url }}</a>{% else %}—{% endif %}</dd>
-  <dt>Public URL</dt><dd>{% if pub.public_url %}<a href="{{ pub.public_url }}" target="_blank">{{ pub.public_url }}</a>{% else %}—{% endif %}</dd>
-  <dt>Last visibility check</dt><dd>{{ pub.public_visibility_checked_at or '—' }}</dd>
-  <dt>Confirmed</dt><dd>{{ pub.public_confirmed_at or '—' }} {% if pub.public_confirmed_by %}by {{ pub.public_confirmed_by }}{% endif %}</dd>
+  <dt>URL черновика (CRMFlow24)</dt><dd>{% if pub.external_url %}<a href="{{ pub.external_url }}" target="_blank">{{ pub.external_url }}</a>{% else %}—{% endif %}</dd>
+  <dt>Публичный URL</dt><dd>{% if pub.public_url %}<a href="{{ pub.public_url }}" target="_blank">{{ pub.public_url }}</a>{% else %}—{% endif %}</dd>
+  <dt>Последняя проверка видимости</dt><dd>{{ pub.public_visibility_checked_at or '—' }}</dd>
+  <dt>Подтверждено</dt><dd>{{ pub.public_confirmed_at or '—' }} {% if pub.public_confirmed_by %}— {{ pub.public_confirmed_by }}{% endif %}</dd>
 </dl>
 
 <ul>
-  <li>Blog: {% if pub.public_visible_in_blog %}yes{% else %}no{% endif %}</li>
-  <li>Sitemap: {% if pub.public_visible_in_sitemap %}yes{% else %}no{% endif %}</li>
-  <li>RSS: {% if pub.public_visible_in_rss %}yes{% else %}no{% endif %}</li>
+  <li>Блог: {% if pub.public_visible_in_blog %}да{% else %}нет{% endif %}</li>
+  <li>Sitemap: {% if pub.public_visible_in_sitemap %}да{% else %}нет{% endif %}</li>
+  <li>RSS: {% if pub.public_visible_in_rss %}да{% else %}нет{% endif %}</li>
 </ul>
 
-<h2>Actions</h2>
+
 <form method="post" action="/admin/publications/{{ pub.id }}/check-public-status" style="display:inline">
-  <button class="btn" type="submit">Check public status</button>
+  <button class="btn" type="submit">Проверить публичный статус</button>
 </form>
 <form method="post" action="/admin/publications/{{ pub.id }}/confirm-public" style="display:inline">
   <input type="hidden" name="confirmed_by" value="operator">
-  <input name="notes" placeholder="Confirmation notes" style="min-width:240px">
-  <button class="btn" type="submit">Confirm public</button>
+  <input name="notes" placeholder="Заметки подтверждения" style="min-width:240px">
+  <button class="btn" type="submit">Подтвердить публикацию</button>
 </form>
 <form method="post" action="/admin/publications/{{ pub.id }}/mark-not-public" style="display:inline">
-  <button class="btn" type="submit">Mark not public</button>
+  <button class="btn" type="submit">Не опубликовано</button>
 </form>
 {% if status.analytics_ready %}
-<a class="btn" href="/admin/publications/{{ pub.id }}/analytics/import">Import metrics</a>
+<a class="btn" href="/admin/publications/{{ pub.id }}/analytics/import">Импорт метрик</a>
 {% endif %}
 
 {% if pub.public_confirmation_notes %}
-<h3>Notes</h3>
+<h3>Заметки</h3>
 <p>{{ pub.public_confirmation_notes }}</p>
 {% endif %}
 
 {% if performance %}
-<h2>Performance</h2>
-<p>Score: <strong>{{ performance.performance_score or '—' }}</strong>
-  | Views: {{ performance.latest_views or '—' }}
+<h2>Эффективность</h2>
+<p>Оценка: <strong>{{ performance.performance_score or '—' }}</strong>
+  | Просмотры: {{ performance.latest_views or '—' }}
   | CTR: {{ performance.latest_ctr or '—' }}
-  | Trend: <code>{{ performance.trend }}</code>
-  | Status: <code>{{ performance.status }}</code></p>
+  | Тренд: <code>{{ performance.trend }}</code>
+  | Статус: <code>{{ performance.status }}</code></p>
 {% if insight_labels %}
-<p>Insights: {% for label in insight_labels %}<code>{{ label }}</code> {% endfor %}</p>
+<p>Инсайты: {% for label in insight_labels %}<code>{{ label }}</code> {% endfor %}</p>
 {% endif %}
 {% endif %}
 
-<h2>Performance history</h2>
+<h2>История метрик</h2>
 {% if snapshots %}
 <table class="table">
-  <thead><tr><th>Date</th><th>Views</th><th>UV</th><th>CTR</th><th>Conv</th><th>Pos</th><th>Source</th></tr></thead>
+  <thead><tr><th>Дата</th><th>Просмотры</th><th>Уник.</th><th>CTR</th><th>Конв.</th><th>Поз.</th><th>Источник</th></tr></thead>
   <tbody>
     {% for s in snapshots %}
     <tr>
@@ -66,12 +76,12 @@
       <td>{{ s.ctr or '—' }}</td>
       <td>{{ s.conversions or '—' }}</td>
       <td>{{ s.position_avg or '—' }}</td>
-      <td>{{ s.source }}{% if s.metadata_json and s.metadata_json.sample %} <span class="warn-box">sample</span>{% endif %}</td>
+      <td>{{ s.source }}{% if s.metadata_json and s.metadata_json.выборка %} <span class="warn-box">выборка</span>{% endif %}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p>No snapshots yet.{% if status.analytics_ready %} <a href="/admin/publications/{{ pub.id }}/analytics/import">Import metrics</a>.{% endif %}</p>
+<p>Снимков метрик пока нет.{% if status.analytics_ready %} <a href="/admin/publications/{{ pub.id }}/analytics/import">Импорт метрик</a>.{% endif %}</p>
 {% endif %}
 {% endblock %}

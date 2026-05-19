@@ -466,3 +466,5 @@ tail -50 storage/logs/app.log
 ## Следующий промпт (рекомендация)
 
 **Этап 2 — UI kit:** новая ветка `admin-ui-kit-stage-2`; scope `admin.css` + optional `_ui_macros.html`; унификация кнопок, табов, таблиц, бейджей; без правок POST/forms/routes.
+
+> **i18n workflow pages** (`admin-ui-i18n-workflow-pages`): help-блоки, переводы списков — [admin-ui-i18n-workflow-pages.md](./admin-ui-i18n-workflow-pages.md).

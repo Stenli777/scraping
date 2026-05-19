@@ -6,7 +6,9 @@
 
 <aside class="help-block">
   <p class="help-block-title">О странице</p>
-  <p>Очередь проверки после review-стадии pipeline. Статусы и значения enum отображаются как в БД.</p>
+  <p>Очередь LLM review: решение take/reject, оценка и риски после review-стадии pipeline.</p>
+  <p class="help-block-title">Что делать</p>
+  <ul><li>Откройте документ по ссылке и продолжите редактуру или RC.</li></ul>
 </aside>
 
 <div class="table-scroll">
@@ -25,7 +27,7 @@
       <td>{% if r.task_id %}<a href="/admin/tasks/{{ r.task_id }}">#{{ r.task_id }}</a>{% else %}—{% endif %}</td>
       <td>{% if r.document_id %}<a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a>{% else %}—{% endif %}</td>
       <td>{{ r.project_id or "—" }}</td>
-      <td>{% if r.take %}<span class="badge status-done">take</span>{% else %}<span class="badge status-error">reject</span>{% endif %}</td>
+      <td>{% if r.take %}<span class="badge status-done" title="Принять">принять</span>{% else %}<span class="badge status-error" title="Отклонить">отклонить</span>{% endif %}</td>
       <td>{{ r.score or "—" }}</td>
       <td>{{ r.content_type or "—" }}</td>
       <td class="url">{{ r.recommended_angle or "—" }}</td>

@@ -14,14 +14,14 @@
         <li><strong>Задача:</strong> <a href="/admin/tasks/{{ document.task_id }}">#{{ document.task_id }}</a>{% if project %} · <strong>Проект:</strong> <a href="/admin/projects/{{ project.id }}">{{ project.slug }}</a>{% endif %}</li>
         <li><strong>Документ:</strong> #{{ document.id }} · <code>{{ document.editorial_status or '—' }}</code></li>
         {% if pipeline_summary %}
-        <li><strong>Pipeline:</strong>
-          Fetch <code>{{ pipeline_summary.fetch }}</code>,
-          Parse <code>{{ pipeline_summary.parse }}</code>,
-          Clean <code>{{ pipeline_summary.clean }}</code>,
+        <li><strong>Pipeline (этапы):</strong>
+          Загрузка <code>{{ pipeline_summary.fetch }}</code>,
+          Парсинг <code>{{ pipeline_summary.parse }}</code>,
+          Очистка <code>{{ pipeline_summary.clean }}</code>,
           Review <code>{{ pipeline_summary.review }}</code>,
           Rewrite <code>{{ pipeline_summary.rewrite }}</code>,
           SEO <code>{{ pipeline_summary.seo }}</code>,
-          Publish <code>{{ pipeline_summary.publish }}</code>
+          Публикация <code>{{ pipeline_summary.publish }}</code>
         </li>
         {% endif %}
         <li><strong>Блокировки публикации:</strong> {% if publish_readiness.ready %}<span class="badge status-done">нет</span>{% else %}<span class="badge status-error">есть</span>{% endif %}</li>
@@ -55,7 +55,7 @@
     {% if project %} · <a href="/admin/projects/{{ project.id }}">Проект {{ project.slug }}</a>{% endif %}
     {% if discovered_url %} · <a href="/admin/discovered-urls">Найденный URL #{{ discovered_url.id }}</a>{% endif %}
     {% if review_record %} · <a href="/admin/review-queue">Review #{{ review_record.id }}</a>{% endif %}
-    · <a href="/admin/pipeline-events">Pipeline</a>
+    · <a href="/admin/pipeline-events">События pipeline</a>
     · <a href="/admin/llm-runs">LLM-запуски</a>
     · <a href="/admin/publish-runs">Публикации (runs)</a>
   </p>
@@ -77,11 +77,11 @@
 
 
   {% if strategy_context.latest_enrichment_job %}
-  <p><strong>Enrichment job:</strong>
+  <p><strong>Задача обогащения:</strong>
     <a href="/admin/enrichment-jobs">#{{ strategy_context.latest_enrichment_job.id }}</a>
     — {{ strategy_context.latest_enrichment_job.status }}
     {% if strategy_context.latest_enrichment_job.model_alias %}({{ strategy_context.latest_enrichment_job.model_alias }}){% endif %}
-    {% if strategy_context.latest_enrichment_job.llm_run_id %} — <a href="/admin/llm-runs">LLM run #{{ strategy_context.latest_enrichment_job.llm_run_id }}</a>{% endif %}
+    {% if strategy_context.latest_enrichment_job.llm_run_id %} — <a href="/admin/llm-runs">LLM-запуск #{{ strategy_context.latest_enrichment_job.llm_run_id }}</a>{% endif %}
   </p>
   {% endif %}
   {% if strategy_context.enrichment_history %}
@@ -98,7 +98,7 @@
     {% if strategy_context.topics.strategy_quality_score is not none %}? quality: {{ strategy_context.topics.strategy_quality_score }}{% endif %}
     {% if strategy_context.topics.is_test_document %}? <span class="badge status-error">test document</span>{% endif %}
   </p>
-  <p><strong>LLM cleanup:</strong> {{ strategy_context.topics.llm_cleanup_status or 'n/a' }}
+  <p><strong>LLM-очистка:</strong> {{ strategy_context.topics.llm_cleanup_status or 'n/a' }}
     {% if strategy_context.topics.topic_cleanup_model_alias %}? {{ strategy_context.topics.topic_cleanup_model_alias }}{% endif %}
     {% if strategy_context.topics.llm_run_id %}? <a href="/admin/llm-runs?document_id={{ document.id }}">run #{{ strategy_context.topics.llm_run_id }}</a>{% endif %}
   </p>
@@ -152,15 +152,15 @@
     <span class="badge {% if publish_readiness.ready %}status-done{% else %}status-error{% endif %}">
       {% if publish_readiness.ready %}Готово{% else %}Не готово{% endif %}
     </span>
-    {% if chk.review_take is sameas true %}<span class="badge status-done">take</span>
-    {% elif chk.review_take is sameas false %}<span class="badge status-error">reject</span>
+    {% if chk.review_take is sameas true %}<span class="badge status-done" title="Review: принять">принять</span>
+    {% elif chk.review_take is sameas false %}<span class="badge status-error" title="Review: отклонить">отклонить</span>
     {% else %}<span class="badge">review?</span>{% endif %}
     {% if chk.review_score is not none %}<span class="badge">score {{ chk.review_score }}</span>{% endif %}
-    {% if chk.duplicate_publish %}<span class="badge status-failed_retryable">duplicate</span>{% endif %}
-    {% if chk.quality_verdict %}<span class="badge">QC {{ chk.quality_verdict }}</span>{% elif chk.quality_review_enabled %}<span class="badge status-error">no QC</span>{% endif %}
+    {% if chk.duplicate_publish %}<span class="badge status-failed_retryable">дубликат</span>{% endif %}
+    {% if chk.quality_verdict %}<span class="badge">QC {{ chk.quality_verdict }}</span>{% elif chk.quality_review_enabled %}<span class="badge status-error">нет QC</span>{% endif %}
     {% if chk.quality_overall_score is not none %}<span class="badge">qc {{ chk.quality_overall_score }}</span>{% endif %}
     {% if chk.editorial_status %}<span class="badge">{{ chk.editorial_status }}</span>{% endif %}
-    {% if chk.approved_for_publish %}<span class="badge status-done">op OK</span>{% elif chk.editorial_workflow_enabled %}<span class="badge status-error">no op OK</span>{% endif %}
+    {% if chk.approved_for_publish %}<span class="badge status-done">оператор OK</span>{% elif chk.editorial_workflow_enabled %}<span class="badge status-error">нет OK оператора</span>{% endif %}
     {% if chk.current_revision_number is not none %}<span class="badge">rev {{ chk.current_revision_number }}</span>{% endif %}
   </p>
   {% if publish_readiness.ready %}
@@ -202,11 +202,11 @@
 {% if feature_flags.get('ENABLE_EDITORIAL_WORKFLOW') %}
 <div class="panel" id="editorial">
   <h2>Редактура</h2>
-  <p><strong>Status:</strong> <code>{{ document.editorial_status }}</code> ·
+  <p><strong>Статус:</strong> <code>{{ document.editorial_status }}</code> ·
      <strong>Одобрено к публикации:</strong> {{ document.approved_for_publish }} ·
-     <strong>Revision:</strong> {{ document.current_revision_number }}
+     <strong>Ревизия:</strong> {{ document.current_revision_number }}
      · <a href="/admin/documents/{{ document.id }}/revisions">История</a></p>
-  {% if document.editorial_notes %}<p><strong>Notes:</strong> {{ document.editorial_notes }}</p>{% endif %}
+  {% if document.editorial_notes %}<p><strong>Заметки:</strong> {{ document.editorial_notes }}</p>{% endif %}
   <p class="export-links">
     <form method="post" action="/admin/documents/{{ document.id }}/editorial/operator-review" style="display:inline">
       <button type="submit" class="btn">На проверку</button>
@@ -281,7 +281,7 @@
   <h2>Пилот production</h2>
   <ul>
     {% for m in pilot_memberships %}
-    <li><a href="/admin/pilots/{{ m.pilot_id }}">{{ m.pilot_name }}</a> · priority {{ m.priority }} · <code>{{ m.status }}</code> · next: <code>{{ m.next_action }}</code>
+    <li><a href="/admin/pilots/{{ m.pilot_id }}">{{ m.pilot_name }}</a> · приоритет {{ m.priority }} · <code>{{ m.status }}</code> · далее: <code>{{ m.next_action }}</code>
       {% if m.blockers %}<span class="warn-box">{{ m.blockers | join(', ') }}</span>{% endif %}
     </li>
     {% endfor %}
@@ -296,7 +296,7 @@
      · rev {{ doc_publication.revision_id or '—' }}
      · <span class="badge">{{ doc_publication.publication_status }}</span>
      · public <code>{{ doc_public_visibility or '—' }}</code>
-     {% if doc_analytics_ready %}<span class="badge status-done">analytics готов</span>{% endif %}
+     {% if doc_analytics_ready %}<span class="badge status-done">аналитика готова</span>{% endif %}
   </p>
   <p><strong>Draft URL:</strong> {% if doc_publication.external_url %}<a href="{{ doc_publication.external_url }}" target="_blank">{{ doc_publication.external_url }}</a>{% else %}—{% endif %}</p>
   <p><strong>Public URL:</strong> {% if doc_publication.public_url %}<a href="{{ doc_publication.public_url }}" target="_blank">{{ doc_publication.public_url }}</a>{% else %}—{% endif %}</p>
@@ -367,7 +367,7 @@
 {% if review_meta %}
 <div class="panel">
   <h2>Review</h2>
-  <p><strong>Take:</strong> {{ review_meta.get('take', '—') }}</p>
+  <p><strong>Решение review:</strong> {{ review_meta.get('take', '—') }}</p>
   <p><strong>Оценка:</strong> {{ review_meta.get('score', '—') }}</p>
   <p><strong>Reason:</strong> {{ review_meta.get('reason', '—') }}</p>
 </div>
@@ -392,7 +392,7 @@
   <p><strong>Рекомендации:</strong> {{ quality_record.recommendations_json | join("; ") }}</p>
   {% endif %}
   {% if quality_record.llm_run_id %}
-  <p><a href="/admin/llm-runs">LLM run #{{ quality_record.llm_run_id }}</a></p>
+  <p><a href="/admin/llm-runs">LLM-запуск #{{ quality_record.llm_run_id }}</a></p>
   {% endif %}
   <p><small>{{ quality_record.created_at }}</small></p>
   {% else %}
@@ -448,23 +448,23 @@
 <div>
   <p class="export-links">
     <form method="post" action="/admin/documents/{{ document.id }}/hermes/research" style="display:inline">
-      <button type="submit" class="btn">Hermes: research</button>
+      <button type="submit" class="btn">Hermes: исследование</button>
     </form>
     <form method="post" action="/admin/documents/{{ document.id }}/hermes/critique" style="display:inline">
-      <button type="submit" class="btn">Hermes: critique</button>
+      <button type="submit" class="btn">Hermes: критика</button>
     </form>
     <a class="btn" href="/admin/hermes">Все запуски</a>
   </p>
   {% if hermes_research %}
   <h3>Последний research</h3>
   <p>Run #{{ hermes_research.id }} · agent {{ hermes_research.agent_used or '—' }} · model {{ hermes_research.model_used or '—' }}
-     {% if hermes_research.fallback_used %}<span class="badge">fallback</span>{% endif %}</p>
+     {% if hermes_research.fallback_used %}<span class="badge">резерв</span>{% endif %}</p>
   <pre class="content code-block">{{ (hermes_research.response_payload_json or {}) | tojson(indent=2) }}</pre>
   {% endif %}
   {% if hermes_critique %}
   <h3>Последний critique</h3>
   <p>Run #{{ hermes_critique.id }} · agent {{ hermes_critique.agent_used or '—' }} · model {{ hermes_critique.model_used or '—' }}
-     {% if hermes_critique.fallback_used %}<span class="badge">fallback</span>{% endif %}</p>
+     {% if hermes_critique.fallback_used %}<span class="badge">резерв</span>{% endif %}</p>
   <pre class="content code-block">{{ (hermes_critique.response_payload_json or {}) | tojson(indent=2) }}</pre>
   {% endif %}
   {% if not hermes_research and not hermes_critique %}
@@ -477,8 +477,8 @@
 {% if seo_record %}
 <div class="panel">
   <h2>SEO</h2>
-  <p><strong>Title:</strong> {{ seo_record.seo_title or "—" }}</p>
-  <p><strong>Description:</strong> {{ seo_record.seo_description or "—" }}</p>
+  <p><strong>Заголовок SEO:</strong> {{ seo_record.seo_title or "—" }}</p>
+  <p><strong>Описание:</strong> {{ seo_record.seo_description or "—" }}</p>
   <p><strong>H1:</strong> {{ seo_record.h1 or "—" }}</p>
   <p><strong>Slug:</strong> <code>{{ seo_record.slug or "—" }}</code></p>
   <p><strong>Категория:</strong> {{ seo_record.suggested_category or "—" }}</p>
@@ -511,16 +511,17 @@
   <h3>История публикаций</h3>
   <div class="scroll-x">
   <table class="table">
-    <thead><tr><th>ID</th><th>Rev</th><th>Цель</th><th>Payload</th><th>Статус</th><th>Retry</th><th>Dry</th><th>External ID</th><th>Draft URL</th><th>Remote</th><th>Ошибка</th><th>Время</th></tr></thead>
+    <thead><tr><th>ID</th><th>Rev</th><th>Цель</th><th>Payload</th><th>Статус</th><th>Retry</th><th>Dry</th><th>External ID</th><th>Draft URL</th><th>Удалённо</th><th>Ошибка</th><th>Время</th></tr></thead>
     <tbody>
       {% for r in publish_runs %}
       <tr>
         <td>#{{ r.id }}</td>
         <td>{{ publish_revision_numbers.get(r.id, '—') }}</td>
         <td>#{{ r.publish_target_id }}</td>
+        <td><code>{{ r.payload_version or '—' }}</code></td>
         <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
-        <td>{{ 'yes' if r.dry_run else 'no' }}</td>
-        <td>{{ 'yes' if r.force_used else 'no' }}</td>
+        <td>{{ 'да' if r.dry_run else 'нет' }}</td>
+        <td>{{ 'да' if r.force_used else 'нет' }}</td>
         <td>{{ r.external_id or '—' }}</td>
         <td>{% if r.draft_url %}<a href="{{ r.draft_url }}" target="_blank">открыть</a>{% else %}—{% endif %}</td>
         <td class="url">{{ (r.error_message or '—')[:60] }}</td>
@@ -554,7 +555,7 @@
     </tbody>
   </table>
   {% else %}
-  <p>Release candidates пока нет.</p>
+  <p>Релиз-кандидатов пока нет.</p>
   {% endif %}
   <form method="post" action="/admin/documents/{{ document.id }}/release-candidates/create" style="margin-top:0.5rem">
     <button type="submit" class="btn">Создать RC</button>
@@ -576,9 +577,9 @@
 <div class="panel">
   <h3>Rewrite</h3>
   <p><strong>Провайдер:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
-  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
-  <p><strong>Upstream model:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
-  <p><strong>Fallback:</strong> {{ 'yes' if rewrite_meta.get('fallback_used') else 'no' }}</p>
+  <p><strong>Алиас модели:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
+  <p><strong>Upstream-модель:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
+  <p><strong>Резерв:</strong> {{ 'да' if rewrite_meta.get('fallback_used') else 'нет' }}</p>
   {% if rewrite_meta.get('llm_run_id') %}
   <p><strong>LLM run:</strong> <a href="/admin/llm-runs">#{{ rewrite_meta.llm_run_id }}</a></p>
   {% endif %}
@@ -631,7 +632,7 @@
     (риск: {{ similarity_summary.canonical_group.duplicate_risk_level }})
   </p>
   {% else %}
-  <p>Canonical group: не назначена</p>
+  <p>Каноническая группа не назначена</p>
   {% endif %}
   {% if similarity_summary.near_duplicates %}
   <h3>Близкие дубликаты</h3>
@@ -651,7 +652,7 @@
   </ul>
   {% endif %}
   {% if similarity_summary.strategy_warnings %}
-  <h3>Strategy</h3>
+  <h3>Стратегия</h3>
   <ul>
     {% for w in similarity_summary.strategy_warnings %}
     <li>{{ w }}</li>
