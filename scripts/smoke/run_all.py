@@ -21,6 +21,7 @@ CHECKS_DEFAULT = [
     "check_repo_safety.py",
     "check_health.py",
     "check_admin_discovered.py",
+    "check_admin_task_detail.py",
     "check_ready.py",
     "check_db.py",
     "check_cliproxy.py",

@@ -6,6 +6,7 @@
 > **Этап 3 выполнен** (ветка `admin-ui-p0-pages-stage-3`): P0 templates + help-блоки + tabs + table-scroll.  
 > **Stage 3B:** fix filter `/admin/discovered-urls?status=...` (query order в routes.py).  
 > **Этап 4 начат** (ветка `admin-ui-i18n-stage-4`): Batch 1 — safe P1 templates. Batch 2 — остальные P1.  
+> **Stage 4B:** fix GET `/admin/tasks/{id}` — удалены неопределённые context keys в routes.py (после Batch 2).
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
