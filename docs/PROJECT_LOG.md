@@ -285,3 +285,19 @@
 - **Smoke/curl:** PASS после merge (`/admin/documents/13`, `/admin/release-candidates/9`, task 17)
 - **Статус:** UI/UX admin visual polish **завершён**
 - **Known technical debt (не блокирует):** дубликат панели Media на document detail; raw enum/status в `<code>`; смещение колонок publish history table
+
+---
+
+## 2026-05-19 — Admin UI: detail operator clarity (`admin-ui-detail-operator-clarity`)
+
+- **Ветка:** `admin-ui-detail-operator-clarity`
+- **Base commit:** `b150174` (master, visual polish closed)
+- **Цель:** операторская понятность двух high-risk detail pages без изменения backend/forms
+- **Шаблоны:** `document_detail.html`, `release_candidate_detail.html`
+- **CSS:** минимальные классы (operator-summary, blocker-list, debug-details, danger-zone, code-block, scroll-x, …)
+- **Smoke:** `check_admin_document_detail.py` — HTTP 200 + markers; новый `check_admin_release_candidate_detail.py`; оба в `run_all.py`
+- **Markers document:** «Операторская сводка»/«Что сейчас», «Следующий шаг», «Блокировки публикации», «Релиз-кандидаты»
+- **Markers RC:** «Что сейчас», «Следующий шаг», «Блокирующие проблемы», «Проверка черновика»; убран дубль h1 (title только в layout)
+- **Не менялось:** routes, services, models, migrations, `action`/`method`/`name`/`value` форм, enum/status в БД
+- **Media duplicate:** вторая панель свёрнута в `<details>` legacy (формы сохранены)
+- **Проверки:** smoke detail PASS; curl 200 (doc 13, RC 9, task 17); marker grep PASS

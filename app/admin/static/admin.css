@@ -783,3 +783,110 @@ a:hover {
   margin: 0;
   padding-left: 1.1rem;
 }
+
+/* --- Detail operator clarity (admin-ui-detail-operator-clarity) --- */
+.operator-summary {
+  border-left: 3px solid var(--accent, #3b82f6);
+}
+.operator-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 2rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .operator-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.operator-summary h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+.next-action-panel {
+  background: var(--panel-bg, rgba(0, 0, 0, 0.03));
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+.next-action-panel p {
+  margin: 0;
+}
+.blocker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+.blocker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.blocker-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.blocker-explain {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.debug-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.debug-details[open] > summary {
+  margin-bottom: 0.75rem;
+}
+.danger-zone {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #f87171;
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.08);
+}
+.danger-zone h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+  color: #b91c1c;
+}
+.form-checklist label {
+  display: block;
+  max-width: 42rem;
+  margin-bottom: 0.65rem;
+}
+.form-checklist input[type="text"],
+.form-checklist textarea {
+  width: 100%;
+  max-width: 42rem;
+}
+.form-checklist-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+}
+.form-checklist-list li {
+  margin-bottom: 0.35rem;
+}
+.stacked-actions .btn-row {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.code-block,
+.raw-block,
+pre.content.code-block {
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.scroll-x {
+  overflow-x: auto;
+  max-width: 100%;
+}
