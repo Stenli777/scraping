@@ -83,3 +83,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 - `scripts/check_pilot_state.py` (read-only); `scripts/seed_pilot_first5.py`.
 - `run_pilot_first5_check.py` — read-only pilot report; `--refresh` updates statuses.
 - Discovery: `run_discovery_test.py`; ops `/tmp/run_4u_ops.py` (discover|enqueue|pilot).
+- `intake_urls.py` — bulk manual URL intake (--file, --enqueue optional).

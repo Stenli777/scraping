@@ -17,6 +17,7 @@ from app.models.source_directory import SourceDirectory
 from app.services.discovery_extractors import discover_html_links, discover_sitemap_urls
 from app.services.pipeline_event_service import emit_pipeline_event
 from app.services.task_service import create_task
+from app.services.article_url_classifier import classify_article_url
 from app.services.url_normalizer import is_blocked, matches_patterns, normalize_url
 
 logger = logging.getLogger(__name__)
@@ -139,6 +140,11 @@ def _process_candidate(
                     status=DiscoveredUrlStatus.BLOCKED.value,
                 )
             )
+        return
+
+    article_cls = classify_article_url(normalized)
+    if "autobit24.ru" in normalized.lower() and not article_cls.is_article:
+        result.blocked += 1
         return
 
     if directory.allow_patterns_json and not matches_patterns(

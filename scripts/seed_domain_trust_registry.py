@@ -10,6 +10,8 @@ SEEDS = [
     ("saltpro.ru", 78, "high"),
     ("www.saltpro.ru", 78, "high"),
     ("crmflow24.ru", 70, "medium"),
+    ("autobit24.ru", 70, "high"),
+    ("www.autobit24.ru", 70, "high"),
 ]
 
 db = SessionLocal()

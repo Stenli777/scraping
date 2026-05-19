@@ -1603,3 +1603,7 @@ router.include_router(analytics_workflow_router)
 from app.admin.pilot_routes import router as pilot_admin_router
 
 router.include_router(pilot_admin_router)
+
+
+from app.admin.manual_url_routes import router as manual_url_router
+router.include_router(manual_url_router)

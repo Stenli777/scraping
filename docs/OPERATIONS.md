@@ -333,3 +333,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-produc
 - Production Pilot block on `/admin/operations` with active pilots and progress.
 - **4T:** first 5 pilot run — 1 item (doc #4); discovery needed for 4 more; `run_pilot_first5_check.py`.
 - **4U:** trusted discovery → manual enqueue → pipeline; pilot fill 2/5; see PROJECT_LOG.
+- **4V:** autobit24-blog discovery + `scripts/intake_urls.py` for trusted manual URLs.

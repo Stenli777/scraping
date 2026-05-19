@@ -7,6 +7,7 @@ from app.admin.routes import router as admin_router
 from app.api.enrichment_jobs import router as enrichment_jobs_router
 from app.api.editorial import router as editorial_router
 from app.api.discovery import router as discovery_router
+from app.api.manual_urls import router as manual_urls_router
 from app.api.documents import router as documents_router
 from app.api.health import router as health_router
 from app.api.hermes import router as hermes_router
@@ -77,6 +78,7 @@ app.include_router(pilots_router)
 app.include_router(automation_router)
 app.include_router(system_router)
 app.include_router(discovery_router)
+app.include_router(manual_urls_router)
 app.include_router(llm_router)
 app.include_router(admin_router)
 

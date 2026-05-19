@@ -381,3 +381,12 @@
 - **Исключено:** doc #8 thin rewrite (452 chars) — убран из pilot; test URLs; spam/example; quality_blocked discovery rows.
 - **Fix:** `detect_test_document` — `debug`/`mock` только в title/slug; pilot relevance exception при review take + CRM topic + rel≥50; `find_safe_doc` расширен.
 - **До 5/5:** нужны ещё 3 сильных статьи (discovery даёт мало article URL — много blocked /tag /users).
+## 2026-05-19 07:28 UTC — этап 4V (autobit24 + manual URL intake)
+
+- **Source:** `autobit24-blog` (#4) `https://autobit24.ru/blog/`, trust autobit24.ru score 70.
+- **Discovery:** 8 new article URLs, 12 blocked (category/listing), 4 enqueued (tasks 14–17).
+- **Manual intake:** API `POST /api/manual-urls`, `/api/manual-urls/bulk`; admin `/admin/manual-urls`; script `scripts/intake_urls.py`.
+- **Article classifier:** `article_url_classifier.py` — autobit24 `/blog/<slug>` high likelihood; categories blocked.
+- **Doc #5:** editorial → ready_to_publish; RC #8 **qa_passed** (score 79).
+- **Pilot:** 2/5 stable (#4 draft CRMFlow24, #5 RC qa_passed); autobit pipeline in progress (LLM queue).
+- **Excluded:** autobit categories, monitor-crm transfer (quality_blocked), thin/off-topic from 4U.

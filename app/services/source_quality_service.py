@@ -24,6 +24,7 @@ from app.models.discovered_url import DiscoveredUrl
 from app.models.domain_trust_registry import DomainTrustRegistry
 from app.models.parsed_document import ParsedDocument
 from app.models.source_quality_score import SourceQualityScore
+from app.services.article_url_classifier import classify_article_url
 from app.services.url_normalizer import normalize_url
 
 logger = logging.getLogger(__name__)
@@ -319,7 +320,10 @@ def score_discovered_url(
     title = record.title or ""
 
     trust = get_domain_trust_score(db, domain, record.project_id)
+    article_cls = classify_article_url(record.url)
     sig = analyze_signals(url=record.url, title=title, text=text, domain=domain)
+    if not article_cls.is_article:
+        sig.path_junk = True
     sig.fetch_ok = bool(text)
     scored = score_signals(sig, trust_score=trust, title=title)
     dup_risk, dup_warn = compute_duplicate_risk(

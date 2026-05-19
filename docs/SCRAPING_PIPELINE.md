@@ -233,3 +233,4 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 
 ### Release candidate gate
 Production publish should use release candidate; pipeline_events `stage=release_candidate`.
+- Manual intake: discovery_source=manual → quality → manual enqueue (same as discovery URLs).

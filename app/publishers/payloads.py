@@ -150,7 +150,9 @@ def build_article_v2_payload(
     quality_score = quality_meta.get("overall_score") or quality_meta.get("score")
 
     editorial_status = getattr(document, "editorial_status", None) or "generated"
-    if editorial_status == "approved":
+    if getattr(document, "approved_for_publish", False):
+        editorial_status = "ready_to_publish"
+    elif editorial_status == "approved":
         editorial_status = "ready_to_publish"
 
     source_url = document.source_url or ""
