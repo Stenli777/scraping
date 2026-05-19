@@ -301,3 +301,15 @@
 - **Не менялось:** routes, services, models, migrations, `action`/`method`/`name`/`value` форм, enum/status в БД
 - **Media duplicate:** вторая панель свёрнута в `<details>` legacy (формы сохранены)
 - **Проверки:** smoke detail PASS; curl 200 (doc 13, RC 9, task 17); marker grep PASS
+
+---
+
+## 2026-05-19 — Admin UI: hybrid operator workflow sidebar + onboarding
+
+- **Ветка:** `admin-ui-sidebar-workflow-hybrid` (от `ad611b4` master)
+- **Почему не merge `admin-ui-operator-workflow` as-is:** ветка на `b150174`, без detail clarity; блок «Служебное» ~20 ссылок; конфликты base.html/admin.css
+- **Взято из `203248a` (идеи):** pipeline groups 1–4, dashboard «С чего начать», next-step на 6 страницах, CSS workflow
+- **Гибрид sidebar:** 9 групп (Обзор, 1–4, Диагностика, Качество и медиа, LLM, Организация/справка); 40 nav_link; href без изменений
+- **Не менялось:** routes, services, models, workers, API; form attributes; detail operator clarity
+- **Docs:** docs/admin-operator-workflow.md
+- **Следующий шаг:** browser QA; merge в master после ручной проверки

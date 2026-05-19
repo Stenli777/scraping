@@ -890,3 +890,75 @@ pre.content.code-block {
   overflow-x: auto;
   max-width: 100%;
 }
+/* --- Operator workflow hybrid (admin-ui-sidebar-workflow-hybrid) --- */
+.workflow-panel h2 {
+  margin-top: 0;
+}
+.workflow-steps {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 900px) {
+  .workflow-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .workflow-steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.workflow-step {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.workflow-step-number {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 50%;
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+.workflow-step-body {
+  min-width: 0;
+}
+.workflow-step-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.workflow-step-meta {
+  margin: 0.5rem 0 0.65rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.next-step {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-subtle);
+  font-size: 0.92rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.next-step strong {
+  font-weight: 600;
+}
+.admin-section-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+}
