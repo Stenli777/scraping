@@ -63,3 +63,6 @@ Public publication confirmation + post-publish tracking. Не реализова
 - **4T:** practical pilot execution; dashboard validated with real draft.
 - **4U:** trusted source expansion; pilot 2/5 operational.
 - **4V:** manual trusted URL intake + autobit24 source.
+
+### 4W (2026-05-19) — stabilization
+Reconciliation UI (in master), Autobit24 pipeline audit, CLIProxy 429/400 hardening, pilot next_action fix for approved RC.

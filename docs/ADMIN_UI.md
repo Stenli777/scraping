@@ -177,3 +177,6 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 - `/admin/analytics-ready`, `/admin/publications/{id}/analytics/import`, performance history on publication detail.
 - `/admin/pilots`, `/admin/pilots/{id}` — progress, items, suggested candidates, safe action links.
 - `/admin/manual-urls` — paste URLs for intake + optional enqueue.
+
+## 4W — publish failure badges
+- `/admin/publish-runs`, `/admin/failed-items`: badges `historical env`, `test target` для старых token/env ошибок.

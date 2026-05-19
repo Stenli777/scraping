@@ -334,3 +334,13 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-produc
 - **4T:** first 5 pilot run — 1 item (doc #4); discovery needed for 4 more; `run_pilot_first5_check.py`.
 - **4U:** trusted discovery → manual enqueue → pipeline; pilot fill 2/5; see PROJECT_LOG.
 - **4V:** autobit24-blog discovery + `scripts/intake_urls.py` for trusted manual URLs.
+
+## Historical / test publish failures (4W)
+
+Старые `failed_retryable` publish runs с `Env variable … is not set` — **не production blocker**:
+- Run **#17** — до настройки `CRMFLOW24_PUBLISH_TOKEN` (target `crmflow24-mock-v2`).
+- Run **#23** — тестовая цель `crmflow24-test-bad-token` (disabled).
+
+В admin (`/admin/publish-runs`, `/admin/failed-items`) отображаются badges: `historical env`, `test target`.
+
+CLIProxy **429** — rate limit, retry с backoff. **400** на rewrite — часто переполнение prompt; rewrite обрезается до 12k символов (`input_truncated` в metadata).

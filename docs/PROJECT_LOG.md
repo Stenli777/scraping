@@ -330,3 +330,49 @@
 elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n) + next-step (hybrid), русский next-step на RC list
 - **Не менялось:** routes, services, models, workers, API; form action/method/name/value
 - **Smoke:** run_all.py PASS после обоих merge
+
+---
+
+## 2026-05-19 — Этап 4W: reconciliation, Autobit24 audit, CLIProxy stabilization
+
+### UI/UX reconciliation
+- **master** @ `6e92b6f`+ (после 4V `9bdfe93`): UI/UX треки **влиты в master** (i18n workflow pages, hybrid sidebar, detail operator clarity, integrated merge `5bebf81`).
+- Незакоммиченных UI-файлов нет; отдельная ветка `admin-ui-sidebar-stage-1` (docs-only) не в production.
+- Admin smoke: ключевые страницы **200**; `/admin/tasks` и `/admin/documents` — **404** (нет list-route, ожидаемо; детали `/admin/tasks/{id}` работают).
+
+### Autobit24 source (id=4, autobit24-blog)
+- `allow_patterns`: `/blog/`; `block_patterns`: category/tag/author/…; **enabled**.
+- Discovery: 8 article URLs enqueued (tasks 14–17), 8 category URLs **blocked**.
+- **Parser:** `generic_article` достаточен (clean_text 38–46k); специализированный `autobit24_article` **не добавлялся**.
+- **Task 14 / doc #10:** rewrite падал на **400** (слишком длинный prompt ~24k chars) → fix truncation 12k; rewrite OK; quality **approved** (85).
+- **Task 15 / doc #11, 17 / doc #13:** done, rewrite есть; review/quality — вручную по необходимости.
+- **Task 16:** ошибка parse/meta `NoneType.strip` → fix `meta_content`; re-queued → worker.
+
+### CLIProxy errors
+- **429:** `RateLimitError`, exponential backoff 5/10/20s (cap 60s), retryable.
+- **400:** `BadRequestError`; rewrite input **truncate 12000** chars + log `input_truncated`.
+- Review уже ограничен 12k.
+
+### Publish runs historical
+- **#17** `crmflow24-mock-v2`: failed_retryable, `CRMFLOW24_PUBLISH_TOKEN` not set — **historical** (до env).
+- **#23** `crmflow24-test-bad-token`: target **disabled**, `SCRAP_BAD_TOKEN_PLACEHOLDER` — **test**, badge `test target` / `historical env` в admin.
+
+### Pilot
+- **2/5**; doc **#5** `next_action` → **publish_draft** (RC #8 approved; soft quality blocker игнорируется при RC approved).
+- Autobit docs **не в pilot** (нет RC / strategy / operator sign-off).
+
+### Код (коммиты 4W)
+- `app/llm/exceptions.py`, `client.py` — 429/400 classification + cooldown
+- `app/services/llm_tasks.py` — rewrite truncation
+- `app/services/pilot_service.py` — RC approved → skip quality next_action
+- `app/services/publish_failure_labels.py`, admin badges
+- `app/parsers/utils.py` — safe meta_content
+
+### Не делали
+- auto/public publish, wide crawl, CRMFlow24/Hermes/cliproxyapi changes, autobit24_article parser, pilot fill «любой ценой».
+
+### Следующие ручные шаги
+1. Doc #4 — public publish в CRMFlow24 → check-public-status.
+2. Doc #5 — publish_draft по решению оператора (RC approved).
+3. Autobit #11/#13 — review + quality; при готовности — RC + pilot review.
+4. Doc #10 — strategy/topics/RC перед pilot.

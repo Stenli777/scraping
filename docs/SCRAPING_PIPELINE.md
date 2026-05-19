@@ -234,3 +234,8 @@ Guarantees: core pipeline never waits on quality scoring; URLs never deleted.
 ### Release candidate gate
 Production publish should use release candidate; pipeline_events `stage=release_candidate`.
 - Manual intake: discovery_source=manual → quality → manual enqueue (same as discovery URLs).
+
+## 4W — Autobit24 (2026-05-19)
+- Source directory `autobit24-blog` (id=4): discovery + manual intake; parser `generic_article`.
+- Rewrite failures on long articles: truncate input 12k chars before CLIProxy (`llm_tasks.REWRITE_MAX_CONTENT_CHARS`).
+- See `docs/PROJECT_LOG.md` этап 4W.

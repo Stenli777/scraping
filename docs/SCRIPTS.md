@@ -84,3 +84,7 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 - `run_pilot_first5_check.py` — read-only pilot report; `--refresh` updates statuses.
 - Discovery: `run_discovery_test.py`; ops `/tmp/run_4u_ops.py` (discover|enqueue|pilot).
 - `intake_urls.py` — bulk manual URL intake (--file, --enqueue optional).
+
+## 4W audit (ops, on-server)
+- `/tmp/4w_full_audit.py`, `/tmp/4w_ops.py` — одноразовые; удалять после ops.
+- Регрессия: `scripts/run_pilot_first5_check.py --refresh`, `scripts/smoke/run_all.py`.
