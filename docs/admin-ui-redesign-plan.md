@@ -1,11 +1,27 @@
 # Scrap Admin — план визуального редизайна
 
-> Документ подготовлен **2026-05-19** (этап: аудит + план, **без изменений кода**).  
-> **Этап 1 выполнен** (ветка `admin-ui-sidebar-stage-1`, 2026-05-19): sidebar в `base.html` + `admin.css`.  
+> Документ подготовлен **2026-05-19** (этап: аудит + план).  
+> **Этап 1 выполнен** (ветка `admin-ui-sidebar-stage-1`, commit `f69e118`, 2026-05-19): sidebar в `base.html` + `admin.css`.  
+> **Следующий этап:** Этап 2 — UI kit (кнопки, табы, таблицы, бейджи).  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
 ---
+
+## Дорожная карта UI/UX (8 этапов)
+
+| Этап | Название | Scope | Статус |
+|------|----------|-------|--------|
+| 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`) |
+| 2 | UI kit | `admin.css`, optional `_ui_macros.html` | Следующий |
+| 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | Запланирован |
+| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | Запланирован |
+| 5 | Help-блоки | P0/P1 страницы | Запланирован |
+| 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |
+| 7 | High-risk точечно | document detail, RC detail, revisions | Запланирован |
+| 8 | Финальная полировка | mobile, a11y, active states, legacy CSS cleanup | Запланирован |
+
+**Примечание:** Scrap admin слушает порт **8800** (не 8000 — там Hermes). Editorial route: `/admin/editorial-queue` (не `/admin/editorial`).
 
 ## Цели
 
@@ -402,11 +418,11 @@ Scrap Admin (brand → /admin)
 # Lint (если установлен ruff в venv)
 .venv/bin/ruff check app/admin
 
-# Ручная проверка admin (curl)
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/admin
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/admin/tasks/new
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/admin/discovered-urls
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/admin/editorial-queue
+# Ручная проверка admin (curl) — Scrap на порту 8800
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8800/admin
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8800/admin/tasks/new
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8800/admin/discovered-urls
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8800/admin/editorial-queue
 
 # Логи после smoke
 tail -50 storage/logs/app.log
@@ -424,4 +440,4 @@ tail -50 storage/logs/app.log
 
 ## Следующий промпт (рекомендация)
 
-**Этап 1 implementation:** изменить только `base.html` + `admin.css`, внедрить sidebar по структуре выше, сохранить все href, прогнать smoke checklist, без правок `routes.py` и child templates кроме optional active-nav helper.
+**Этап 2 — UI kit:** новая ветка `admin-ui-kit-stage-2`; scope `admin.css` + optional `_ui_macros.html`; унификация кнопок, табов, таблиц, бейджей; без правок POST/forms/routes.

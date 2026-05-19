@@ -413,3 +413,16 @@
 - **Результат:** GET 200; sidebar рендерится; form action=/admin/tasks/new без изменений
 - **Ошибки:** run_all git_clean — ожидаемо до commit
 - **Следующий шаг:** Этап 2 — UI kit (кнопки, табы, таблицы, бейджи)
+
+---
+
+## 2026-05-19 08:32 UTC — Admin UI Этап 1: финализация docs + smoke
+
+- **Ветка:** admin-ui-sidebar-stage-1
+- **Commits:** f69e118 (sidebar layout), 47e6024 (docs inventory + ADMIN_UI links)
+- **Что изменено:** Закрыты docs-хвосты этапа 1; обновлена дорожная карта 8 этапов в admin-ui-redesign-plan.md; порт 8800 зафиксирован в документации
+- **Файлы:** docs/ADMIN_UI.md, docs/admin-ui-routes-inventory.md, docs/admin-ui-redesign-plan.md, docs/PROJECT_LOG.md
+- **Команды:** check_health PASS; run_all PASS (all smoke checks, git clean); curl GET :8800/admin, /tasks/new, /discovered-urls, /editorial-queue — 200
+- **Результат:** git tree clean; формы/action URLs не менялись; /admin/editorial не используется
+- **Ошибки:** нет
+- **Следующий шаг:** merge admin-ui-sidebar-stage-1 в master после ручной визуальной проверки; затем Этап 2 (ветка admin-ui-kit-stage-2)
