@@ -26,21 +26,23 @@
           <div class="nav-group-label">Обзор</div>
           {{ nav_link('/admin', 'Обзор') }}
           {{ nav_link('/admin/failed-items', 'Сбои и зависшие') }}
-          {{ nav_link('/admin/operations', 'Операции') }}
-          {{ nav_link('/admin/system', 'Система') }}
         </section>
 
         <section class="nav-group">
-          <div class="nav-group-label">Импорт и discovery</div>
+          <div class="nav-group-label admin-section-label">1. Импорт</div>
           {{ nav_link('/admin/tasks/new', 'Добавить URL') }}
           {{ nav_link('/admin/manual-urls', 'Ручной импорт URL') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label admin-section-label">2. Discovery</div>
           {{ nav_link('/admin/source-directories', 'Источники') }}
           {{ nav_link('/admin/discovered-urls', 'Найденные URL') }}
           {{ nav_link('/admin/source-quality', 'Качество источников') }}
         </section>
 
         <section class="nav-group">
-          <div class="nav-group-label">Очереди и редактура</div>
+          <div class="nav-group-label admin-section-label">3. Редактура</div>
           {{ nav_link('/admin/review-queue', 'Очередь проверки') }}
           {{ nav_link('/admin/editorial-queue', 'Редактура') }}
           {{ nav_link('/admin/draft-reviews', 'Проверка черновиков') }}
@@ -48,27 +50,30 @@
         </section>
 
         <section class="nav-group">
-          <div class="nav-group-label">Качество</div>
-          {{ nav_link('/admin/quality-scores', 'Оценки качества') }}
-          {{ nav_link('/admin/canonical-groups', 'Канонические группы') }}
-        </section>
-
-        <section class="nav-group">
-          <div class="nav-group-label">Медиа и обогащение</div>
-          {{ nav_link('/admin/media', 'Медиа') }}
-          {{ nav_link('/admin/media-jobs', 'Медиа-задачи') }}
-          {{ nav_link('/admin/enrichment-dashboard', 'Обогащение') }}
-          {{ nav_link('/admin/enrichment-jobs', 'Задачи обогащения') }}
-        </section>
-
-        <section class="nav-group">
-          <div class="nav-group-label">Публикация</div>
+          <div class="nav-group-label admin-section-label">4. Публикация</div>
           {{ nav_link('/admin/publish-targets', 'Цели публикации') }}
           {{ nav_link('/admin/publish-runs', 'Запуски публикации') }}
           {{ nav_link('/admin/publications', 'Публикации') }}
           {{ nav_link('/admin/analytics-ready', 'Готово к аналитике') }}
           {{ nav_link('/admin/analytics', 'Аналитика') }}
           {{ nav_link('/admin/pilots', 'Пилоты') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Диагностика</div>
+          {{ nav_link('/admin/operations', 'Операции') }}
+          {{ nav_link('/admin/system', 'Система') }}
+          {{ nav_link('/admin/pipeline-events', 'События pipeline') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Качество и медиа</div>
+          {{ nav_link('/admin/quality-scores', 'Оценки качества') }}
+          {{ nav_link('/admin/canonical-groups', 'Канонические группы') }}
+          {{ nav_link('/admin/media', 'Медиа') }}
+          {{ nav_link('/admin/media-jobs', 'Медиа-задачи') }}
+          {{ nav_link('/admin/enrichment-dashboard', 'Обогащение') }}
+          {{ nav_link('/admin/enrichment-jobs', 'Задачи обогащения') }}
         </section>
 
         <section class="nav-group">
@@ -80,17 +85,12 @@
         </section>
 
         <section class="nav-group">
-          <div class="nav-group-label">Организация контента</div>
+          <div class="nav-group-label">Организация / справка</div>
           {{ nav_link('/admin/projects', 'Проекты') }}
           {{ nav_link('/admin/campaigns', 'Кампании') }}
           {{ nav_link('/admin/clusters', 'Кластеры') }}
           {{ nav_link('/admin/automation', 'Автоматизация') }}
           {{ nav_link('/admin/automation-runs', 'Запуски автоматизации') }}
-        </section>
-
-        <section class="nav-group">
-          <div class="nav-group-label">Справка / API</div>
-          {{ nav_link('/admin/pipeline-events', 'События pipeline') }}
           {{ nav_link('/admin/settings', 'Настройки') }}
           {{ nav_link('/health', 'Health', true) }}
           {{ nav_link('/health/ready', 'Ready', true) }}
