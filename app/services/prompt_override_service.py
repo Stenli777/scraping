@@ -112,9 +112,65 @@ def get_effective_prompt_details(
         "preview_user": preview_user,
         "expected_variables": _expected_variables(key),
         "warnings": warnings,
+        "source_label_ru": {
+            "project_override": "Проектная версия",
+            "global": "Глобальный prompt",
+            "code_fallback": "Fallback из кода",
+        }.get(source, source),
+        "fallback_notice": (
+            "Глобальный prompt template не найден. Используется code fallback."
+            if source == "code_fallback" and _template(db, key) is None
+            else (
+                "Для этого агента используется fallback prompt из кода."
+                if source == "code_fallback"
+                else None
+            )
+        ),
     }
 
 
+
+
+def get_override_edit_defaults(db: Session, project_id: int, key: str) -> dict[str, Any]:
+    """Form defaults for project agent editor."""
+    effective = get_effective_prompt_details(db, key, project_id=project_id)
+    override = get_project_override(db, project_id, key)
+    system = effective.get("system") or ""
+    user = effective.get("user_template") or ""
+    version = ""
+    notes = ""
+    fallback_notice: str | None = None
+    template = _template(db, key)
+    if effective.get("source") == "code_fallback":
+        if template is None:
+            fallback_notice = (
+                "Глобальный prompt template не найден. Используется code fallback."
+            )
+        elif not override or not override.enabled:
+            fallback_notice = (
+                "Для этого агента пока используется fallback prompt из кода. "
+                "Проектная настройка ещё не создана."
+            )
+    if override and override.enabled:
+        from app.models.prompt_version import PromptVersion
+
+        pv = db.get(PromptVersion, override.prompt_version_id)
+        if pv:
+            version = pv.version
+            notes = pv.notes or ""
+            try:
+                data = json.loads(pv.content_md)
+                system = data.get("system", system)
+                user = data.get("user", user)
+            except json.JSONDecodeError:
+                pass
+    return {
+        "system": system,
+        "user": user,
+        "version": version,
+        "notes": notes,
+        "fallback_notice": fallback_notice,
+    }
 def create_project_override_version(
     db: Session,
     project_id: int,
