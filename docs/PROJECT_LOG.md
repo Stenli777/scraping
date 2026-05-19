@@ -263,3 +263,16 @@
 - **Smoke ID:** document **13** (и любой существующий id из БД)
 - **Restart:** `systemctl restart scrap-api.service` (если uvicorn держал старый код)
 - **Следующий шаг:** merge Stage 4C → master; финальный Batch 5 high-risk display-only polish
+
+---
+
+## 2026-05-19 — Admin UI Batch 5: high-risk detail pages display-only polish
+
+- **Ветка:** `admin-ui-final-high-risk-polish-stage-5`
+- **Base commit:** `7c51b6d` (merge Stage 4C document detail fix)
+- **Что изменено:** display-only русификация `document_detail.html`, `release_candidate_detail.html`; help-блоки; секции RC/Canonical перенесены внутрь `{% block content %}` (structural, без изменения forms)
+- **Файлы:** `document_detail.html`, `release_candidate_detail.html`, docs
+- **Не менялось:** routes, services, models, CSS (не требовался), `action`/`method`/`name`/`value` форм
+- **Команды:** smoke PASS; curl `/admin/documents/13`, `/admin/release-candidates/9` → 200
+- **Restart:** не потребовался (только templates)
+- **Следующий шаг:** merge Batch 5 в master; финальный manual browser check; закрытие UI/UX-задачи

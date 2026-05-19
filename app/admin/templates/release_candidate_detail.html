@@ -1,92 +1,103 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Release candidate #{{ detail.id }}</h1>
-<p>Document <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a>
-  | Revision #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">stale</span>{% endif %}
-  | Status <code>{{ detail.status }}</code> | QA score <strong>{{ detail.qa_score }}</strong>
-  {% if public_info.analytics_ready %}<span class="badge status-done">analytics ready</span>{% endif %}
+<div class="page-header">
+  <h1 class="page-title">Release candidate #{{ detail.id }}</h1>
+  <p class="page-subtitle">Карточка RC: QA, проверка черновика, публикация.</p>
+</div>
+
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>POST-действия и имена полей формы не меняются.</p>
+</aside>
+
+<p>Документ <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a>
+  | Ревизия #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">устарела</span>{% endif %}
+  | Статус <code>{{ detail.status }}</code> | QA <strong>{{ detail.qa_score }}</strong>
+  {% if public_info.analytics_ready %}<span class="badge status-done">analytics готов</span>{% endif %}
 </p>
 
-<h2>Blocking issues</h2>
+<h2>Блокирующие проблемы</h2>
 {% if detail.blocking_issues %}
 <ul class="warnings">{% for b in detail.blocking_issues %}<li>{{ b.label }}: {{ b.detail or b.id }}</li>{% endfor %}</ul>
-{% else %}<p>None</p>{% endif %}
+{% else %}<p>Нет</p>{% endif %}
 
-<h2>Warnings</h2>
+<h2>Предупреждения</h2>
 {% if detail.warnings %}
 <ul>{% for w in detail.warnings %}<li>{{ w.label }}: {{ w.detail or w.id }}</li>{% endfor %}</ul>
-{% else %}<p>None</p>{% endif %}
+{% else %}<p>Нет</p>{% endif %}
 
-<h2>Checklist</h2>
-<details><summary>Show checklist</summary>
+<h2>Чеклист</h2>
+<details><summary>Показать чеклист</summary>
 <pre>{{ detail.checklist | tojson(indent=2) }}</pre>
 </details>
 
-<h2>Actions</h2>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/run-qa" style="display:inline"><button class="btn">Run QA</button></form>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/approve" style="display:inline"><button class="btn">Approve</button></form>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/reject" style="display:inline"><button class="btn">Reject</button></form>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/publish-draft" style="display:inline"><button class="btn">Publish draft</button></form>
-<a class="btn" href="/api/release-candidates/{{ detail.id }}/payload-preview" target="_blank">View payload preview (JSON)</a>
-<a class="btn" href="/api/publish-targets" target="_blank">Publish targets health</a>
+<h2>Действия</h2>
+<div class="btn-row">
+<form method="post" action="/admin/release-candidates/{{ detail.id }}/run-qa" style="display:inline"><button class="btn">Запустить QA</button></form>
+<form method="post" action="/admin/release-candidates/{{ detail.id }}/approve" style="display:inline"><button class="btn">Одобрить</button></form>
+<form method="post" action="/admin/release-candidates/{{ detail.id }}/reject" style="display:inline"><button class="btn">Отклонить</button></form>
+<form method="post" action="/admin/release-candidates/{{ detail.id }}/publish-draft" style="display:inline"><button class="btn">Опубликовать черновик</button></form>
+<a class="btn" href="/api/release-candidates/{{ detail.id }}/payload-preview" target="_blank">Превью payload (JSON)</a>
+<a class="btn" href="/api/publish-targets" target="_blank">Состояние publish targets</a>
+</div>
 
 {% if detail.publish_runs %}
-<h2>Publish runs</h2>
+<h2>Запуски публикации</h2>
 <ul>{% for r in detail.publish_runs %}<li>#{{ r.id }} — {{ r.status }} (dry_run={{ r.dry_run }})</li>{% endfor %}</ul>
 {% endif %}
 
-<section class="draft-review-panel">
-<h2>CRMFlow24 Draft Review</h2>
+<section class="draft-review-panel panel">
+<h2>CRMFlow24 — проверка черновика</h2>
 {% if draft_review.draft_url %}
 <p>Draft URL: <a href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
 {% else %}
-<p class="warn-box">No draft URL on publication / publish run yet.</p>
+<p class="warn-box">Draft URL ещё нет (publication / publish run).</p>
 {% endif %}
 
-<p>Review status: <code>{{ draft_review.draft_review_status or 'pending' }}</code>
-  {% if draft_review.draft_reviewed_at %} | reviewed {{ draft_review.draft_reviewed_at }}{% endif %}</p>
+<p>Статус проверки: <code>{{ draft_review.draft_review_status or 'pending' }}</code>
+  {% if draft_review.draft_reviewed_at %} | проверено {{ draft_review.draft_reviewed_at }}{% endif %}</p>
 
 {% if draft_review.latest_feedback %}
-<p>Latest feedback #{{ draft_review.latest_feedback.id }} — <code>{{ draft_review.latest_feedback.review_status }}</code></p>
+<p>Последний feedback #{{ draft_review.latest_feedback.id }} — <code>{{ draft_review.latest_feedback.review_status }}</code></p>
 {% endif %}
 
 <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/notes">
-  <label>Reviewer <input name="reviewer_name" value="{{ draft_review.latest_feedback.reviewer_name if draft_review.latest_feedback else 'operator' }}"></label>
-  <label>Notes <textarea name="notes" rows="3">{{ draft_review.latest_feedback.notes if draft_review.latest_feedback else '' }}</textarea></label>
-  <label>Required changes <input name="required_changes" placeholder="comma-separated"></label>
+  <label>Ревьюер <input name="reviewer_name" value="{{ draft_review.latest_feedback.reviewer_name if draft_review.latest_feedback else 'operator' }}"></label>
+  <label>Заметки <textarea name="notes" rows="3">{{ draft_review.latest_feedback.notes if draft_review.latest_feedback else '' }}</textarea></label>
+  <label>Обязательные правки <input name="required_changes" placeholder="через запятую"></label>
   <fieldset>
-    <legend>Checklist</legend>
-    <label><input type="checkbox" name="checked_public_visibility" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_public_visibility %}checked{% endif %}> Public visibility checked</label>
-    <label><input type="checkbox" name="checked_seo" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_seo %}checked{% endif %}> SEO checked</label>
-    <label><input type="checkbox" name="checked_content" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_content %}checked{% endif %}> Content checked</label>
-    <label><input type="checkbox" name="checked_media" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_media %}checked{% endif %}> Media checked</label>
+    <legend>Чеклист</legend>
+    <label><input type="checkbox" name="checked_public_visibility" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_public_visibility %}checked{% endif %}> Публичная видимость проверена</label>
+    <label><input type="checkbox" name="checked_seo" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_seo %}checked{% endif %}> SEO проверен</label>
+    <label><input type="checkbox" name="checked_content" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_content %}checked{% endif %}> Контент проверен</label>
+    <label><input type="checkbox" name="checked_media" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_media %}checked{% endif %}> Медиа проверено</label>
   </fieldset>
-  <button class="btn" type="submit">Save notes</button>
+  <button class="btn" type="submit">Сохранить заметки</button>
 </form>
 
-<div style="margin:1rem 0">
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn">Mark accepted</button></form>
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn">Mark needs edits</button></form>
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn">Mark rejected</button></form>
+<div class="btn-row" style="margin:1rem 0">
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn">Принят</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn">Нужны правки</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn">Отклонить</button></form>
 {% if draft_review.publication_id %}
 <form method="post" action="/admin/publications/{{ draft_review.publication_id }}/check-visibility" style="display:inline;margin-left:0.5rem">
-  <button class="btn" type="submit">Check public visibility (legacy)</button>
+  <button class="btn" type="submit">Проверить видимость (legacy)</button>
 </form>
 {% endif %}
 </div>
 
 {% if draft_review.visibility %}
-<h3>Public visibility (legacy check)</h3>
-<p>Checked at: {{ draft_review.visibility.checked_at }}</p>
+<h3>Публичная видимость (legacy)</h3>
+<p>Проверено: {{ draft_review.visibility.checked_at }}</p>
 <ul>
-  <li>Blog: {% if draft_review.visibility.visible_in_blog %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
-  <li>Sitemap: {% if draft_review.visibility.visible_in_sitemap %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
-  <li>RSS: {% if draft_review.visibility.visible_in_rss %}<strong class="warn-box">VISIBLE</strong>{% else %}not visible{% endif %}</li>
+  <li>Блог: {% if draft_review.visibility.visible_in_blog %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
+  <li>Sitemap: {% if draft_review.visibility.visible_in_sitemap %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
+  <li>RSS: {% if draft_review.visibility.visible_in_rss %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
 </ul>
 {% endif %}
 
 {% if draft_review.feedback_history %}
-<h3>Feedback history</h3>
+<h3>История feedback</h3>
 <ul>
   {% for fb in draft_review.feedback_history %}
   <li>#{{ fb.id }} — <code>{{ fb.review_status }}</code> — {{ fb.created_at }}</li>
@@ -94,20 +105,20 @@
 </ul>
 {% endif %}
 
-<h2>Public publication (4Q)</h2>
-<p>Visibility: <code>{{ public_info.public_visibility_status or 'unknown' }}</code>
+<h2>Публичная публикация (4Q)</h2>
+<p>Видимость: <code>{{ public_info.public_visibility_status or 'unknown' }}</code>
   | Candidate: <code>{{ detail.public_status or 'unknown' }}</code>
-  {% if public_info.analytics_ready %}| <span class="badge status-done">analytics ready</span>{% endif %}
+  {% if public_info.analytics_ready %}| <span class="badge status-done">analytics готов</span>{% endif %}
 </p>
 {% if public_info.public_url %}
 <p>Public URL: <a href="{{ public_info.public_url }}" target="_blank" rel="noopener">{{ public_info.public_url }}</a></p>
 {% endif %}
 {% if public_info.publication_id %}
-<div style="margin:1rem 0">
-  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/check-public-status" style="display:inline"><button class="btn">Check public status</button></form>
-  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/confirm-public" style="display:inline"><button class="btn">Confirm public</button></form>
-  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/mark-not-public" style="display:inline"><button class="btn">Mark not public</button></form>
-  <a class="btn" href="/admin/publications/{{ public_info.publication_id }}">Publication detail</a>
+<div class="btn-row" style="margin:1rem 0">
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/check-public-status" style="display:inline"><button class="btn">Проверить публичный статус</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/confirm-public" style="display:inline"><button class="btn">Подтвердить публикацию</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/mark-not-public" style="display:inline"><button class="btn">Не опубликовано</button></form>
+  <a class="btn" href="/admin/publications/{{ public_info.publication_id }}">Карточка публикации</a>
 </div>
 {% endif %}
 </section>

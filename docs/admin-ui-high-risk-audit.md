@@ -218,6 +218,7 @@ grep -nE '<form|action=|method=|name=|value=|button|submit|href=' app/admin/temp
 
 ## Audit metadata
 
+- **Batch 5 completed:** 2026-05-19 — display-only RU polish `document_detail.html`, `release_candidate_detail.html`; RC/Canonical внутри content block.
 - **Дата аудита (UTC):** 2026-05-19
 - **Аудитор:** Cursor agent (Batch 4 audit-only)
 - **Изменения кода в Batch 4:** нет (только этот документ + PROJECT_LOG + redesign-plan)
