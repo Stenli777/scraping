@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+{% set nav = nav or {} %}
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+</div>
+
+<div class="panel">
+  <h1>Документы проекта — {{ project.name }}</h1>
+  <form method="get" class="form-inline form-row form-row-3">
+    <label>Editorial <input name="status" value="{{ filter_status }}"></label>
+    <label>Публикация
+      <select name="has_publication">
+        <option value="">—</option>
+        <option value="yes" {% if filter_publication == 'yes' %}selected{% endif %}>есть</option>
+        <option value="no" {% if filter_publication == 'no' %}selected{% endif %}>нет</option>
+      </select>
+    </label>
+    <label>Пилот
+      <select name="in_pilot">
+        <option value="">—</option>
+        <option value="yes" {% if filter_pilot == 'yes' %}selected{% endif %}>в пилоте</option>
+        <option value="no" {% if filter_pilot == 'no' %}selected{% endif %}>не в пилоте</option>
+      </select>
+    </label>
+    <button type="submit" class="btn">Фильтр</button>
+  </form>
+</div>
+
+<div class="panel table-scroll inner-scroll">
+<table class="table compact">
+  <thead>
+    <tr>
+      <th>ID</th><th>Заголовок</th><th>Review</th><th>Quality</th><th>Editorial</th><th>Publication</th><th>Пилот</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in documents %}
+    <tr>
+      <td>{{ d.id }}</td>
+      <td class="break-anywhere">{{ d.title }}</td>
+      <td>{{ d.review_status }}</td>
+      <td>{{ d.quality_status }}</td>
+      <td><code>{{ d.editorial_status }}</code></td>
+      <td>{{ d.publication_status }}</td>
+      <td>{{ "да" if d.in_pilot else "нет" }}</td>
+      <td><a class="btn" href="/admin/documents/{{ d.id }}">Открыть</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="muted">Нет документов</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+</div>
+{% endblock %}

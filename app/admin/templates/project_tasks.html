@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+{% set nav = nav or {} %}
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+</div>
+
+<div class="panel">
+  <h1>Задачи проекта — {{ project.name }}</h1>
+  <form method="get" class="form-inline">
+    <label>Статус <input name="status" value="{{ filter_status }}" placeholder="done, failed…"></label>
+    <button type="submit" class="btn">Фильтр</button>
+  </form>
+</div>
+
+<div class="panel table-scroll inner-scroll">
+<table class="table compact">
+  <thead>
+    <tr><th>ID</th><th>Статус</th><th>URL</th><th>Парсер</th><th>Документ</th><th>Создана</th><th>Обновлена</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for t in tasks %}
+    <tr>
+      <td>{{ t.id }}</td>
+      <td><code>{{ t.status }}</code></td>
+      <td class="break-anywhere">{{ t.source_url[:80] }}{% if t.source_url|length > 80 %}…{% endif %}</td>
+      <td>{{ t.parser }}</td>
+      <td>{% if t.document_id %}<a href="/admin/documents/{{ t.document_id }}">#{{ t.document_id }}</a>{% else %}—{% endif %}</td>
+      <td class="nowrap">{{ t.created_at }}</td>
+      <td class="nowrap">{{ t.updated_at }}</td>
+      <td><a class="btn" href="/admin/tasks/{{ t.id }}">Открыть</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="muted">Нет задач</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+</div>
+{% endblock %}
