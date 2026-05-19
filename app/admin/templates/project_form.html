@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+{% set nav = nav or {} %}
 {% if project and metrics %}
-<div class="panel meta">
-  <p>Задач: {{ metrics.tasks }} · Документов: {{ metrics.documents }} ·
-  <a href="/admin/projects/{{ project.id }}/agents">Агенты проекта</a></p>
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.projects_url or '/admin/projects' }}">← К списку проектов</a>
+  <a class="btn" href="{{ nav.agents_url or ('/admin/projects/' ~ project.id ~ '/agents') }}">Агенты проекта</a>
+  <a class="btn" href="{{ nav.tasks_url or ('/admin/projects/' ~ project.id ~ '/tasks') }}">Задачи проекта ({{ metrics.tasks }})</a>
+  <a class="btn" href="{{ nav.documents_url or ('/admin/projects/' ~ project.id ~ '/documents') }}">Документы проекта ({{ metrics.documents }})</a>
 </div>
 {% endif %}
 
-<form method="post" class="form panel">
+<form method="post" class="form panel form-compact">
   {% if errors %}
   <div class="alert-block" style="background:#fee;padding:0.75rem">
     {% for field, msg in errors.items() %}
@@ -16,30 +19,44 @@
   </div>
   {% endif %}
 
-  <label>Название <input name="name" value="{{ form.name }}" required></label>
-  <label>Slug <input name="slug" value="{{ form.slug }}" required></label>
-  <label>Домен (без https) <input name="domain" value="{{ form.domain }}" placeholder="crmflow24.ru"></label>
+  <div class="form-row form-row-4">
+    <label>Название <input name="name" value="{{ form.name }}" required></label>
+    <label>Slug <input name="slug" value="{{ form.slug }}" required></label>
+    <label>Домен (без https) <input name="domain" value="{{ form.domain }}" placeholder="crmflow24.ru"></label>
+    <label>Язык <input name="default_language" value="{{ form.default_language }}" required></label>
+  </div>
+  <div class="form-row form-row-2">
+    <label>Тональность <textarea name="tone_of_voice" rows="2">{{ form.tone_of_voice }}</textarea></label>
+    <label>Аудитория <textarea name="target_audience" rows="2">{{ form.target_audience }}</textarea></label>
+  </div>
   <label>Описание <textarea name="description" rows="2">{{ form.description }}</textarea></label>
-  <label>Язык <input name="default_language" value="{{ form.default_language }}" required></label>
   <label><input type="checkbox" name="enabled" {% if form.enabled %}checked{% endif %}> Проект включён</label>
 
   <h3>Профиль контента</h3>
-  <label>Тон <textarea name="tone_of_voice" rows="2">{{ form.tone_of_voice }}</textarea></label>
-  <label>Аудитория <textarea name="target_audience" rows="2">{{ form.target_audience }}</textarea></label>
+  <div class="form-row form-row-2">
+    <label>Разрешённые темы (JSON) <textarea name="allowed_topics_json" rows="3">{{ form.allowed_topics_json }}</textarea></label>
+    <label>Запрещённые темы (JSON) <textarea name="blocked_topics_json" rows="3">{{ form.blocked_topics_json }}</textarea></label>
+  </div>
   <label>Правила контента <textarea name="content_rules_md" rows="4">{{ form.content_rules_md }}</textarea></label>
   <label>Инструкции рерайта <textarea name="rewrite_instructions_md" rows="4">{{ form.rewrite_instructions_md }}</textarea></label>
   <label>Инструкции SEO <textarea name="seo_instructions_md" rows="3">{{ form.seo_instructions_md }}</textarea></label>
   <label>Инструкции рецензии <textarea name="review_instructions_md" rows="3">{{ form.review_instructions_md }}</textarea></label>
-  <label>Разрешённые темы (JSON) <textarea name="allowed_topics_json" rows="3">{{ form.allowed_topics_json }}</textarea></label>
-  <label>Запрещённые темы (JSON) <textarea name="blocked_topics_json" rows="3">{{ form.blocked_topics_json }}</textarea></label>
 
-  <button type="submit" class="btn primary">{{ submit_label }}</button>
-  <a class="btn" href="/admin/projects">Отмена</a>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">{{ submit_label }}</button>
+    <a class="btn" href="/admin/projects">Отмена</a>
+  </div>
 </form>
 
 {% if project %}
 <form method="post" action="/admin/projects/{{ project.id }}/disable" style="margin-top:1rem">
   <button type="submit" class="btn">Отключить проект</button>
 </form>
+<div class="admin-nav-block" style="margin-top:1.5rem">
+  <a class="btn" href="{{ nav.projects_url or '/admin/projects' }}">← К списку проектов</a>
+  <a class="btn" href="{{ nav.tasks_url or ('/admin/projects/' ~ project.id ~ '/tasks') }}">Задачи проекта</a>
+  <a class="btn" href="{{ nav.documents_url or ('/admin/projects/' ~ project.id ~ '/documents') }}">Документы проекта</a>
+  <a class="btn" href="{{ nav.agents_url or ('/admin/projects/' ~ project.id ~ '/agents') }}">Агенты проекта</a>
+</div>
 {% endif %}
 {% endblock %}

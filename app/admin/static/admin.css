@@ -962,3 +962,79 @@ pre.content.code-block {
   text-transform: uppercase;
   color: var(--sidebar-muted);
 }
+
+/* --- Stage 4Z: compact forms + inner scrollbars --- */
+.admin-nav-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.admin-nav-block.bottom {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+.form-compact .form-row {
+  display: grid;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.form-compact .form-row-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.form-compact .form-row-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.form-compact .form-row-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 900px) {
+  .form-compact .form-row-4,
+  .form-compact .form-row-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .form-compact .form-row-2,
+  .form-compact .form-row-3,
+  .form-compact .form-row-4 {
+    grid-template-columns: 1fr;
+  }
+}
+.form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-end;
+}
+textarea.agent-editor {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88rem;
+  min-height: 8rem;
+}
+.scroll-y,
+.prompt-preview,
+.version-list,
+.inner-scroll {
+  overflow-y: auto;
+  max-height: 22rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.scroll-y::-webkit-scrollbar,
+.prompt-preview::-webkit-scrollbar,
+.version-list::-webkit-scrollbar,
+.inner-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-y::-webkit-scrollbar-thumb,
+.prompt-preview::-webkit-scrollbar-thumb,
+.inner-scroll::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+.scroll-x {
+  overflow-x: auto;
+  max-width: 100%;
+}

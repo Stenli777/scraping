@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-<p><a class="btn" href="/admin/projects/{{ project.id }}/edit">← Проект {{ project.name }}</a></p>
+{% set nav = nav or {} %}
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+</div>
 <div class="panel help-block">
   <p>Переопределение промпта для этого проекта. Если выключено — используется глобальный агент.</p>
 </div>
+<div class="panel table-scroll inner-scroll">
 <table class="table">
   <thead>
     <tr><th>Агент</th><th>Режим</th><th>Эффективная версия</th><th></th></tr>
@@ -12,11 +17,16 @@
     {% for row in agents %}
     <tr>
       <td><strong>{{ row.meta.agent_name }}</strong><br><code>{{ row.meta.key }}</code></td>
-      <td>{% if row.uses_override %}<span class="badge">override</span>{% else %}глобальный{% endif %}</td>
+      <td>{% if row.uses_override %}<span class="badge">проектная версия</span>{% else %}глобальный{% endif %}</td>
       <td><code>{{ row.effective_version }}</code> ({{ row.effective_source }})</td>
       <td><a class="btn" href="/admin/projects/{{ project.id }}/agents/{{ row.meta.key }}">Настроить</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+</div>
 {% endblock %}
