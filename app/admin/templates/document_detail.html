@@ -14,7 +14,7 @@
         <li><strong>Задача:</strong> <a href="/admin/tasks/{{ document.task_id }}">#{{ document.task_id }}</a>{% if project %} · <strong>Проект:</strong> <a href="/admin/projects/{{ project.id }}">{{ project.slug }}</a>{% endif %}</li>
         <li><strong>Документ:</strong> #{{ document.id }} · <code>{{ document.editorial_status or '—' }}</code></li>
         {% if pipeline_summary %}
-        <li><strong>Pipeline (этапы):</strong>
+        <li><strong>Конвейер (этапы):</strong>
           Загрузка <code>{{ pipeline_summary.fetch }}</code>,
           Парсинг <code>{{ pipeline_summary.parse }}</code>,
           Очистка <code>{{ pipeline_summary.clean }}</code>,

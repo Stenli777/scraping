@@ -310,3 +310,4 @@
 - **Scope:** переводы и help/next-step на task_new, source_directories, discovered_urls, editorial_queue, release_candidates_list, publications, publication_detail, review_queue; правки document_detail/RC detail (display)
 - **Не менялось:** routes, services, models, form action/method/name/value
 - **Словарь:** `docs/admin-ui-i18n-workflow-pages.md`
+- **Smoke:** run_all.py PASS; ветка origin/admin-ui-i18n-workflow-pages
