@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="page-header">
+  <p class="page-subtitle">Опубликованные и черновые записи: статус, видимость, ссылки на CRM и публичный URL.</p>
+</div>
+
+<div class="table-scroll">
 <table class="table">
-  <thead><tr><th>ID</th><th>Doc</th><th>Pub status</th><th>Visibility</th><th>Analytics</th><th>Draft</th><th>Public</th><th></th></tr></thead>
+  <thead><tr><th>ID</th><th>Док.</th><th>Статус публ.</th><th>Видимость</th><th>Analytics</th><th>Черновик</th><th>Публичный</th><th></th></tr></thead>
   <tbody>
     {% for row in rows %}
     <tr>
@@ -12,11 +17,12 @@
       <td>{% if row.analytics_ready %}<span class="badge status-done">ready</span>{% else %}—{% endif %}</td>
       <td class="url">{% if row.record.external_url %}<a href="{{ row.record.external_url }}" target="_blank">admin</a>{% else %}—{% endif %}</td>
       <td class="url">{% if row.record.public_url %}<a href="{{ row.record.public_url }}" target="_blank">blog</a>{% else %}—{% endif %}</td>
-      <td><a href="/admin/publications/{{ row.record.id }}">view</a></td>
+      <td><a href="/admin/publications/{{ row.record.id }}">Открыть</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="8">No publication records yet.</td></tr>
+    <tr><td colspan="8">Нет записей публикации</td></tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

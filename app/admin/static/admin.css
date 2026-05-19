@@ -773,3 +773,13 @@ a:hover {
   font-size: 1.35rem;
   font-weight: 600;
 }
+
+/* --- Stage 4 Batch 2 helpers (i18n) --- */
+.log-block td.payload-block code {
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+.status-line {
+  margin: 0;
+  padding-left: 1.1rem;
+}

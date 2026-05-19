@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Draft review queue</h1>
-<p>Publications awaiting CRMFlow24 draft review (pending / needs edits).</p>
+<div class="page-header">
+  <h1 class="page-title">Проверка черновиков</h1>
+  <p class="page-subtitle">Публикации, ожидающие draft review в CRMFlow24 (pending / needs edits).</p>
+</div>
+
+<div class="table-scroll">
 <table class="table">
   <thead>
     <tr>
-      <th>Pub</th><th>Doc</th><th>Candidate</th><th>Run</th><th>Status</th><th>Age</th><th>Draft URL</th><th>Notes</th><th></th>
+      <th>Публ.</th><th>Док.</th><th>Кандидат</th><th>Запуск</th><th>Статус</th><th>Создано</th><th>URL черновика</th><th>Заметки</th><th></th>
     </tr>
   </thead>
   <tbody>
@@ -17,17 +21,18 @@
       <td>{% if item.publish_run_id %}#{{ item.publish_run_id }}{% else %}—{% endif %}</td>
       <td><code>{{ item.draft_review_status }}</code></td>
       <td>{{ item.created_at or '—' }}</td>
-      <td>{% if item.draft_url %}<a href="{{ item.draft_url }}" target="_blank" rel="noopener">open</a>{% else %}—{% endif %}</td>
+      <td>{% if item.draft_url %}<a href="{{ item.draft_url }}" target="_blank" rel="noopener">открыть</a>{% else %}—{% endif %}</td>
       <td>{{ (item.notes or '')[:80] }}{% if item.notes and item.notes|length > 80 %}…{% endif %}</td>
       <td>
         {% if item.release_candidate_id %}
-        <a class="btn" href="/admin/release-candidates/{{ item.release_candidate_id }}">Review</a>
+        <a class="btn" href="/admin/release-candidates/{{ item.release_candidate_id }}">Проверить</a>
         {% endif %}
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="9">No items in queue</td></tr>
+    <tr><td colspan="9">Нет записей в очереди</td></tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

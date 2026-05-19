@@ -480,3 +480,34 @@
 - **Ошибки:** нет
 - **Restart/deploy:** не требовался
 - **Следующий шаг:** Stage 4 Batch 2 (task_detail, _pipeline_summary, publications, draft_reviews_list, release_candidates_list) или merge Batch 1 после ручной проверки
+
+
+---
+
+## 2026-05-19 — Admin UI Этап 4 Batch 2: secondary pages i18n
+
+- **Ветка:** admin-ui-i18n-stage-4-batch-2
+- **Base commit:** 271ebfa (merge Batch 1 в master)
+- **Batch:** Stage 4 Batch 2 — display-only русификация secondary templates
+- **Что изменено:** task_detail, _pipeline_summary, publications, draft_reviews_list, release_candidates_list — русские labels, page-header, table-scroll; точечный CSS (.log-block, .status-line); исправлен `</div>` в task_detail (был `</motion>`)
+- **Файлы:** 5 templates, admin.css (append), PROJECT_LOG, admin-ui-redesign-plan.md
+- **Forms сохранены:** task_detail POST mark-skipped, rerun-rewrite, run-review, run-seo — action/method/name без изменений
+- **Backend:** не менялся
+- **Команды:** check_health PASS; check_admin_discovered PASS; run_all PASS; curl :8800 admin, discovered, editorial, publications, draft-reviews, release-candidates, tasks/<id> — 200
+- **Ошибки:** нет
+- **Restart/deploy:** не требовался
+- **Следующий шаг:** merge Batch 2 в master или Stage 4 Batch 3 (high-risk отложены)
+
+
+---
+
+## 2026-05-19 — Admin UI Stage 4B bugfix: task detail NameError
+
+- **Ветка:** admin-ui-i18n-stage-4-batch-2
+- **Проблема:** GET `/admin/tasks/{id}` → 500, `NameError: strategy_context is not defined` в `admin_task_detail`
+- **Причина:** в context передавались `strategy_context`, `similarity_summary`, `lineage_summary`, `release_candidates` без присвоения (копипаст с document_detail); `task_detail.html` их не использует
+- **Исправление:** удалены неиспользуемые ключи из TemplateResponse context
+- **Файлы:** `app/admin/routes.py`, `scripts/smoke/check_admin_task_detail.py`, `run_all.py`, docs
+- **Команды:** curl `/admin/tasks/17`, `/admin/tasks/1` → 200; smoke PASS
+- **Restart:** `systemctl restart scrap-api.service` (uvicorn держал старый код до restart)
+- **Следующий шаг:** merge Batch 2 + 4B в master
