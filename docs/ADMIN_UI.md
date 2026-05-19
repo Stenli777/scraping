@@ -181,3 +181,24 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 ## 4W — publish failure badges
 - `/admin/publish-runs`, `/admin/failed-items`: badges `historical env`, `test target` для старых token/env ошибок.
 - `/admin/agents` — агенты (промпты RU); `/admin/projects/new`, `/admin/projects/{id}/agents`
+
+## 2026-05-19 — этап 4Z (agent editor UX)
+
+### UX-правила
+1. **Навигация сверху и снизу** — на длинных страницах агентов/проекта дублировать кнопки возврата.
+2. **Компактные формы** — связанные поля в одной строке (название, slug, домен, язык; JSON темы).
+3. **Понятные кнопки** — «Сохранить новую версию агента», «Сохранить и сделать активной для проекта».
+4. **Редактор агента** — textarea для system/user, preview effective prompt.
+
+### Термины
+- **System prompt** — роль и правила агента.
+- **User prompt** — шаблон задачи с переменными документа.
+- **Project override** — проектная версия только для этого проекта.
+
+### Страницы
+- Project agent detail — редактор override.
+- Project tasks / documents — списки с фильтрами.
+
+### topic_cleanup_v1
+- Исправлена UTF-8 в code fallback prompts (раньше были знаки вопроса).
+- Явное сообщение при использовании fallback из кода.

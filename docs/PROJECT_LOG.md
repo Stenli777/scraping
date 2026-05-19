@@ -424,3 +424,20 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 ### Скрипт настройки (ops)
 - `/tmp/4y_setup.py` на сервере (повторяемый сид профиля+override).
 
+
+## 2026-05-19 — этап 4Z
+
+- UX: редактор агента проекта (textarea, русские кнопки, nav top/bottom).
+- Fix:  prompts UTF-8 (убраны  в admin preview).
+- Feat: , .
+- Compact: форма  (form-row).
+- CSS: , , , .
+-  — body checks + новые URL.
+
+## 2026-05-19 — этап 4Z
+
+- UX: редактор агента проекта (textarea, русские кнопки, nav top/bottom).
+- Fix: topic_cleanup_v1 prompts UTF-8.
+- Feat: project tasks/documents admin pages.
+- Compact project edit form + inner scroll CSS.
+- check_project_agent_admin.py расширен.
