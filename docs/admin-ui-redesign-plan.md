@@ -11,6 +11,9 @@
 > **Visual polish + detail clarity** merged (`ad611b4`).  
 > **Hybrid operator workflow** (`admin-ui-sidebar-workflow-hybrid`): pipeline sidebar, dashboard onboarding — [admin-operator-workflow.md](./admin-operator-workflow.md).  
 > Not merged as-is: `admin-ui-operator-workflow` (`203248a`).
+> **i18n workflow pages** merged (`admin-ui-i18n-workflow-pages` → master, `a5bcda0`).
+> **Hybrid sidebar + onboarding** merged (`admin-ui-sidebar-workflow-hybrid` → master, `5bebf81`).
+> Словарь display-переводов: [admin-ui-i18n-workflow-pages.md](./admin-ui-i18n-workflow-pages.md).
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
@@ -23,11 +26,11 @@
 | 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`, merge `eebb951`) |
 | 2 | UI kit | `admin.css`, labels в `base.html` | **Выполнен** (ветка `admin-ui-kit-stage-2`) |
 | 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Выполнен** (ветка `admin-ui-p0-pages-stage-3`) |
-| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **Следующий** |
-| 5 | Help-блоки | P1 страницы | Запланирован |
-| 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |
-| 7 | High-risk точечно | document detail, RC detail, revisions | **Batch 5 выполнен** — polish по [admin-ui-high-risk-audit.md](./admin-ui-high-risk-audit.md) |
-| 8 | Финальная полировка | mobile, a11y, active states, legacy CSS cleanup | Запланирован |
+| 4 | Русификация display layer | workflow pages, list/detail labels | **Выполнен** (`admin-ui-i18n-workflow-pages`) |
+| 5 | Help-блоки + next-step | workflow list pages, publication/review detail | **Выполнен** (вместе с этапом 4) |
+| 6 | Operator onboarding | hybrid sidebar, dashboard «С чего начать», next-step | **Выполнен** (`admin-ui-sidebar-workflow-hybrid`) |
+| 7 | High-risk точечно | document detail, RC detail, operator clarity | **Выполнен** — polish + clarity (`ad611b4`) |
+| 8 | Финальная полировка | mobile, a11y, active states, legacy CSS cleanup | Запланирован (низкий приоритет) |
 
 **Примечание:** Scrap admin слушает порт **8800** (не 8000 — там Hermes). Editorial route: `/admin/editorial-queue` (не `/admin/editorial`).
 
@@ -470,3 +473,9 @@ tail -50 storage/logs/app.log
 **Этап 2 — UI kit:** новая ветка `admin-ui-kit-stage-2`; scope `admin.css` + optional `_ui_macros.html`; унификация кнопок, табов, таблиц, бейджей; без правок POST/forms/routes.
 
 > **i18n workflow pages** (`admin-ui-i18n-workflow-pages`): help-блоки, переводы списков — [admin-ui-i18n-workflow-pages.md](./admin-ui-i18n-workflow-pages.md).
+
+## Этап: integrated operator UI (2026-05-19)
+
+- **master:** `admin-ui-i18n-workflow-pages` + `admin-ui-sidebar-workflow-hybrid` merged (`--no-ff`)
+- **Конфликты:** `publications.html`, `release_candidates_list.html`, `PROJECT_LOG.md` — объединены help (i18n) + next-step (hybrid)
+- **Трек закрыт:** operator workflow / onboarding / i18n workflow pages — **завершён** (browser QA — рекомендуется)
