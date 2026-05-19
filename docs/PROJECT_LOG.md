@@ -426,3 +426,16 @@
 - **Результат:** git tree clean; формы/action URLs не менялись; /admin/editorial не используется
 - **Ошибки:** нет
 - **Следующий шаг:** merge admin-ui-sidebar-stage-1 в master после ручной визуальной проверки; затем Этап 2 (ветка admin-ui-kit-stage-2)
+
+---
+
+## 2026-05-19 — Admin UI Этап 2: base UI kit styles
+
+- **Ветка:** admin-ui-kit-stage-2
+- **Base commit:** eebb951 (merge sidebar stage 1)
+- **Что изменено:** UI kit в admin.css (scrollbar sidebar, кнопки, табы, таблицы, бейджи, panel/help-block заготовки, main area typography); частичная русификация labels в base.html; child templates/routes/forms не менялись
+- **Файлы:** app/admin/static/admin.css, app/admin/templates/base.html, docs/PROJECT_LOG.md, docs/admin-ui-redesign-plan.md
+- **Команды:** check_health PASS; run_all PASS; curl GET :8800/admin, /tasks/new, /discovered-urls, /editorial-queue, /source-quality — 200
+- **Результат:** forms/action/method/name без изменений; /admin/editorial не используется
+- **Ошибки:** нет
+- **Следующий шаг:** Этап 3 — применить UI kit к P0 страницам (task_new, discovered_urls, editorial_queue + partial)
