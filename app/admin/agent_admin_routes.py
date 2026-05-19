@@ -12,7 +12,16 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.project import Project
 from app.models.prompt_template import PromptTemplate
-from app.services.agent_registry import KNOWN_AGENT_KEYS, get_agent_meta, list_agents
+from app.services.agent_registry import (
+    KNOWN_AGENT_KEYS,
+    get_agent_meta,
+    list_agents,
+    source_label_ru,
+)
+from app.services.project_admin_list_helpers import (
+    list_project_documents,
+    list_project_tasks,
+)
 from app.services.project_admin_service import (
     can_delete_project,
     create_project,
@@ -26,6 +35,7 @@ from app.services.prompt_override_service import (
     disable_project_override,
     get_effective_prompt_details,
     get_project_override,
+    get_override_edit_defaults,
     list_recent_llm_runs_for_prompt,
     smoke_render_prompt,
 )
@@ -43,6 +53,20 @@ def _admin_templates(request: Request):
     from app.admin.routes import templates
 
     return templates
+
+
+def _project_nav(project: Project, *, agent_key: str | None = None) -> dict:
+    agents_url = f"/admin/projects/{project.id}/agents"
+    agent_url = f"{agents_url}/{agent_key}" if agent_key else None
+    return {
+        "project": project,
+        "agents_url": agents_url,
+        "agent_url": agent_url,
+        "project_edit_url": f"/admin/projects/{project.id}/edit",
+        "projects_url": "/admin/projects",
+        "tasks_url": f"/admin/projects/{project.id}/tasks",
+        "documents_url": f"/admin/projects/{project.id}/documents",
+    }
 
 
 # --- Agents ---
@@ -279,6 +303,7 @@ def admin_project_save(
                 "errors": errors,
                 "form": form,
                 "metrics": project_usage_counts(db, project_id),
+                "nav": _project_nav(project),
                 "title": f"Проект: {project.name}",
                 "submit_label": "Сохранить",
             },
@@ -342,6 +367,7 @@ def admin_project_agents(project_id: int, request: Request, db: Session = Depend
             "project": project,
             "agents": rows,
             "title": f"Агенты проекта — {project.name}",
+            "nav": _project_nav(project),
         },
     )
 
@@ -358,6 +384,7 @@ def admin_project_agent_detail(
     effective = get_effective_prompt_details(db, key, project_id=project_id)
     global_eff = get_effective_prompt_details(db, key, project_id=None)
     override = get_project_override(db, project_id, key)
+    edit_form = get_override_edit_defaults(db, project_id, key)
     versions = list_prompt_versions(db, key)
     llm_runs = list_recent_llm_runs_for_prompt(db, key, limit=10)
     return tpl.TemplateResponse(
@@ -370,9 +397,86 @@ def admin_project_agent_detail(
             "effective": effective,
             "global_eff": global_eff,
             "override": override,
+            "edit_form": edit_form,
             "versions": versions,
             "llm_runs": llm_runs,
-            "title": f"{meta['short_name']} — {project.name}",
+            "source_badge": source_label_ru(effective.get("source", "")),
+            "title": f"{meta['agent_name']} — {project.name}",
+            "nav": _project_nav(project, agent_key=key),
+        },
+    )
+
+
+
+
+@router.get("/admin/projects/{project_id}/tasks", response_class=HTMLResponse)
+def admin_project_tasks(
+    project_id: int,
+    request: Request,
+    status: str | None = None,
+    db: Session = Depends(get_db),
+):
+    tpl = _admin_templates(request)
+    project = db.get(Project, project_id)
+    if not project:
+        return RedirectResponse("/admin/projects", status_code=302)
+    tasks = list_project_tasks(db, project_id, status=status or None)
+    return tpl.TemplateResponse(
+        request,
+        "project_tasks.html",
+        {
+            "request": request,
+            "project": project,
+            "tasks": tasks,
+            "filter_status": status or "",
+            "title": f"Задачи проекта — {project.name}",
+            "nav": _project_nav(project),
+        },
+    )
+
+
+@router.get("/admin/projects/{project_id}/documents", response_class=HTMLResponse)
+def admin_project_documents(
+    project_id: int,
+    request: Request,
+    status: str | None = None,
+    has_publication: str | None = None,
+    in_pilot: str | None = None,
+    db: Session = Depends(get_db),
+):
+    tpl = _admin_templates(request)
+    project = db.get(Project, project_id)
+    if not project:
+        return RedirectResponse("/admin/projects", status_code=302)
+    pub_filter = None
+    if has_publication == "yes":
+        pub_filter = True
+    elif has_publication == "no":
+        pub_filter = False
+    pilot_filter = None
+    if in_pilot == "yes":
+        pilot_filter = True
+    elif in_pilot == "no":
+        pilot_filter = False
+    documents = list_project_documents(
+        db,
+        project_id,
+        status=status or None,
+        has_publication=pub_filter,
+        in_pilot=pilot_filter,
+    )
+    return tpl.TemplateResponse(
+        request,
+        "project_documents.html",
+        {
+            "request": request,
+            "project": project,
+            "documents": documents,
+            "filter_status": status or "",
+            "filter_publication": has_publication or "",
+            "filter_pilot": in_pilot or "",
+            "title": f"Документы проекта — {project.name}",
+            "nav": _project_nav(project),
         },
     )
 
@@ -385,7 +489,7 @@ def admin_project_agent_create_override(
     system: str = Form(""),
     user: str = Form(...),
     notes: str = Form(""),
-    activate: str | None = Form(None),
+    action: str = Form("save_and_activate"),
     db: Session = Depends(get_db),
 ):
     create_project_override_version(
@@ -396,7 +500,7 @@ def admin_project_agent_create_override(
         system=system,
         user=user,
         notes=notes or None,
-        activate=activate == "on",
+        activate=action == "save_and_activate",
     )
     return RedirectResponse(f"/admin/projects/{project_id}/agents/{key}", status_code=303)
 

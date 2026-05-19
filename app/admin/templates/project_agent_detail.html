@@ -1,32 +1,56 @@
 {% extends "base.html" %}
 {% block content %}
-<p>
-  <a class="btn" href="/admin/projects/{{ project.id }}/agents">← Агенты проекта</a>
-  <a class="btn" href="/admin/agents/{{ meta.key }}">Глобальный агент</a>
-</p>
+{% set nav = nav or {} %}
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.agents_url or ('/admin/projects/' ~ project.id ~ '/agents') }}">← К списку агентов проекта</a>
+  <a class="btn" href="{{ nav.project_edit_url or ('/admin/projects/' ~ project.id ~ '/edit') }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url or '/admin/projects' }}">← К списку проектов</a>
+</div>
 
 <div class="panel">
   <h1>{{ meta.agent_name }}</h1>
-  <p>{{ meta.purpose }}</p>
+  <p class="muted">{{ meta.purpose }}</p>
   <p><strong>Проект:</strong> {{ project.name }} (<code>{{ project.slug }}</code>)</p>
-  <p><strong>Итоговый источник:</strong> {{ effective.source }} · версия <code>{{ effective.version }}</code></p>
+  <p><span class="badge">{{ source_badge }}</span> · версия <code>{{ effective.version }}</code></p>
 </div>
 
+<div class="panel help-block">
+  <h2>Что делает этот агент</h2>
+  <ul>
+    <li><strong>Pipeline:</strong> {{ meta.pipeline_usage }}</li>
+    <li><strong>Принимает:</strong> {{ meta.accepts }}</li>
+    <li><strong>Возвращает:</strong> {{ meta.returns }}</li>
+    <li><strong>Настройка проекта:</strong> {{ meta.override_effect }}</li>
+  </ul>
+</div>
+
+{% if edit_form.fallback_notice or effective.fallback_notice %}
+<div class="panel alert-block">
+  <p>{{ edit_form.fallback_notice or effective.fallback_notice }}</p>
+</div>
+{% endif %}
+
 {% if request.query_params.get('smoke') %}
-<div class="panel"><p class="muted">Smoke-check выполнен (без вызова LLM). См. логи при необходимости.</p></div>
+<div class="panel"><p class="muted">Smoke-check выполнен (без вызова LLM).</p></div>
 {% endif %}
 
 <div class="panel">
-  <h2>Итоговый prompt (preview)</h2>
-  <p><strong>System</strong></p>
-  <pre class="content">{{ effective.system or "—" }}</pre>
-  <p><strong>User (шаблон)</strong></p>
-  <pre class="content">{{ effective.user_template or "—" }}</pre>
-  <p><strong>Пример user после подстановки</strong></p>
-  <pre class="content">{{ effective.preview_user or "—" }}</pre>
+  <h2>Текущий активный текст агента</h2>
+  <p class="muted">Источник: {{ effective.source_label_ru or effective.source }} · версия <code>{{ effective.version }}</code></p>
+  <p><strong>System prompt</strong></p>
+  <pre class="content prompt-preview scroll-y">{{ effective.system or "—" }}</pre>
+  <p><strong>Инструкция для задачи (user prompt)</strong></p>
+  <pre class="content prompt-preview scroll-y">{{ effective.user_template or "—" }}</pre>
+  <p><strong>Пример итогового запроса после подстановки переменных</strong></p>
+  <pre class="content prompt-preview scroll-y">{{ effective.preview_user or "—" }}</pre>
+  {% if effective.expected_variables %}
+  <p><strong>Ожидаемые переменные:</strong> <code>{{ effective.expected_variables | join(", ") }}</code></p>
+  {% endif %}
   {% if effective.warnings %}
   <p><strong>Предупреждения:</strong> {{ effective.warnings | join("; ") }}</p>
   {% endif %}
+  <details><summary>Raw JSON (техническое)</summary>
+  <pre class="content scroll-y">{{ effective | tojson(indent=2) }}</pre></details>
   <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/smoke" style="display:inline">
     <button type="submit" class="btn">Проверить (smoke)</button>
   </form>
@@ -38,24 +62,30 @@
 </div>
 
 <div class="panel">
-  <h2>Создать переопределение для проекта</h2>
+  <h2>Настройка агента для этого проекта</h2>
+  <p class="field-help"><strong>System prompt</strong> — общая роль и правила агента.</p>
+  <p class="field-help"><strong>User prompt</strong> — шаблон задачи, куда подставляются данные документа.</p>
+  <p class="field-help"><strong>Project override</strong> — проектная версия агента, которая заменяет глобальный prompt только для этого проекта.</p>
   <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/override" class="form">
-    <label>Метка версии <input name="version" required placeholder="v1"></label>
-    <label>Заметки <input name="notes"></label>
-    <label>System <textarea name="system" rows="5"></textarea></label>
-    <label>User (шаблон) <textarea name="user" rows="8" required></textarea></label>
-    <label><input type="checkbox" name="activate" checked> Включить override</label>
-    <button type="submit" class="btn primary">Сохранить override</button>
+    <label>Название версии <input name="version" value="{{ edit_form.version }}" required placeholder="v1"></label>
+    <label>Комментарий к версии <input name="notes" value="{{ edit_form.notes }}"></label>
+    <label>System prompt <textarea name="system" rows="6" class="agent-editor">{{ edit_form.system }}</textarea></label>
+    <label>Инструкция для задачи (user prompt) <textarea name="user" rows="10" class="agent-editor" required>{{ edit_form.user }}</textarea></label>
+    <div class="form-actions">
+      <button type="submit" name="action" value="save_version" class="btn">Сохранить новую версию агента</button>
+      <button type="submit" name="action" value="save_and_activate" class="btn primary">Сохранить и сделать активной для проекта</button>
+    </div>
   </form>
   {% if override and override.enabled %}
   <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/override/disable" style="margin-top:1rem">
-    <button type="submit" class="btn">Отключить override (вернуться к глобальному)</button>
+    <button type="submit" class="btn">Отключить проектную версию и использовать глобальный prompt</button>
   </form>
   {% endif %}
 </div>
 
 <div class="panel">
   <h2>Последние LLM-запуски</h2>
+  <div class="table-scroll inner-scroll">
   <table class="table compact">
     <tr><th>ID</th><th>OK</th><th>Model</th><th>Prompt ref</th></tr>
     {% for r in llm_runs %}
@@ -65,5 +95,12 @@
     </tr>
     {% endfor %}
   </table>
+  </div>
+</div>
+
+<div class="admin-nav-block">
+  <a class="btn" href="{{ nav.agents_url or ('/admin/projects/' ~ project.id ~ '/agents') }}">← К списку агентов проекта</a>
+  <a class="btn" href="{{ nav.project_edit_url or ('/admin/projects/' ~ project.id ~ '/edit') }}">← К проекту</a>
+  <a class="btn" href="{{ nav.projects_url or '/admin/projects' }}">← К списку проектов</a>
 </div>
 {% endblock %}
