@@ -4,6 +4,45 @@
 {% set rewrite_meta = rewrite_meta or meta.get('rewrite') or {} %}
 {% if pipeline_summary %}{% include "_pipeline_summary.html" %}{% endif %}
 
+{% set chk = publish_readiness.checks or {} %}
+<section class="panel operator-summary" id="operator-summary">
+  <h2>Операторская сводка</h2>
+  <div class="operator-summary-grid">
+    <div>
+      <h3>Что сейчас</h3>
+      <ul class="summary-list">
+        <li><strong>Задача:</strong> <a href="/admin/tasks/{{ document.task_id }}">#{{ document.task_id }}</a>{% if project %} · <strong>Проект:</strong> <a href="/admin/projects/{{ project.id }}">{{ project.slug }}</a>{% endif %}</li>
+        <li><strong>Документ:</strong> #{{ document.id }} · <code>{{ document.editorial_status or '—' }}</code></li>
+        {% if pipeline_summary %}
+        <li><strong>Pipeline:</strong>
+          Fetch <code>{{ pipeline_summary.fetch }}</code>,
+          Parse <code>{{ pipeline_summary.parse }}</code>,
+          Clean <code>{{ pipeline_summary.clean }}</code>,
+          Review <code>{{ pipeline_summary.review }}</code>,
+          Rewrite <code>{{ pipeline_summary.rewrite }}</code>,
+          SEO <code>{{ pipeline_summary.seo }}</code>,
+          Publish <code>{{ pipeline_summary.publish }}</code>
+        </li>
+        {% endif %}
+        <li><strong>Блокировки публикации:</strong> {% if publish_readiness.ready %}<span class="badge status-done">нет</span>{% else %}<span class="badge status-error">есть</span>{% endif %}</li>
+        <li><strong>Релиз-кандидаты:</strong> {% if release_candidates %}{{ release_candidates|length }} (последний <a href="/admin/release-candidates/{{ release_candidates[0].id }}">#{{ release_candidates[0].id }}</a>){% else %}нет{% endif %}</li>
+      </ul>
+    </div>
+    <div class="next-action-panel">
+      <h3>Следующий шаг</h3>
+      {% if feature_flags.get('ENABLE_QUALITY_REVIEW') and (not quality_record or (chk.quality_review_enabled and not chk.quality_verdict)) %}
+      <p>Запустите QC (кнопка в блоке метаданных или «Проверки качества»).</p>
+      {% elif not publish_readiness.ready %}
+      <p>Смотрите причины в блоке «Блокировки публикации». При необходимости запустите review/SEO/QC.</p>
+      {% elif not release_candidates %}
+      <p>Создайте RC в блоке «Релиз-кандидаты» или проверьте готовность к публикации черновика.</p>
+      {% else %}
+      <p>Проверьте релиз-кандидаты и при необходимости откройте карточку RC.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
 <aside class="help-block">
   <p class="help-block-title">О странице</p>
   <p>Карточка документа: метаданные, pipeline, editorial, публикация и release candidates. Кнопки запускают существующие POST-действия.</p>
@@ -107,8 +146,8 @@
 </div>
 
 <div class="panel" id="publish-readiness">
-  <h2>Готовность к публикации</h2>
-  {% set chk = publish_readiness.checks or {} %}
+  <h2>Блокировки публикации</h2>
+  <p class="field-help">Пока есть блокировки, документ нельзя безопасно публиковать. Сначала исправьте причины ниже или используйте force только осознанно.</p>
   <p>
     <span class="badge {% if publish_readiness.ready %}status-done{% else %}status-error{% endif %}">
       {% if publish_readiness.ready %}Готово{% else %}Не готово{% endif %}
@@ -128,7 +167,29 @@
   <p class="ok-box">Готово к публикации (только черновик)</p>
   {% else %}
   <p class="warn-box">Заблокировано</p>
-  <p><strong>Не хватает:</strong> {{ publish_readiness.missing | join(', ') or '—' }}</p>
+  {% if publish_readiness.missing %}
+  <p><strong>Не хватает:</strong></p>
+  <ul class="blocker-list">
+    {% for item in publish_readiness.missing %}
+    {% set raw = item|lower %}
+    <li class="blocker-item">
+      <code>{{ item }}</code>
+      <span class="blocker-explain">
+        {% if 'quality' in raw or 'qc' in raw %}Проверка качества (QC)
+        {% elif 'review' in raw %}Review не пройден
+        {% elif 'seo' in raw %}SEO не выполнен
+        {% elif 'editorial' in raw or 'approve' in raw %}Редакторское подтверждение
+        {% elif 'strategy' in raw or 'topic' in raw %}Контент-стратегия
+        {% elif 'duplicate' in raw %}Дубликат публикации
+        {% elif 'media' in raw %}Медиа / превью
+        {% else %}Требуется исправление{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p><strong>Не хватает:</strong> —</p>
+  {% endif %}
   {% endif %}
   {% if publish_readiness.warnings %}
   <p><strong>Предупреждения:</strong> {{ publish_readiness.warnings | join(', ') }}</p>
@@ -166,9 +227,12 @@
 </div>
 {% endif %}
 
+<details class="panel debug-details" id="technical-diagnostics">
+<summary>Техническая диагностика</summary>
+
 {% if timeline %}
-<div class="panel" id="timeline">
-  <h2>Хронология</h2>
+<div id="timeline">
+  <h3>Хронология pipeline</h3>
   <ul>
     {% for ev in timeline %}
     <li><strong>{{ ev.label }}</strong> — {{ ev.detail or "" }} <small>{{ ev.at or "" }}</small>
@@ -180,11 +244,11 @@
 {% endif %}
 
 <div class="meta grid-meta">
-  <p><strong>URL:</strong> <a href="{{ document.source_url }}" target="_blank">{{ document.source_url }}</a></p>
+  <p><strong>URL:</strong> <a class="break-anywhere" href="{{ document.source_url }}" target="_blank">{{ document.source_url }}</a></p>
   <p><strong>Парсер:</strong> <code>{{ meta.get('parser_name', '—') }}</code></p>
   <p><strong>Rewriter (env):</strong> <code>{{ settings.rewriter_provider }}</code></p>
   <p><strong>Заголовок:</strong> {{ meta.get('extracted_title') or meta.get('title', '—') }}</p>
-  <p><strong>Hash:</strong> <code>{{ document.content_hash }}</code></p>
+  <p><strong>Hash:</strong> <code class="break-anywhere">{{ document.content_hash }}</code></p>
   <p><strong>Версия:</strong> {{ document.version }}</p>
   <p><strong>Слов:</strong> {{ meta.get('word_count', '—') }}</p>
   <p><strong>Создан:</strong> {{ document.created_at }}</p>
@@ -207,6 +271,8 @@
     </form>
   </p>
 </div>
+
+</details>
 
 {% if feature_flags.get('ENABLE_ANALYTICS') %}
 
@@ -309,7 +375,7 @@
 
 {% if quality_record or feature_flags.get('ENABLE_QUALITY_REVIEW') %}
 <div class="panel" id="quality">
-  <h2>Оценка качества (QC)</h2>
+  <h2>Проверки качества</h2>
   {% if quality_record %}
   <p><strong>Итого:</strong> {{ quality_record.overall_score }}</p>
   <p><strong>Читаемость:</strong> {{ quality_record.readability_score or "—" }} ·
@@ -339,8 +405,11 @@
 
 
 {% if feature_flags.get('ENABLE_MEDIA_PIPELINE') %}
-<div class="panel" id="media">
-  <h2>Медиа</h2>
+<details class="panel debug-details" id="media-legacy-duplicate">
+  <summary>Медиа (технический дубль / legacy)</summary>
+  <p class="field-help">Дублирует панель «Медиа» выше с теми же POST-действиями. Оставлено для совместимости.</p>
+  <div class="panel" id="media-legacy-inner">
+  <h3>Медиа</h3>
   {% if preview_media %}
   <p><strong>Превью #{{ preview_media.id }}</strong> · {{ preview_media.source_type }} ·
      <span class="badge status-{{ preview_media.status }}">{{ preview_media.status }}</span></p>
@@ -369,12 +438,14 @@
   {% if publish_readiness.checks.media.warnings %}
   <p class="warn-box">Предупреждения медиа: {{ publish_readiness.checks.media.warnings | join(', ') }}</p>
   {% endif %}
-</div>
+  </div>
+</details>
 {% endif %}
 
 {% if feature_flags.get('ENABLE_HERMES') %}
-<div class="panel" id="hermes">
-  <h2>Hermes (опционально)</h2>
+<details class="panel debug-details" id="hermes">
+<summary>Hermes (опционально)</summary>
+<div>
   <p class="export-links">
     <form method="post" action="/admin/documents/{{ document.id }}/hermes/research" style="display:inline">
       <button type="submit" class="btn">Hermes: research</button>
@@ -388,23 +459,24 @@
   <h3>Последний research</h3>
   <p>Run #{{ hermes_research.id }} · agent {{ hermes_research.agent_used or '—' }} · model {{ hermes_research.model_used or '—' }}
      {% if hermes_research.fallback_used %}<span class="badge">fallback</span>{% endif %}</p>
-  <pre class="content">{{ (hermes_research.response_payload_json or {}) | tojson(indent=2) }}</pre>
+  <pre class="content code-block">{{ (hermes_research.response_payload_json or {}) | tojson(indent=2) }}</pre>
   {% endif %}
   {% if hermes_critique %}
   <h3>Последний critique</h3>
   <p>Run #{{ hermes_critique.id }} · agent {{ hermes_critique.agent_used or '—' }} · model {{ hermes_critique.model_used or '—' }}
      {% if hermes_critique.fallback_used %}<span class="badge">fallback</span>{% endif %}</p>
-  <pre class="content">{{ (hermes_critique.response_payload_json or {}) | tojson(indent=2) }}</pre>
+  <pre class="content code-block">{{ (hermes_critique.response_payload_json or {}) | tojson(indent=2) }}</pre>
   {% endif %}
   {% if not hermes_research and not hermes_critique %}
   <p class="warn-box">Нет запусков Hermes.</p>
   {% endif %}
 </div>
+</details>
 {% endif %}
 
 {% if seo_record %}
 <div class="panel">
-  <h2>SEO-метаданные</h2>
+  <h2>SEO</h2>
   <p><strong>Title:</strong> {{ seo_record.seo_title or "—" }}</p>
   <p><strong>Description:</strong> {{ seo_record.seo_description or "—" }}</p>
   <p><strong>H1:</strong> {{ seo_record.h1 or "—" }}</p>
@@ -437,6 +509,7 @@
   </form>
   {% if publish_runs %}
   <h3>История публикаций</h3>
+  <div class="scroll-x">
   <table class="table">
     <thead><tr><th>ID</th><th>Rev</th><th>Цель</th><th>Payload</th><th>Статус</th><th>Retry</th><th>Dry</th><th>External ID</th><th>Draft URL</th><th>Remote</th><th>Ошибка</th><th>Время</th></tr></thead>
     <tbody>
@@ -456,57 +529,15 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% endif %}
 </div>
 {% elif not feature_flags.get('ENABLE_PUBLISHING') %}
 <div class="warn-box">Публикация отключена (ENABLE_PUBLISHING=false)</div>
 {% endif %}
 
-{% if rewrite_meta %}
-<div class="panel">
-  <h2>Rewrite</h2>
-  <p><strong>Провайдер:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
-  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
-  <p><strong>Upstream model:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
-  <p><strong>Fallback:</strong> {{ 'yes' if rewrite_meta.get('fallback_used') else 'no' }}</p>
-  {% if rewrite_meta.get('llm_run_id') %}
-  <p><strong>LLM run:</strong> <a href="/admin/llm-runs">#{{ rewrite_meta.llm_run_id }}</a></p>
-  {% endif %}
-  {% if meta.get('rewrite_error') %}
-  <p class="error"><strong>Ошибка rewrite:</strong> {{ meta.rewrite_error }}</p>
-  {% endif %}
-</div>
-{% endif %}
-
-{% if meta.get('extraction_warnings') %}
-<div class="warn-box">
-  <strong>Предупреждения:</strong> {{ meta.get('extraction_warnings') | join(', ') }}
-</div>
-{% endif %}
-
-<section class="panel">
-  <h2>Чистый текст</h2>
-  <pre class="content">{{ document.clean_text or "—" }}</pre>
-</section>
-<section class="panel">
-  <h2>Rewrite-текст</h2>
-  <pre class="content">{{ document.rewritten_text or "—" }}</pre>
-</section>
-<section class="panel">
-  <h2>Исходный текст</h2>
-  <pre class="content">{{ document.raw_text or "—" }}</pre>
-</section>
-<details class="panel">
-  <summary>Metadata JSON</summary>
-  <pre class="content">{{ meta | tojson(indent=2) }}</pre>
-</details>
-<details class="panel">
-  <summary>Raw HTML (сокращённо)</summary>
-  <pre class="content html">{{ (document.raw_html or "—")[:8000] }}{% if document.raw_html and document.raw_html|length > 8000 %}…{% endif %}</pre>
-</details>
-
-<section class="card" id="release-candidates">
-  <h2>Кандидаты на релиз</h2>
+<section class="card panel" id="release-candidates">
+  <h2>Релиз-кандидаты</h2>
   {% if release_candidates %}
   <table class="table">
     <thead><tr><th>ID</th><th>Статус</th><th>QA</th><th>Блокеры</th><th></th></tr></thead>
@@ -539,8 +570,59 @@
   {% endif %}
 </section>
 
-<section class="card" id="canonical-similarity">
-  <h2>Каноникал / похожесть</h2>
+{% if rewrite_meta %}
+<details class="panel debug-details">
+  <summary>Rewrite (техническая диагностика)</summary>
+<div class="panel">
+  <h3>Rewrite</h3>
+  <p><strong>Провайдер:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
+  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
+  <p><strong>Upstream model:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
+  <p><strong>Fallback:</strong> {{ 'yes' if rewrite_meta.get('fallback_used') else 'no' }}</p>
+  {% if rewrite_meta.get('llm_run_id') %}
+  <p><strong>LLM run:</strong> <a href="/admin/llm-runs">#{{ rewrite_meta.llm_run_id }}</a></p>
+  {% endif %}
+  {% if meta.get('rewrite_error') %}
+  <p class="error"><strong>Ошибка rewrite:</strong> {{ meta.rewrite_error }}</p>
+  {% endif %}
+</div>
+</details>
+{% endif %}
+
+{% if meta.get('extraction_warnings') %}
+<div class="warn-box">
+  <strong>Предупреждения:</strong> {{ meta.get('extraction_warnings') | join(', ') }}
+</div>
+{% endif %}
+
+<details class="panel debug-details" id="raw-texts">
+  <summary>Тексты и raw данные</summary>
+  <section class="panel">
+    <h3>Чистый текст</h3>
+    <pre class="content code-block">{{ document.clean_text or "—" }}</pre>
+  </section>
+  <section class="panel">
+    <h3>Rewrite-текст</h3>
+    <pre class="content code-block">{{ document.rewritten_text or "—" }}</pre>
+  </section>
+  <section class="panel">
+    <h3>Исходный текст</h3>
+    <pre class="content code-block">{{ document.raw_text or "—" }}</pre>
+  </section>
+  <details class="panel">
+    <summary>Metadata JSON</summary>
+    <pre class="content code-block">{{ meta | tojson(indent=2) }}</pre>
+  </details>
+  <details class="panel">
+    <summary>Raw HTML (сокращённо)</summary>
+    <pre class="content html code-block">{{ (document.raw_html or "—")[:8000] }}{% if document.raw_html and document.raw_html|length > 8000 %}…{% endif %}</pre>
+  </details>
+</details>
+
+<details class="panel debug-details" id="canonical-similarity">
+  <summary>Каноникал / похожесть (техническая диагностика)</summary>
+  <div>
+  <h3>Каноникал / похожесть</h3>
   {% if similarity_summary.canonical_group %}
   <p><strong>Группа:</strong>
     <a href="/admin/canonical-groups/{{ similarity_summary.canonical_group.id }}">
@@ -587,5 +669,6 @@
     {% endfor %}
   </ul>
   {% endif %}
-</section>
+  </div>
+</details>
 {% endblock %}

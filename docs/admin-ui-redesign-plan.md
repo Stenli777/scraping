@@ -453,6 +453,16 @@ tail -50 storage/logs/app.log
 
 ---
 
+## Этап: detail operator clarity (2026-05-19)
+
+- **Ветка:** `admin-ui-detail-operator-clarity` (от `master` после Batch 5)
+- **Scope:** только `document_detail.html`, `release_candidate_detail.html`, `admin.css`, smoke scripts, docs
+- **Результат:** сводка «Что сейчас» / «Следующий шаг»; блокировки с пояснениями; debug в `<details>`; smoke markers
+- **Закрыто:** дубль h1 на RC detail; визуальный шум raw-текстов
+- **Debt:** Media duplicate (свёрнут); полный i18n raw enum; выравнивание publish history table
+
+---
+
 ## Следующий промпт (рекомендация)
 
 **Этап 2 — UI kit:** новая ветка `admin-ui-kit-stage-2`; scope `admin.css` + optional `_ui_macros.html`; унификация кнопок, табов, таблиц, бейджей; без правок POST/forms/routes.

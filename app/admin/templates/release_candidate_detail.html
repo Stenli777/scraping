@@ -1,55 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
+{% set publish_ok = not detail.blocking_issues %}
 <div class="page-header">
-  <h1 class="page-title">Release candidate #{{ detail.id }}</h1>
-  <p class="page-subtitle">Карточка RC: QA, проверка черновика, публикация.</p>
+  <p class="page-subtitle">Карточка RC: QA, проверка черновика, публикация. Документ <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a>, ревизия #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">устарела</span>{% endif %}.</p>
 </div>
 
 <aside class="help-block">
   <p class="help-block-title">О странице</p>
-  <p>POST-действия и имена полей формы не меняются.</p>
+  <p>POST-действия и имена полей формы не меняются. Ниже — операторская сводка; техническая диагностика свёрнута.</p>
 </aside>
 
-<p>Документ <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a>
-  | Ревизия #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">устарела</span>{% endif %}
-  | Статус <code>{{ detail.status }}</code> | QA <strong>{{ detail.qa_score }}</strong>
-  {% if public_info.analytics_ready %}<span class="badge status-done">analytics готов</span>{% endif %}
-</p>
+<section class="panel operator-summary" id="operator-summary">
+  <h2>Операторская сводка</h2>
+  <div class="operator-summary-grid">
+    <div>
+      <h3>Что сейчас</h3>
+      <ul class="summary-list">
+        <li><strong>Документ:</strong> <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a></li>
+        <li><strong>Ревизия:</strong> #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">устарела</span>{% endif %}</li>
+        <li><strong>Статус RC:</strong> <code>{{ detail.status }}</code></li>
+        <li><strong>QA:</strong> {% if detail.qa_score is not none %}<strong>{{ detail.qa_score }}</strong>{% else %}не запускался{% endif %}</li>
+        <li><strong>Публикация:</strong> {% if publish_ok %}<span class="badge status-done">можно</span>{% else %}<span class="badge status-error">нельзя</span>{% endif %}</li>
+        <li><strong>Draft URL:</strong> {% if draft_review.draft_url %}<a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">есть</a>{% else %}<span class="warn-box">нет</span>{% endif %}</li>
+      </ul>
+    </div>
+    <div class="next-action-panel">
+      <h3>Следующий шаг</h3>
+      {% if detail.blocking_issues %}
+      <p class="warn-box">Сначала устраните блокирующие проблемы ниже. Публикация не готова.</p>
+      {% elif detail.qa_score is none %}
+      <p>Запустите QA в блоке «Действия с релиз-кандидатом», затем проверьте блокировки.</p>
+      {% elif not draft_review.draft_url %}
+      <p>QA выполнен. Опубликуйте черновик, когда блокировок нет.</p>
+      {% else %}
+      <p>Проверьте черновик по ссылке и заполните feedback в блоке «Проверка черновика».</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
 
-<h2>Блокирующие проблемы</h2>
-{% if detail.blocking_issues %}
-<ul class="warnings">{% for b in detail.blocking_issues %}<li>{{ b.label }}: {{ b.detail or b.id }}</li>{% endfor %}</ul>
-{% else %}<p>Нет</p>{% endif %}
+<section class="panel" id="rc-blockers">
+  <h2>Блокирующие проблемы</h2>
+  {% if detail.blocking_issues %}
+  <p class="field-help">Ниже технические причины блокировки. Используйте как чеклист: качество, редактура, стратегия и payload должны быть OK.</p>
+  <ul class="blocker-list warnings">
+    {% for b in detail.blocking_issues %}
+    {% set raw = ((b.id or '') ~ ' ' ~ (b.label or '') ~ ' ' ~ (b.detail or ''))|lower %}
+    <li class="blocker-item">
+      <code>{{ b.label }}{% if b.detail or b.id %}: {{ b.detail or b.id }}{% endif %}</code>
+      <span class="blocker-explain">
+        {% if 'quality_verdict' in raw %}QC не подтверждён
+        {% elif 'quality_score' in raw or 'score=' in raw %}Оценка качества ниже порога
+        {% elif 'editorial' in raw or 'approved_for_publish' in raw %}Документ не прошёл редакторское подтверждение
+        {% elif 'strategy' in raw or 'topic_not_extracted' in raw %}Контент-стратегия не разрешает публикацию
+        {% elif 'payload' in raw %}Payload не проходит проверку
+        {% else %}Требуется исправление по этой проверке{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="ok-box">Блокирующих проблем нет.</p>
+  {% endif %}
+</section>
 
-<h2>Предупреждения</h2>
 {% if detail.warnings %}
-<ul>{% for w in detail.warnings %}<li>{{ w.label }}: {{ w.detail or w.id }}</li>{% endfor %}</ul>
-{% else %}<p>Нет</p>{% endif %}
-
-<h2>Чеклист</h2>
-<details><summary>Показать чеклист</summary>
-<pre>{{ detail.checklist | tojson(indent=2) }}</pre>
-</details>
-
-<h2>Действия</h2>
-<div class="btn-row">
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/run-qa" style="display:inline"><button class="btn">Запустить QA</button></form>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/approve" style="display:inline"><button class="btn">Одобрить</button></form>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/reject" style="display:inline"><button class="btn">Отклонить</button></form>
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/publish-draft" style="display:inline"><button class="btn">Опубликовать черновик</button></form>
-<a class="btn" href="/api/release-candidates/{{ detail.id }}/payload-preview" target="_blank">Превью payload (JSON)</a>
-<a class="btn" href="/api/publish-targets" target="_blank">Состояние publish targets</a>
-</div>
-
-{% if detail.publish_runs %}
-<h2>Запуски публикации</h2>
-<ul>{% for r in detail.publish_runs %}<li>#{{ r.id }} — {{ r.status }} (dry_run={{ r.dry_run }})</li>{% endfor %}</ul>
+<section class="panel">
+  <h2>Предупреждения</h2>
+  <ul>{% for w in detail.warnings %}<li>{{ w.label }}: {{ w.detail or w.id }}</li>{% endfor %}</ul>
+</section>
 {% endif %}
 
-<section class="draft-review-panel panel">
-<h2>CRMFlow24 — проверка черновика</h2>
+<section class="panel stacked-actions" id="rc-actions">
+  <h2>Действия с релиз-кандидатом</h2>
+  <p class="field-help">QA и одобрение — до публикации. Отклонение необратимо с точки зрения workflow.</p>
+  <div class="btn-row">
+    <form method="post" action="/admin/release-candidates/{{ detail.id }}/run-qa" style="display:inline"><button class="btn" type="submit">Запустить QA</button></form>
+    <form method="post" action="/admin/release-candidates/{{ detail.id }}/approve" style="display:inline"><button class="btn" type="submit">Одобрить</button></form>
+    <form method="post" action="/admin/release-candidates/{{ detail.id }}/publish-draft" style="display:inline"><button class="btn primary" type="submit">Опубликовать черновик</button></form>
+  </div>
+  <div class="danger-zone panel">
+    <h3>Опасные действия</h3>
+    <form method="post" action="/admin/release-candidates/{{ detail.id }}/reject" style="display:inline"><button class="btn" type="submit">Отклонить</button></form>
+  </div>
+</section>
+
+<section class="draft-review-panel panel" id="draft-review">
+<h2>Проверка черновика</h2>
 {% if draft_review.draft_url %}
-<p>Draft URL: <a href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
+<p>Draft URL: <a class="break-anywhere" href="{{ draft_review.draft_url }}" target="_blank" rel="noopener">{{ draft_review.draft_url }}</a></p>
 {% else %}
 <p class="warn-box">Draft URL ещё нет (publication / publish run).</p>
 {% endif %}
@@ -61,40 +100,34 @@
 <p>Последний feedback #{{ draft_review.latest_feedback.id }} — <code>{{ draft_review.latest_feedback.review_status }}</code></p>
 {% endif %}
 
-<form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/notes">
+<p class="field-help">Поля <code>reviewer_name</code>, <code>notes</code> и <code>required_changes</code> сохраняются как feedback при нажатии «Сохранить заметки» или кнопок вердикта.</p>
+
+<form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/notes" class="form-checklist">
   <label>Ревьюер <input name="reviewer_name" value="{{ draft_review.latest_feedback.reviewer_name if draft_review.latest_feedback else 'operator' }}"></label>
-  <label>Заметки <textarea name="notes" rows="3">{{ draft_review.latest_feedback.notes if draft_review.latest_feedback else '' }}</textarea></label>
+  <label>Заметки <textarea name="notes" rows="4">{{ draft_review.latest_feedback.notes if draft_review.latest_feedback else '' }}</textarea></label>
   <label>Обязательные правки <input name="required_changes" placeholder="через запятую"></label>
   <fieldset>
-    <legend>Чеклист</legend>
-    <label><input type="checkbox" name="checked_public_visibility" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_public_visibility %}checked{% endif %}> Публичная видимость проверена</label>
-    <label><input type="checkbox" name="checked_seo" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_seo %}checked{% endif %}> SEO проверен</label>
-    <label><input type="checkbox" name="checked_content" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_content %}checked{% endif %}> Контент проверен</label>
-    <label><input type="checkbox" name="checked_media" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_media %}checked{% endif %}> Медиа проверено</label>
+    <legend>Чеклист проверки черновика</legend>
+    <ul class="form-checklist-list">
+    <li><label><input type="checkbox" name="checked_public_visibility" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_public_visibility %}checked{% endif %}> Публичная видимость проверена</label></li>
+    <li><label><input type="checkbox" name="checked_seo" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_seo %}checked{% endif %}> SEO проверен</label></li>
+    <li><label><input type="checkbox" name="checked_content" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_content %}checked{% endif %}> Контент проверен</label></li>
+    <li><label><input type="checkbox" name="checked_media" {% if draft_review.latest_feedback and draft_review.latest_feedback.checked_media %}checked{% endif %}> Медиа проверено</label></li>
+    </ul>
   </fieldset>
   <button class="btn" type="submit">Сохранить заметки</button>
 </form>
 
-<div class="btn-row" style="margin:1rem 0">
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn">Принят</button></form>
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn">Нужны правки</button></form>
-  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn">Отклонить</button></form>
+<div class="btn-row stacked-actions" style="margin:1rem 0">
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/accepted" style="display:inline"><button class="btn primary" type="submit">Принят</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/needs-edits" style="display:inline"><button class="btn" type="submit">Нужны правки</button></form>
+  <form method="post" action="/admin/release-candidates/{{ detail.id }}/draft-feedback/rejected" style="display:inline"><button class="btn" type="submit">Отклонить (feedback)</button></form>
 {% if draft_review.publication_id %}
 <form method="post" action="/admin/publications/{{ draft_review.publication_id }}/check-visibility" style="display:inline;margin-left:0.5rem">
   <button class="btn" type="submit">Проверить видимость (legacy)</button>
 </form>
 {% endif %}
 </div>
-
-{% if draft_review.visibility %}
-<h3>Публичная видимость (legacy)</h3>
-<p>Проверено: {{ draft_review.visibility.checked_at }}</p>
-<ul>
-  <li>Блог: {% if draft_review.visibility.visible_in_blog %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
-  <li>Sitemap: {% if draft_review.visibility.visible_in_sitemap %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
-  <li>RSS: {% if draft_review.visibility.visible_in_rss %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
-</ul>
-{% endif %}
 
 {% if draft_review.feedback_history %}
 <h3>История feedback</h3>
@@ -104,22 +137,47 @@
   {% endfor %}
 </ul>
 {% endif %}
+</section>
 
-<h2>Публичная публикация (4Q)</h2>
+<section class="panel" id="rc-public-publish">
+<h2>Публичная публикация</h2>
 <p>Видимость: <code>{{ public_info.public_visibility_status or 'unknown' }}</code>
   | Candidate: <code>{{ detail.public_status or 'unknown' }}</code>
   {% if public_info.analytics_ready %}| <span class="badge status-done">analytics готов</span>{% endif %}
 </p>
 {% if public_info.public_url %}
-<p>Public URL: <a href="{{ public_info.public_url }}" target="_blank" rel="noopener">{{ public_info.public_url }}</a></p>
+<p>Public URL: <a class="break-anywhere" href="{{ public_info.public_url }}" target="_blank" rel="noopener">{{ public_info.public_url }}</a></p>
 {% endif %}
 {% if public_info.publication_id %}
 <div class="btn-row" style="margin:1rem 0">
-  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/check-public-status" style="display:inline"><button class="btn">Проверить публичный статус</button></form>
-  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/confirm-public" style="display:inline"><button class="btn">Подтвердить публикацию</button></form>
-  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/mark-not-public" style="display:inline"><button class="btn">Не опубликовано</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/check-public-status" style="display:inline"><button class="btn" type="submit">Проверить публичный статус</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/confirm-public" style="display:inline"><button class="btn primary" type="submit">Подтвердить публикацию</button></form>
+  <form method="post" action="/admin/publications/{{ public_info.publication_id }}/mark-not-public" style="display:inline"><button class="btn" type="submit">Не опубликовано</button></form>
   <a class="btn" href="/admin/publications/{{ public_info.publication_id }}">Карточка публикации</a>
 </div>
 {% endif %}
 </section>
+
+<details class="panel debug-details">
+  <summary>Техническая диагностика</summary>
+  <h3>Чеклист (JSON)</h3>
+  <pre class="code-block">{{ detail.checklist | tojson(indent=2) }}</pre>
+  {% if detail.publish_runs %}
+  <h3>Запуски публикации</h3>
+  <ul>{% for r in detail.publish_runs %}<li>#{{ r.id }} — {{ r.status }} (dry_run={{ r.dry_run }})</li>{% endfor %}</ul>
+  {% endif %}
+  <p class="btn-row">
+    <a class="btn" href="/api/release-candidates/{{ detail.id }}/payload-preview" target="_blank">Превью payload (JSON)</a>
+    <a class="btn" href="/api/publish-targets" target="_blank">Состояние publish targets</a>
+  </p>
+  {% if draft_review.visibility %}
+  <h3>Публичная видимость (legacy)</h3>
+  <p>Проверено: {{ draft_review.visibility.checked_at }}</p>
+  <ul>
+    <li>Блог: {% if draft_review.visibility.visible_in_blog %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
+    <li>Sitemap: {% if draft_review.visibility.visible_in_sitemap %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
+    <li>RSS: {% if draft_review.visibility.visible_in_rss %}<strong class="warn-box">ВИДЕН</strong>{% else %}не виден{% endif %}</li>
+  </ul>
+  {% endif %}
+</details>
 {% endblock %}

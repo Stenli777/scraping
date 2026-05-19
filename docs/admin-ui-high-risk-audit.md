@@ -216,9 +216,27 @@ grep -nE '<form|action=|method=|name=|value=|button|submit|href=' app/admin/temp
 
 ---
 
+## Detail operator clarity (post–Batch 5)
+
+- **Этап:** `admin-ui-detail-operator-clarity` (2026-05-19)
+- **Улучшено:** операторская сводка «Что сейчас» / «Следующий шаг»; human-readable пояснения блокировок; секции действий (QA / publish / danger-zone); debug/raw в `<details>`; smoke проверяет HTML markers, не только 200
+- **Forms:** `action` / `method` / `name` / `value` **не менялись**
+- **Backend:** routes / services / models **не трогались**
+- **Остаточный debt:** raw `<code>` статусы в badge; дубликат Media (свёрнут, не удалён); publish history table column alignment
+
+### Smoke markers (detail pages)
+
+| Страница | Script | Markers |
+|----------|--------|---------|
+| Document detail | `check_admin_document_detail.py` | «Операторская сводка» или «Что сейчас»; «Следующий шаг»; «Блокировки публикации»; «Релиз-кандидаты» |
+| RC detail | `check_admin_release_candidate_detail.py` | «Что сейчас» или «О странице»; «Следующий шаг»; «Блокирующие проблемы»; «Проверка черновика» |
+
+---
+
 ## Audit metadata
 
 - **Batch 5 completed:** 2026-05-19 — display-only RU polish `document_detail.html`, `release_candidate_detail.html`; RC/Canonical внутри content block.
+- **Operator clarity completed:** 2026-05-19 — targeted UX onboarding on same two templates + CSS + smoke markers.
 - **Дата аудита (UTC):** 2026-05-19
 - **Аудитор:** Cursor agent (Batch 4 audit-only)
 - **Изменения кода в Batch 4:** нет (только этот документ + PROJECT_LOG + redesign-plan)

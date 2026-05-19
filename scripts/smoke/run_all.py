@@ -23,6 +23,7 @@ CHECKS_DEFAULT = [
     "check_admin_discovered.py",
     "check_admin_task_detail.py",
     "check_admin_document_detail.py",
+    "check_admin_release_candidate_detail.py",
     "check_ready.py",
     "check_db.py",
     "check_cliproxy.py",
