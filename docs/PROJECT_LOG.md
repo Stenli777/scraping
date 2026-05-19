@@ -511,3 +511,19 @@
 - **Команды:** curl `/admin/tasks/17`, `/admin/tasks/1` → 200; smoke PASS
 - **Restart:** `systemctl restart scrap-api.service` (uvicorn держал старый код до restart)
 - **Следующий шаг:** merge Batch 2 + 4B в master
+
+
+---
+
+## 2026-05-19 — Admin UI Этап 4 Batch 3: route titles (display)
+
+- **Ветка:** admin-ui-i18n-stage-4-batch-3
+- **Base commit:** 43db0f5 (merge Batch 2 + Stage 4B)
+- **Batch:** Stage 4 Batch 3 — русские `title` в TemplateResponse context для переведённых admin pages
+- **Что изменено:** `app/admin/routes.py` — title values; `app/admin/manual_url_routes.py` — title + request в context для manual-urls
+- **Не менялось:** templates, CSS, routes paths, handlers, forms, services
+- **Переведены titles:** Dashboard→Обзор, Failed Items, Review Queue, Source Directories, Discovered URLs, Editorial Queue, Publications, Draft reviews, Release candidates, Projects, Prompts, Quality Scores, Publish Targets/Runs, Operations, System, Media, Source Quality, task detail (уже RU)
+- **Не тронуты:** document_detail, release_candidate_detail, publication detail, dynamic high-risk titles
+- **Команды:** smoke PASS; curl Batch 1–2 pages + tasks/17 — 200
+- **Restart:** systemctl restart scrap-api.service (uvicorn)
+- **Следующий шаг:** merge Batch 3 в master или Batch 4 high-risk audit-only

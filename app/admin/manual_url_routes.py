@@ -23,7 +23,13 @@ def admin_manual_urls(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "manual_urls.html",
-        {"projects": projects, "directories": directories, "results": None},
+        {
+            "request": request,
+            "title": "Ручной импорт URL",
+            "projects": projects,
+            "directories": directories,
+            "results": None,
+        },
     )
 
 
@@ -69,6 +75,8 @@ def admin_manual_urls_submit(
         request,
         "manual_urls.html",
         {
+            "request": request,
+            "title": "Ручной импорт URL",
             "projects": projects,
             "directories": directories,
             "results": results,
