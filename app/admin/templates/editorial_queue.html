@@ -1,26 +1,58 @@
 {% extends "base.html" %}
 {% block content %}
 {% if not feature_flags.get('ENABLE_EDITORIAL_WORKFLOW') %}
-<p class="warn-box">Editorial workflow disabled (ENABLE_EDITORIAL_WORKFLOW=false).</p>
+<p class="warn-box">Editorial workflow отключён (ENABLE_EDITORIAL_WORKFLOW=false).</p>
 {% else %}
 
-<h2>Needs review</h2>
-<p><small>generated, operator_review</small></p>
-{% set items = groups.needs_review %}
-{% include "_editorial_queue_table.html" %}
+<div class="page-header">
+  <p class="page-subtitle">Редакторская очередь: документы сгруппированы по статусам проверки и готовности к публикации.</p>
+</div>
 
-<h2>Needs revision</h2>
-{% set items = groups.needs_revision %}
-{% include "_editorial_queue_table.html" %}
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Очередь показывает документы на этапе editorial review после rewrite и quality.</p>
+  <p class="help-block-title">Действия</p>
+  <ul>
+    <li><strong>Открыть</strong> — карточка документа с полным контекстом pipeline.</li>
+    <li><strong>RC</strong> — создать release candidate для публикации.</li>
+    <li><strong>QC</strong> — запустить проверку качества (run quality).</li>
+  </ul>
+  <p class="field-help">Заблокированные документы (blocked) нельзя публиковать без устранения причин.</p>
+</aside>
 
-<h2>Ready</h2>
-<p><small>approved, ready_to_publish</small></p>
-{% set items = groups.ready %}
-{% include "_editorial_queue_table.html" %}
+<section class="section-stack panel">
+  <h2>Требует проверки</h2>
+  <p class="muted"><small>generated, operator_review</small></p>
+  {% set items = groups.needs_review %}
+  <div class="table-scroll">
+    {% include "_editorial_queue_table.html" %}
+  </div>
+</section>
 
-<h2>Rejected</h2>
-{% set items = groups.rejected %}
-{% include "_editorial_queue_table.html" %}
+<section class="section-stack panel">
+  <h2>Нужна доработка</h2>
+  {% set items = groups.needs_revision %}
+  <div class="table-scroll">
+    {% include "_editorial_queue_table.html" %}
+  </div>
+</section>
+
+<section class="section-stack panel">
+  <h2>Готово к публикации</h2>
+  <p class="muted"><small>approved, ready_to_publish</small></p>
+  {% set items = groups.ready %}
+  <div class="table-scroll">
+    {% include "_editorial_queue_table.html" %}
+  </div>
+</section>
+
+<section class="section-stack panel">
+  <h2>Отклонено</h2>
+  {% set items = groups.rejected %}
+  <div class="table-scroll">
+    {% include "_editorial_queue_table.html" %}
+  </div>
+</section>
 
 {% endif %}
 {% endblock %}

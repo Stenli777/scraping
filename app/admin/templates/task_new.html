@@ -1,18 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
-<form method="post" action="/admin/tasks/new" class="form">
-  <label>
-    URL статьи
-    <input type="url" name="source_url" required placeholder="https://example.com/article">
-  </label>
-  <label>
-    Тип парсера
-    <select name="parser_type">
-      {% for p in parser_types %}
-      <option value="{{ p }}">{{ p }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <button type="submit" class="btn primary">Создать задачу</button>
-</form>
+<div class="page-header">
+  <p class="page-subtitle">Создайте scrape-задачу для одного URL. После отправки откроется карточка задачи в pipeline.</p>
+</div>
+
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Форма создаёт одну scraping-задачу по указанному URL.</p>
+  <p class="help-block-title">Что делать</p>
+  <ul>
+    <li>Вставьте URL статьи и нажмите «Создать задачу».</li>
+    <li>Тип парсера можно оставить <code>generic_article</code>, если для домена нет специального парсера.</li>
+    <li>Для массового добавления URL используйте <a href="/admin/manual-urls">ручной импорт</a>.</li>
+  </ul>
+</aside>
+
+<div class="panel">
+  <form method="post" action="/admin/tasks/new" class="form form-grid">
+    <label>
+      URL статьи
+      <input type="url" name="source_url" required placeholder="https://example.com/article">
+      <span class="field-help">Полный адрес страницы статьи, которую нужно спарсить.</span>
+    </label>
+    <label>
+      Тип парсера
+      <select name="parser_type">
+        {% for p in parser_types %}
+        <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+      <span class="field-help">Парсер подбирается по домену; при сомнении оставьте generic_article.</span>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Создать задачу</button>
+    </div>
+  </form>
+</div>
 {% endblock %}

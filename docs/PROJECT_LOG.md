@@ -439,3 +439,16 @@
 - **Результат:** forms/action/method/name без изменений; /admin/editorial не используется
 - **Ошибки:** нет
 - **Следующий шаг:** Этап 3 — применить UI kit к P0 страницам (task_new, discovered_urls, editorial_queue + partial)
+
+---
+
+## 2026-05-19 — Admin UI Этап 3: P0 pages polish
+
+- **Ветка:** admin-ui-p0-pages-stage-3
+- **Base commit:** f87e5c9 (merge UI kit stage 2)
+- **Что изменено:** UI kit применён к P0: task_new, discovered_urls, editorial_queue, _editorial_queue_table; help-блоки, tabs фильтров, table-scroll, русские labels колонок/кнопок; точечный CSS (form-grid, section-stack, action-cell)
+- **Файлы:** 4 templates, admin.css, PROJECT_LOG, admin-ui-redesign-plan.md
+- **Forms сохранены:** action=/admin/tasks/new method=post name=source_url name=parser_type; discovered POST enqueue/approve-quality/ignore; editorial POST RC/QC — без изменений URL/method/name
+- **Команды:** check_health PASS; run_all PASS; curl GET :8800 P0 pages — 200
+- **Ошибки:** нет
+- **Следующий шаг:** Этап 4 — русификация display layer на P1 и остальных страницах

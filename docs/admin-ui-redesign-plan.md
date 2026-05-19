@@ -2,8 +2,9 @@
 
 > Документ подготовлен **2026-05-19** (этап: аудит + план).  
 > **Этап 1 выполнен** (ветка `admin-ui-sidebar-stage-1`, commit `f69e118`, merge `eebb951`).  
-> **Этап 2 выполнен** (ветка `admin-ui-kit-stage-2`): UI kit в `admin.css`, scrollbar sidebar, labels меню в `base.html`.  
-> **Следующий этап:** Этап 3 — P0 страницы (`task_new`, `discovered_urls`, `editorial_queue`).  
+> **Этап 2 выполнен** (ветка `admin-ui-kit-stage-2`, merge `f87e5c9`).  
+> **Этап 3 выполнен** (ветка `admin-ui-p0-pages-stage-3`): P0 templates + help-блоки + tabs + table-scroll.  
+> **Следующий этап:** Этап 4 — русификация display layer на остальных страницах.  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
@@ -15,9 +16,9 @@
 |------|----------|-------|--------|
 | 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`, merge `eebb951`) |
 | 2 | UI kit | `admin.css`, labels в `base.html` | **Выполнен** (ветка `admin-ui-kit-stage-2`) |
-| 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Следующий** |
-| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | Запланирован |
-| 5 | Help-блоки | P0/P1 страницы | Запланирован |
+| 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Выполнен** (ветка `admin-ui-p0-pages-stage-3`) |
+| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **Следующий** |
+| 5 | Help-блоки | P1 страницы | Запланирован |
 | 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |
 | 7 | High-risk точечно | document detail, RC detail, revisions | Запланирован |
 | 8 | Финальная полировка | mobile, a11y, active states, legacy CSS cleanup | Запланирован |

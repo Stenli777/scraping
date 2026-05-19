@@ -685,3 +685,67 @@ a:hover {
     columns: 1;
   }
 }
+
+/* --- P0 page helpers (stage 3) --- */
+.page-header {
+  margin: -0.25rem 0 1rem;
+}
+.page-header .page-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.help-block ul {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.25rem;
+}
+.help-block li {
+  margin-bottom: 0.25rem;
+}
+.form-grid {
+  max-width: 640px;
+}
+.form-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.field-help {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.35rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+.section-stack {
+  margin-bottom: 1.5rem;
+}
+.section-stack:last-child {
+  margin-bottom: 0;
+}
+.section-stack > h2 {
+  margin-top: 0;
+}
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 1.25rem 0.75rem;
+}
+.action-cell {
+  white-space: nowrap;
+  min-width: 9rem;
+}
+.action-cell .btn-row {
+  flex-wrap: nowrap;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.numeric-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
