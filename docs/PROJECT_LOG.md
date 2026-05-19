@@ -390,3 +390,39 @@
 - **Doc #5:** editorial → ready_to_publish; RC #8 **qa_passed** (score 79).
 - **Pilot:** 2/5 stable (#4 draft CRMFlow24, #5 RC qa_passed); autobit pipeline in progress (LLM queue).
 - **Excluded:** autobit categories, monitor-crm transfer (quality_blocked), thin/off-topic from 4U.
+
+---
+
+## 2026-05-19 — Admin UI audit + redesign plan (docs only)
+
+- **Что изменено:** Аудит стека Scrap Admin (routes, templates, static); инвентаризация 49 GET + 44 POST admin routes; план поэтапного визуального редизайна (sidebar, UI kit, русификация, help-блоки). Код не менялся.
+- **Файлы:** docs/admin-ui-redesign-plan.md, docs/admin-ui-routes-inventory.md
+- **Команды:** rg admin routes, curl GET smoke, scripts/smoke/check_health.py
+- **Результат:** health PASS. Editorial route: /admin/editorial-queue (не /admin/editorial). Routes без пункта меню: manual-urls, release-candidates, canonical-groups.
+- **Ошибки:** нет
+- **Следующий шаг:** Этап 1 — sidebar в base.html + admin.css
+
+---
+
+## 2026-05-19 08:20 UTC — Admin UI Этап 1: sidebar layout
+
+- **Ветка:** admin-ui-sidebar-stage-1
+- **Что изменено:** Горизонтальный topbar заменён на левый vertical sidebar (9 групп, pipeline-first). Active link по request.url.path. Добавлены пункты manual-urls, release-candidates, canonical-groups. Responsive sidebar на <=900px. Backend/routes/forms не менялись.
+- **Файлы:** app/admin/templates/base.html, app/admin/static/admin.css, docs/admin-ui-redesign-plan.md, docs/PROJECT_LOG.md
+- **Команды:** curl GET :8800/admin, /admin/tasks/new, /admin/discovered-urls, /admin/editorial-queue; check_health PASS; run_all FAIL только git_clean (dirty tree)
+- **Результат:** GET 200; sidebar рендерится; form action=/admin/tasks/new без изменений
+- **Ошибки:** run_all git_clean — ожидаемо до commit
+- **Следующий шаг:** Этап 2 — UI kit (кнопки, табы, таблицы, бейджи)
+
+---
+
+## 2026-05-19 08:32 UTC — Admin UI Этап 1: финализация docs + smoke
+
+- **Ветка:** admin-ui-sidebar-stage-1
+- **Commits:** f69e118 (sidebar layout), 47e6024 (docs inventory + ADMIN_UI links)
+- **Что изменено:** Закрыты docs-хвосты этапа 1; обновлена дорожная карта 8 этапов в admin-ui-redesign-plan.md; порт 8800 зафиксирован в документации
+- **Файлы:** docs/ADMIN_UI.md, docs/admin-ui-routes-inventory.md, docs/admin-ui-redesign-plan.md, docs/PROJECT_LOG.md
+- **Команды:** check_health PASS; run_all PASS (all smoke checks, git clean); curl GET :8800/admin, /tasks/new, /discovered-urls, /editorial-queue — 200
+- **Результат:** git tree clean; формы/action URLs не менялись; /admin/editorial не используется
+- **Ошибки:** нет
+- **Следующий шаг:** merge admin-ui-sidebar-stage-1 в master после ручной визуальной проверки; затем Этап 2 (ветка admin-ui-kit-stage-2)
