@@ -116,7 +116,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "stats": stats,
             "recent_tasks": recent_tasks,
-            "title": "Dashboard",
+            "title": "Обзор",
         },
     )
 
@@ -132,7 +132,7 @@ def admin_failed_items(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "items": items,
             "stale_tasks": stale,
-            "title": "Failed Items",
+            "title": "Сбои и зависшие",
         },
     )
 
@@ -463,7 +463,7 @@ def admin_publish_targets(request: Request, db: Session = Depends(get_db)):
             "health": health,
             "safety_profiles": safety_profiles,
             "safety_map": safety_map,
-            "title": "Publish Targets",
+            "title": "Цели публикации",
         },
     )
 
@@ -481,7 +481,7 @@ def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
             "runs": runs,
             "retryable": retryable,
             "chains": chains,
-            "title": "Publish Runs",
+            "title": "Запуски публикации",
         },
     )
 
@@ -507,7 +507,7 @@ def admin_projects(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "projects.html",
-        {"request": request, "projects": projects, "title": "Projects"},
+        {"request": request, "projects": projects, "title": "Проекты"},
     )
 
 
@@ -519,7 +519,7 @@ def admin_project_detail(project_id: int, request: Request, db: Session = Depend
     return templates.TemplateResponse(
         request,
         "project_detail.html",
-        {"request": request, "project": project, "title": f"Project {project.slug}"},
+        {"request": request, "project": project, "title": f"Проект {project.slug}"},
     )
 
 
@@ -529,7 +529,7 @@ def admin_review_queue(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "review_queue.html",
-        {"request": request, "reviews": reviews, "title": "Review Queue"},
+        {"request": request, "reviews": reviews, "title": "Очередь проверки"},
     )
 
 
@@ -559,7 +559,7 @@ def admin_source_directories(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "source_directories.html",
-        {"request": request, "directories": directories, "title": "Source Directories"},
+        {"request": request, "directories": directories, "title": "Источники"},
     )
 
 
@@ -577,7 +577,7 @@ def admin_source_directory_detail(
             "request": request,
             "directory": directory,
             "feature_flags": all_flags(),
-            "title": f"Source: {directory.name}",
+            "title": f"Источник: {directory.name}",
         },
     )
 
@@ -612,7 +612,7 @@ def admin_discovered_urls(
             "projects": projects,
             "directories": directories,
             "quality_map": quality_map,
-            "title": "Discovered URLs",
+            "title": "Найденные URL",
         },
     )
 
@@ -656,7 +656,7 @@ def admin_prompts(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "prompts.html",
-        {"request": request, "prompts": prompts, "title": "Prompts"},
+        {"request": request, "prompts": prompts, "title": "Промпты"},
     )
 
 
@@ -720,7 +720,7 @@ def admin_quality_scores(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "quality_scores.html",
-        {"request": request, "scores": scores, "title": "Quality Scores"},
+        {"request": request, "scores": scores, "title": "Оценки качества"},
     )
 
 
@@ -741,7 +741,7 @@ def admin_publications(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "publications.html",
-        {"request": request, "rows": rows, "title": "Publications", "feature_flags": all_flags()},
+        {"request": request, "rows": rows, "title": "Публикации", "feature_flags": all_flags()},
     )
 
 
@@ -801,7 +801,7 @@ def admin_operations(request: Request, db: Session = Depends(get_db)):
             "smoke_production_hint": ctx.get("smoke_production_hint"),
             "post_publication": ctx.get("post_publication"),
             "pilot_ops": ctx.get("pilot_ops"),
-            "title": "Operations",
+            "title": "Операции",
         },
     )
 
@@ -835,7 +835,7 @@ def admin_editorial_queue(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "groups": groups,
             "feature_flags": all_flags(),
-            "title": "Editorial Queue",
+            "title": "Редактура",
         },
     )
 
@@ -853,7 +853,7 @@ def admin_media(request: Request, db: Session = Depends(get_db)):
             "assets": assets,
             "feature_flags": all_flags(),
             "settings": get_settings(),
-            "title": "Media Assets",
+            "title": "Медиа",
         },
     )
 
@@ -870,7 +870,7 @@ def admin_source_quality(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "source_quality_dashboard.html",
-        {"request": request, "metrics": metrics, "trusted": trusted, "blocked": blocked, "high": high, "title": "Source Quality"},
+        {"request": request, "metrics": metrics, "trusted": trusted, "blocked": blocked, "high": high, "title": "Качество источников"},
     )
 
 
@@ -1159,7 +1159,7 @@ def admin_system(request: Request, db: Session = Depends(get_db)):
         "system.html",
         {
             "request": request,
-            "title": "System",
+            "title": "Система",
             "info": info,
             "warnings": get_workspace_warnings(),
             "scheduler_enabled": is_scheduler_enabled(),
@@ -1355,7 +1355,7 @@ def admin_release_candidates_list(request: Request, db: Session = Depends(get_db
     return templates.TemplateResponse(
         request,
         "release_candidates_list.html",
-        {"request": request, "items": items, "title": "Release candidates"},
+        {"request": request, "items": items, "title": "Релиз-кандидаты"},
     )
 
 
@@ -1427,7 +1427,7 @@ def admin_draft_reviews_list(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "draft_reviews_list.html",
-        {"request": request, "items": items, "title": "Draft reviews"},
+        {"request": request, "items": items, "title": "Проверка черновиков"},
     )
 
 
