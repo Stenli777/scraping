@@ -1,8 +1,9 @@
 # Scrap Admin — план визуального редизайна
 
 > Документ подготовлен **2026-05-19** (этап: аудит + план).  
-> **Этап 1 выполнен** (ветка `admin-ui-sidebar-stage-1`, commit `f69e118`, 2026-05-19): sidebar в `base.html` + `admin.css`.  
-> **Следующий этап:** Этап 2 — UI kit (кнопки, табы, таблицы, бейджи).  
+> **Этап 1 выполнен** (ветка `admin-ui-sidebar-stage-1`, commit `f69e118`, merge `eebb951`).  
+> **Этап 2 выполнен** (ветка `admin-ui-kit-stage-2`): UI kit в `admin.css`, scrollbar sidebar, labels меню в `base.html`.  
+> **Следующий этап:** Этап 3 — P0 страницы (`task_new`, `discovered_urls`, `editorial_queue`).  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
@@ -12,9 +13,9 @@
 
 | Этап | Название | Scope | Статус |
 |------|----------|-------|--------|
-| 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`) |
-| 2 | UI kit | `admin.css`, optional `_ui_macros.html` | Следующий |
-| 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | Запланирован |
+| 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`, merge `eebb951`) |
+| 2 | UI kit | `admin.css`, labels в `base.html` | **Выполнен** (ветка `admin-ui-kit-stage-2`) |
+| 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Следующий** |
 | 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | Запланирован |
 | 5 | Help-блоки | P0/P1 страницы | Запланирован |
 | 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |

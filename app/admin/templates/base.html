@@ -24,7 +24,7 @@
       <nav class="sidebar-nav" aria-label="Admin navigation">
         <section class="nav-group">
           <div class="nav-group-label">Обзор</div>
-          {{ nav_link('/admin', 'Dashboard') }}
+          {{ nav_link('/admin', 'Обзор') }}
           {{ nav_link('/admin/failed-items', 'Сбои и зависшие') }}
           {{ nav_link('/admin/operations', 'Операции') }}
           {{ nav_link('/admin/system', 'Система') }}
@@ -41,56 +41,56 @@
 
         <section class="nav-group">
           <div class="nav-group-label">Очереди и редактура</div>
-          {{ nav_link('/admin/review-queue', 'Review Queue') }}
-          {{ nav_link('/admin/editorial-queue', 'Editorial Queue') }}
-          {{ nav_link('/admin/draft-reviews', 'Draft reviews') }}
-          {{ nav_link('/admin/release-candidates', 'Release candidates') }}
+          {{ nav_link('/admin/review-queue', 'Очередь проверки') }}
+          {{ nav_link('/admin/editorial-queue', 'Редактура') }}
+          {{ nav_link('/admin/draft-reviews', 'Проверка черновиков') }}
+          {{ nav_link('/admin/release-candidates', 'Релиз-кандидаты') }}
         </section>
 
         <section class="nav-group">
           <div class="nav-group-label">Качество</div>
-          {{ nav_link('/admin/quality-scores', 'Quality scores') }}
-          {{ nav_link('/admin/canonical-groups', 'Canonical groups') }}
+          {{ nav_link('/admin/quality-scores', 'Оценки качества') }}
+          {{ nav_link('/admin/canonical-groups', 'Канонические группы') }}
         </section>
 
         <section class="nav-group">
           <div class="nav-group-label">Медиа и обогащение</div>
-          {{ nav_link('/admin/media', 'Media') }}
-          {{ nav_link('/admin/media-jobs', 'Media Jobs') }}
-          {{ nav_link('/admin/enrichment-dashboard', 'Enrichment') }}
-          {{ nav_link('/admin/enrichment-jobs', 'Enrichment Jobs') }}
+          {{ nav_link('/admin/media', 'Медиа') }}
+          {{ nav_link('/admin/media-jobs', 'Медиа-задачи') }}
+          {{ nav_link('/admin/enrichment-dashboard', 'Обогащение') }}
+          {{ nav_link('/admin/enrichment-jobs', 'Задачи обогащения') }}
         </section>
 
         <section class="nav-group">
           <div class="nav-group-label">Публикация</div>
-          {{ nav_link('/admin/publish-targets', 'Publish Targets') }}
-          {{ nav_link('/admin/publish-runs', 'Publish Runs') }}
-          {{ nav_link('/admin/publications', 'Publications') }}
-          {{ nav_link('/admin/analytics-ready', 'Analytics ready') }}
-          {{ nav_link('/admin/analytics', 'Analytics') }}
-          {{ nav_link('/admin/pilots', 'Pilots') }}
+          {{ nav_link('/admin/publish-targets', 'Цели публикации') }}
+          {{ nav_link('/admin/publish-runs', 'Запуски публикации') }}
+          {{ nav_link('/admin/publications', 'Публикации') }}
+          {{ nav_link('/admin/analytics-ready', 'Готово к аналитике') }}
+          {{ nav_link('/admin/analytics', 'Аналитика') }}
+          {{ nav_link('/admin/pilots', 'Пилоты') }}
         </section>
 
         <section class="nav-group">
           <div class="nav-group-label">LLM и промпты</div>
-          {{ nav_link('/admin/prompts', 'Prompts') }}
-          {{ nav_link('/admin/llm-runs', 'LLM Runs') }}
-          {{ nav_link('/admin/llm/smoke', 'LLM Smoke') }}
+          {{ nav_link('/admin/prompts', 'Промпты') }}
+          {{ nav_link('/admin/llm-runs', 'LLM-запуски') }}
+          {{ nav_link('/admin/llm/smoke', 'LLM smoke-test') }}
           {{ nav_link('/admin/hermes', 'Hermes') }}
         </section>
 
         <section class="nav-group">
           <div class="nav-group-label">Организация контента</div>
-          {{ nav_link('/admin/projects', 'Projects') }}
-          {{ nav_link('/admin/campaigns', 'Campaigns') }}
-          {{ nav_link('/admin/clusters', 'Clusters') }}
-          {{ nav_link('/admin/automation', 'Automation') }}
-          {{ nav_link('/admin/automation-runs', 'Automation Runs') }}
+          {{ nav_link('/admin/projects', 'Проекты') }}
+          {{ nav_link('/admin/campaigns', 'Кампании') }}
+          {{ nav_link('/admin/clusters', 'Кластеры') }}
+          {{ nav_link('/admin/automation', 'Автоматизация') }}
+          {{ nav_link('/admin/automation-runs', 'Запуски автоматизации') }}
         </section>
 
         <section class="nav-group">
           <div class="nav-group-label">Справка / API</div>
-          {{ nav_link('/admin/pipeline-events', 'Pipeline Events') }}
+          {{ nav_link('/admin/pipeline-events', 'События pipeline') }}
           {{ nav_link('/admin/settings', 'Настройки') }}
           {{ nav_link('/health', 'Health', true) }}
           {{ nav_link('/health/ready', 'Ready', true) }}
