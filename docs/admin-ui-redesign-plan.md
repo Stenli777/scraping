@@ -5,9 +5,8 @@
 > **Этап 2 выполнен** (ветка `admin-ui-kit-stage-2`, merge `f87e5c9`).  
 > **Этап 3 выполнен** (ветка `admin-ui-p0-pages-stage-3`): P0 templates + help-блоки + tabs + table-scroll.  
 > **Stage 3B:** fix filter `/admin/discovered-urls?status=...` (query order в routes.py).  
-> **Этап 4 начат** (ветка `admin-ui-i18n-stage-4`): Batch 1 — safe P1 templates. Batch 2 — остальные P1.  
-> **Batch 3:** route titles micro-batch — русские `title` в admin routes (browser tab).
-> **Stage 4B:** fix GET `/admin/tasks/{id}` — удалены неопределённые context keys в routes.py (после Batch 2).
+> **Stage 4 Batch 4 (audit-only):** high-risk templates audit — [admin-ui-high-risk-audit.md](./admin-ui-high-risk-audit.md).  
+> **Следующий шаг:** Batch 5 — display-only русификация `document_detail.html` + `release_candidate_detail.html` по плану audit.  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
@@ -20,10 +19,10 @@
 | 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`, merge `eebb951`) |
 | 2 | UI kit | `admin.css`, labels в `base.html` | **Выполнен** (ветка `admin-ui-kit-stage-2`) |
 | 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Выполнен** (ветка `admin-ui-p0-pages-stage-3`) |
-| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **В работе** (Batch 1 выполнен; Batch 2: task_detail, _pipeline_summary, publications, draft_reviews_list, release_candidates_list) |
+| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **Следующий** |
 | 5 | Help-блоки | P1 страницы | Запланирован |
 | 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |
-| 7 | High-risk точечно | document detail, RC detail, revisions | Запланирован |
+| 7 | High-risk точечно | document detail, RC detail, revisions | **Audit Batch 4 выполнен** → Batch 5 polish по [admin-ui-high-risk-audit.md](./admin-ui-high-risk-audit.md) |
 | 8 | Финальная полировка | mobile, a11y, active states, legacy CSS cleanup | Запланирован |
 
 **Примечание:** Scrap admin слушает порт **8800** (не 8000 — там Hermes). Editorial route: `/admin/editorial-queue` (не `/admin/editorial`).
