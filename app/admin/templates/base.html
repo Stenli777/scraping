@@ -7,47 +7,104 @@
   <link rel="stylesheet" href="/static/admin.css">
 </head>
 <body>
-  <header class="topbar">
-    <a href="/admin" class="brand">Scrap Admin</a>
-    <nav>
-      <a href="/admin">Dashboard</a>
-      <a href="/admin/failed-items">Failed</a>
-      <a href="/admin/tasks/new">Добавить URL</a>
-      <a href="/admin/projects">Projects</a>
-      <a href="/admin/source-directories">Discovery</a>
-      <a href="/admin/source-quality">Quality</a> · <a href="/admin/discovered-urls">Discovered URLs</a>
-      <a href="/admin/review-queue">Review Queue</a>
-      <a href="/admin/editorial-queue">Editorial</a>
-      <a href="/admin/prompts">Prompts</a>
-      <a href="/admin/quality-scores">Quality</a>
-      <a href="/admin/hermes">Hermes</a>
-      <a href="/admin/media">Media</a>
-      <a href="/admin/enrichment-dashboard">Enrichment</a> · <a href="/admin/enrichment-jobs">Jobs</a> · <a href="/admin/media-jobs">Media Jobs</a>
-      <a href="/admin/campaigns">Campaigns</a>
-      <a href="/admin/clusters">Clusters</a>
-      <a href="/admin/publish-targets">Publish Targets</a>
-      <a href="/admin/publish-runs">Publish Runs</a>
-      <a href="/admin/llm-runs">LLM Runs</a>
-      <a href="/admin/pipeline-events">Pipeline</a>
-      <a href="/admin/llm/smoke">LLM Smoke</a>
-      <a href="/admin/publications">Publications</a>
-      <a href="/admin/draft-reviews">Draft reviews</a>
-      <a href="/admin/analytics">Analytics</a>
-      <a href="/admin/analytics-ready">Analytics ready</a>
-      <a href="/admin/pilots">Pilots</a>
-      <a href="/admin/automation">Automation</a>
-      <a href="/admin/automation-runs">Automation Runs</a>
-      <a href="/admin/system">System</a>
-      <a href="/admin/operations">Operations</a>
-      <a href="/admin/settings">Настройки</a>
-      <a href="/health" target="_blank">Health</a>
-      <a href="/health/ready" target="_blank">Ready</a>
-      <a href="/docs" target="_blank">API Docs</a>
-    </nav>
-  </header>
-  <main class="container">
-    <h1>{{ title }}</h1>
-    {% block content %}{% endblock %}
-  </main>
+  {% set current_path = request.url.path %}
+  {% macro nav_link(href, label, external=false) %}
+    {% if external %}
+      <a class="nav-link external" href="{{ href }}" target="_blank" rel="noopener noreferrer">{{ label }}</a>
+    {% elif href == '/admin' %}
+      <a class="nav-link{% if current_path == '/admin' %} active{% endif %}" href="{{ href }}">{{ label }}</a>
+    {% else %}
+      <a class="nav-link{% if current_path == href or current_path.startswith(href + '/') %} active{% endif %}" href="{{ href }}">{{ label }}</a>
+    {% endif %}
+  {% endmacro %}
+
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <a href="/admin" class="admin-brand">Scrap Admin</a>
+      <nav class="sidebar-nav" aria-label="Admin navigation">
+        <section class="nav-group">
+          <div class="nav-group-label">Обзор</div>
+          {{ nav_link('/admin', 'Dashboard') }}
+          {{ nav_link('/admin/failed-items', 'Сбои и зависшие') }}
+          {{ nav_link('/admin/operations', 'Операции') }}
+          {{ nav_link('/admin/system', 'Система') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Импорт и discovery</div>
+          {{ nav_link('/admin/tasks/new', 'Добавить URL') }}
+          {{ nav_link('/admin/manual-urls', 'Ручной импорт URL') }}
+          {{ nav_link('/admin/source-directories', 'Источники') }}
+          {{ nav_link('/admin/discovered-urls', 'Найденные URL') }}
+          {{ nav_link('/admin/source-quality', 'Качество источников') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Очереди и редактура</div>
+          {{ nav_link('/admin/review-queue', 'Review Queue') }}
+          {{ nav_link('/admin/editorial-queue', 'Editorial Queue') }}
+          {{ nav_link('/admin/draft-reviews', 'Draft reviews') }}
+          {{ nav_link('/admin/release-candidates', 'Release candidates') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Качество</div>
+          {{ nav_link('/admin/quality-scores', 'Quality scores') }}
+          {{ nav_link('/admin/canonical-groups', 'Canonical groups') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Медиа и обогащение</div>
+          {{ nav_link('/admin/media', 'Media') }}
+          {{ nav_link('/admin/media-jobs', 'Media Jobs') }}
+          {{ nav_link('/admin/enrichment-dashboard', 'Enrichment') }}
+          {{ nav_link('/admin/enrichment-jobs', 'Enrichment Jobs') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Публикация</div>
+          {{ nav_link('/admin/publish-targets', 'Publish Targets') }}
+          {{ nav_link('/admin/publish-runs', 'Publish Runs') }}
+          {{ nav_link('/admin/publications', 'Publications') }}
+          {{ nav_link('/admin/analytics-ready', 'Analytics ready') }}
+          {{ nav_link('/admin/analytics', 'Analytics') }}
+          {{ nav_link('/admin/pilots', 'Pilots') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">LLM и промпты</div>
+          {{ nav_link('/admin/prompts', 'Prompts') }}
+          {{ nav_link('/admin/llm-runs', 'LLM Runs') }}
+          {{ nav_link('/admin/llm/smoke', 'LLM Smoke') }}
+          {{ nav_link('/admin/hermes', 'Hermes') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Организация контента</div>
+          {{ nav_link('/admin/projects', 'Projects') }}
+          {{ nav_link('/admin/campaigns', 'Campaigns') }}
+          {{ nav_link('/admin/clusters', 'Clusters') }}
+          {{ nav_link('/admin/automation', 'Automation') }}
+          {{ nav_link('/admin/automation-runs', 'Automation Runs') }}
+        </section>
+
+        <section class="nav-group">
+          <div class="nav-group-label">Справка / API</div>
+          {{ nav_link('/admin/pipeline-events', 'Pipeline Events') }}
+          {{ nav_link('/admin/settings', 'Настройки') }}
+          {{ nav_link('/health', 'Health', true) }}
+          {{ nav_link('/health/ready', 'Ready', true) }}
+          {{ nav_link('/docs', 'API Docs', true) }}
+        </section>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="container">
+        <h1>{{ title }}</h1>
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
 </body>
 </html>
