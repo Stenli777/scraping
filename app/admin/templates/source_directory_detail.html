@@ -1,34 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="meta grid-meta">
-  <p><strong>Name:</strong> {{ directory.name }}</p>
-  <p><strong>Project ID:</strong> {{ directory.project_id }}</p>
-  <p><strong>Base URL:</strong> <a href="{{ directory.base_url }}" target="_blank">{{ directory.base_url }}</a></p>
-  <p><strong>Mode:</strong> <code>{{ directory.discovery_mode }}</code></p>
-  <p><strong>Enabled:</strong> {{ "yes" if directory.enabled else "no" }}</p>
-  <p><strong>Max URLs/run:</strong> {{ directory.max_urls_per_run }}</p>
-  <p><strong>Max depth:</strong> {{ directory.max_depth }}</p>
-  <p><strong>Crawl delay:</strong> {{ directory.crawl_delay_seconds }}s</p>
-  <p><strong>Last discovered:</strong> {{ directory.last_discovered_at or "—" }}</p>
+<div class="page-header">
+  <p class="page-subtitle">Карточка каталога discovery: настройки, паттерны и запуск обхода.</p>
 </div>
 
+<dl class="description-list">
+  <dt>Название</dt><dd>{{ directory.name }}</dd>
+  <dt>ID проекта</dt><dd>{{ directory.project_id }}</dd>
+  <dt>Базовый URL</dt><dd><a href="{{ directory.base_url }}" target="_blank">{{ directory.base_url }}</a></dd>
+  <dt>Режим</dt><dd><code>{{ directory.discovery_mode }}</code></dd>
+  <dt>Включён</dt><dd>{{ "да" if directory.enabled else "нет" }}</dd>
+  <dt>Макс. URL за запуск</dt><dd>{{ directory.max_urls_per_run }}</dd>
+  <dt>Макс. глубина</dt><dd>{{ directory.max_depth }}</dd>
+  <dt>Задержка crawl</dt><dd>{{ directory.crawl_delay_seconds }} с</dd>
+  <dt>Последний discovery</dt><dd>{{ directory.last_discovered_at or "—" }}</dd>
+</dl>
+
 <section class="panel">
-  <h2>Allow patterns</h2>
+  <h2>Разрешённые паттерны</h2>
   <pre class="content">{{ (directory.allow_patterns_json or []) | tojson(indent=2) }}</pre>
 </section>
 <section class="panel">
-  <h2>Block patterns</h2>
+  <h2>Блокируемые паттерны</h2>
   <pre class="content">{{ (directory.block_patterns_json or []) | tojson(indent=2) }}</pre>
 </section>
 
 {% if directory.enabled and feature_flags.get('ENABLE_SOURCE_DISCOVERY') %}
 <form method="post" action="/admin/source-directories/{{ directory.id }}/discover">
-  <button type="submit" class="btn primary">Run discovery</button>
+  <button type="submit" class="btn primary">Запустить discovery</button>
 </form>
 {% elif not feature_flags.get('ENABLE_SOURCE_DISCOVERY') %}
-<div class="warn-box">Discovery disabled (ENABLE_SOURCE_DISCOVERY=false)</div>
+<div class="warn-box">Discovery отключён (ENABLE_SOURCE_DISCOVERY=false)</div>
 {% endif %}
 
-<p><a class="btn" href="/admin/source-directories">← Directories</a>
-   <a class="btn" href="/admin/discovered-urls?source_directory_id={{ directory.id }}">Discovered URLs</a></p>
+<p>
+  <a class="btn" href="/admin/source-directories">← Источники</a>
+  <a class="btn" href="/admin/discovered-urls?source_directory_id={{ directory.id }}">Обнаруженные URL</a>
+</p>
 {% endblock %}

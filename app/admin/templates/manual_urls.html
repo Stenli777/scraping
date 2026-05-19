@@ -1,30 +1,56 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Manual URL intake</h1>
-<p>Trusted URLs → discovered_urls → source quality (no auto-enqueue unless checked).</p>
-<form method="post" action="/admin/manual-urls">
-  <label>Project ID</label>
-  <select name="project_id">
-    {% for p in projects %}
-    <option value="{{ p.id }}" {% if selected_project_id == p.id %}selected{% endif %}>{{ p.id }} — {{ p.slug }}</option>
-    {% endfor %}
-  </select>
-  <label>Source directory (optional)</label>
-  <select name="source_directory_id">
-    <option value="">auto</option>
-    {% for d in directories %}
-    <option value="{{ d.id }}" {% if selected_directory_id == d.id %}selected{% endif %}>{{ d.id }} — {{ d.name }}</option>
-    {% endfor %}
-  </select>
-  <label>URLs (one per line)</label>
-  <textarea name="urls_text" rows="12" cols="90" placeholder="https://autobit24.ru/blog/..."></textarea>
-  <label><input type="checkbox" name="enqueue" value="true"> Enqueue after intake</label>
-  <button type="submit">Intake</button>
+<div class="page-header">
+  <h1 class="page-title">Ручной импорт URL</h1>
+  <p class="page-subtitle">Доверенные URL → discovered_urls → оценка качества (без auto-enqueue, если не отмечено).</p>
+</div>
+
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Массовый или одиночный импорт URL в очередь discovery. Опционально — постановка в очередь scrape после intake.</p>
+  <p class="help-block-title">Что делать</p>
+  <ul>
+    <li>Выберите проект и при необходимости каталог источника.</li>
+    <li>Вставьте URL по одному на строку.</li>
+    <li>Отметьте «Поставить в очередь», если нужен enqueue сразу после импорта.</li>
+  </ul>
+</aside>
+
+<div class="panel">
+<form method="post" action="/admin/manual-urls" class="form form-grid">
+  <label>
+    ID проекта
+    <select name="project_id">
+      {% for p in projects %}
+      <option value="{{ p.id }}" {% if selected_project_id == p.id %}selected{% endif %}>{{ p.id }} — {{ p.slug }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Каталог источника (необязательно)
+    <select name="source_directory_id">
+      <option value="">auto</option>
+      {% for d in directories %}
+      <option value="{{ d.id }}" {% if selected_directory_id == d.id %}selected{% endif %}>{{ d.id }} — {{ d.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    URL (по одному на строку)
+    <textarea name="urls_text" rows="12" cols="90" placeholder="https://autobit24.ru/blog/..."></textarea>
+  </label>
+  <label><input type="checkbox" name="enqueue" value="true"> Поставить в очередь после импорта</label>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Импортировать</button>
+  </div>
 </form>
+</div>
+
 {% if results %}
-<h2>Results</h2>
+<h2>Результаты</h2>
+<div class="table-scroll">
 <table class="table">
-  <thead><tr><th>URL</th><th>ID</th><th>Status</th><th>Article</th><th>Dup</th><th>Error</th></tr></thead>
+  <thead><tr><th>URL</th><th>ID</th><th>Статус</th><th>Статья</th><th>Дубликат</th><th>Ошибка</th></tr></thead>
   <tbody>
   {% for r in results %}
   <tr>
@@ -32,11 +58,12 @@
     <td>{{ r.discovered_url_id or "—" }}</td>
     <td>{{ r.status }}</td>
     <td>{{ r.article_likelihood }} {% if r.is_article %}✓{% endif %}</td>
-    <td>{{ "yes" if r.duplicate else "no" }}</td>
+    <td>{{ "да" if r.duplicate else "нет" }}</td>
     <td>{{ r.error or "" }}</td>
   </tr>
   {% endfor %}
   </tbody>
 </table>
+</div>
 {% endif %}
 {% endblock %}

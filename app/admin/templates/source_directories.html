@@ -1,10 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="page-header">
+  <p class="page-subtitle">Каталоги discovery: базовый URL, режим обхода и последний запуск.</p>
+</div>
+
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Список source directories по проектам. Откройте карточку для паттернов и запуска discovery.</p>
+</aside>
+
+<div class="table-scroll">
 <table class="table">
   <thead>
     <tr>
-      <th>ID</th><th>Project</th><th>Name</th><th>Base URL</th><th>Mode</th>
-      <th>Enabled</th><th>Max URLs</th><th>Last discovered</th>
+      <th>ID</th><th>Проект</th><th>Название</th><th>Базовый URL</th><th>Режим</th>
+      <th>Включён</th><th>Макс. URL</th><th>Последний discovery</th>
     </tr>
   </thead>
   <tbody>
@@ -15,13 +25,14 @@
       <td>{{ d.name }}</td>
       <td class="url"><a href="{{ d.base_url }}" target="_blank">{{ d.base_url }}</a></td>
       <td><code>{{ d.discovery_mode }}</code></td>
-      <td>{{ "yes" if d.enabled else "no" }}</td>
+      <td>{{ "да" if d.enabled else "нет" }}</td>
       <td>{{ d.max_urls_per_run }}</td>
       <td>{{ d.last_discovered_at or "—" }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="8">Нет source directories. Запустите migration 005.</td></tr>
+    <tr><td colspan="8">Нет каталогов источников. Запустите migration 005.</td></tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}

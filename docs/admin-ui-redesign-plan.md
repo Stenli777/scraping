@@ -5,7 +5,7 @@
 > **Этап 2 выполнен** (ветка `admin-ui-kit-stage-2`, merge `f87e5c9`).  
 > **Этап 3 выполнен** (ветка `admin-ui-p0-pages-stage-3`): P0 templates + help-блоки + tabs + table-scroll.  
 > **Stage 3B:** fix filter `/admin/discovered-urls?status=...` (query order в routes.py).  
-> **Следующий этап:** Этап 4 — русификация display layer на остальных страницах.  
+> **Этап 4 начат** (ветка `admin-ui-i18n-stage-4`): Batch 1 — safe P1 templates. Batch 2 — остальные P1.  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
@@ -18,7 +18,7 @@
 | 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`, merge `eebb951`) |
 | 2 | UI kit | `admin.css`, labels в `base.html` | **Выполнен** (ветка `admin-ui-kit-stage-2`) |
 | 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Выполнен** (ветка `admin-ui-p0-pages-stage-3`) |
-| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **Следующий** |
+| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **В работе** (Batch 1: dashboard, failed_items, review_queue, source_directories, source_directory_detail, manual_urls) |
 | 5 | Help-блоки | P1 страницы | Запланирован |
 | 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |
 | 7 | High-risk точечно | document detail, RC detail, revisions | Запланирован |

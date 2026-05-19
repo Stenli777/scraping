@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="page-header">
+  <p class="page-subtitle">Сводка pipeline: задачи, discovery, сбои и последние события.</p>
+</div>
+
 <div class="stats-grid">
   <div class="stat-card">
-    <h3>Tasks</h3>
+    <h3>Задачи</h3>
     <ul class="stat-list">
       <li>queued: <strong>{{ stats.task_counts.get('queued', 0) }}</strong></li>
       <li>done: <strong>{{ stats.task_counts.get('done', 0) }}</strong></li>
@@ -10,7 +14,7 @@
     </ul>
   </div>
   <div class="stat-card">
-    <h3>Discovered URLs</h3>
+    <h3>Обнаруженные URL</h3>
     <ul class="stat-list">
       {% for st, cnt in stats.discovered_counts.items() %}
       <li>{{ st }}: <strong>{{ cnt }}</strong></li>
@@ -18,34 +22,34 @@
       <li>—</li>
       {% endfor %}
     </ul>
-    <p><a href="/admin/discovered-urls">Open queue</a></p>
+    <p><a href="/admin/discovered-urls">Открыть очередь</a></p>
   </div>
   <div class="stat-card">
-    <h3>Catalog</h3>
-    <p>Projects: <strong>{{ stats.projects_count }}</strong></p>
-    <p>Source directories: <strong>{{ stats.source_directories_count }}</strong></p>
-    <p><a href="/admin/source-directories">Discovery sources</a></p>
+    <h3>Каталог</h3>
+    <p>Проекты: <strong>{{ stats.projects_count }}</strong></p>
+    <p>Источники: <strong>{{ stats.source_directories_count }}</strong></p>
+    <p><a href="/admin/source-directories">Каталоги discovery</a></p>
   </div>
 </div>
 
 <div class="actions">
   <a class="btn primary" href="/admin/tasks/new">+ Новая задача</a>
-  <a class="btn" href="/admin/failed-items">Failed items</a>
-  <a class="btn" href="/admin/discovered-urls">Discovered URLs</a>
+  <a class="btn" href="/admin/failed-items">Сбои и зависшие</a>
+  <a class="btn" href="/admin/discovered-urls">Обнаруженные URL</a>
 </div>
 
 {% if stats.failed_tasks %}
 <div class="panel">
-  <h2>Recent failed tasks</h2>
+  <h2>Последние сбои задач</h2>
   <table class="table compact">
-    <thead><tr><th>ID</th><th>Status</th><th>Error</th><th></th></tr></thead>
+    <thead><tr><th>ID</th><th>Статус</th><th>Ошибка</th><th></th></tr></thead>
     <tbody>
       {% for t in stats.failed_tasks %}
       <tr>
         <td><a href="/admin/tasks/{{ t.id }}">#{{ t.id }}</a></td>
         <td><span class="badge status-{{ t.status }}">{{ t.status }}</span></td>
         <td class="url">{{ (t.error_message or '—')[:120] }}</td>
-        <td><a href="/admin/tasks/{{ t.id }}">Open</a></td>
+        <td><a href="/admin/tasks/{{ t.id }}">Открыть</a></td>
       </tr>
       {% endfor %}
     </tbody>
@@ -55,9 +59,9 @@
 
 {% if stats.failed_llm %}
 <div class="panel">
-  <h2>Recent LLM failures</h2>
+  <h2>Последние сбои LLM</h2>
   <table class="table compact">
-    <thead><tr><th>ID</th><th>Alias</th><th>Error</th><th>Task</th></tr></thead>
+    <thead><tr><th>ID</th><th>Alias</th><th>Ошибка</th><th>Задача</th></tr></thead>
     <tbody>
       {% for r in stats.failed_llm %}
       <tr>
@@ -74,9 +78,9 @@
 
 {% if stats.failed_publish %}
 <div class="panel">
-  <h2>Recent publish failures</h2>
+  <h2>Последние сбои публикации</h2>
   <table class="table compact">
-    <thead><tr><th>ID</th><th>Status</th><th>Doc</th><th>Error</th></tr></thead>
+    <thead><tr><th>ID</th><th>Статус</th><th>Док.</th><th>Ошибка</th></tr></thead>
     <tbody>
       {% for r in stats.failed_publish %}
       <tr>
@@ -92,9 +96,9 @@
 {% endif %}
 
 <div class="panel">
-  <h2>Last pipeline events</h2>
+  <h2>Последние события pipeline</h2>
   <table class="table compact">
-    <thead><tr><th>ID</th><th>Task</th><th>Stage</th><th>Status</th><th>Time</th></tr></thead>
+    <thead><tr><th>ID</th><th>Задача</th><th>Этап</th><th>Статус</th><th>Время</th></tr></thead>
     <tbody>
       {% for e in stats.pipeline_events %}
       <tr>
@@ -105,14 +109,14 @@
         <td>{{ e.created_at }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="5">No events</td></tr>
+      <tr><td colspan="5">Нет событий</td></tr>
       {% endfor %}
     </tbody>
   </table>
-  <p><a href="/admin/pipeline-events">All events</a></p>
+  <p><a href="/admin/pipeline-events">Все события</a></p>
 </div>
 
-<h2>Recent tasks</h2>
+<h2>Последние задачи</h2>
 <table class="table">
   <thead>
     <tr><th>ID</th><th>URL</th><th>Статус</th><th>Документ</th><th>Создана</th><th></th></tr>
