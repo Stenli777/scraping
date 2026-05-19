@@ -18,7 +18,7 @@
 | 1 | Sidebar + layout | `base.html`, `admin.css` | **Выполнен** (`f69e118`, merge `eebb951`) |
 | 2 | UI kit | `admin.css`, labels в `base.html` | **Выполнен** (ветка `admin-ui-kit-stage-2`) |
 | 3 | P0 страницы | `task_new`, `discovered_urls`, `editorial_queue`, partial | **Выполнен** (ветка `admin-ui-p0-pages-stage-3`) |
-| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **В работе** (Batch 1: dashboard, failed_items, review_queue, source_directories, source_directory_detail, manual_urls) |
+| 4 | Русификация display layer | меню, заголовки, таблицы, статусы, кнопки | **В работе** (Batch 1 выполнен; Batch 2: task_detail, _pipeline_summary, publications, draft_reviews_list, release_candidates_list) |
 | 5 | Help-блоки | P1 страницы | Запланирован |
 | 6 | P1 страницы | dashboard, task detail, review queue, source dirs, failed items, manual urls, RC list, draft reviews, publications | Запланирован |
 | 7 | High-risk точечно | document detail, RC detail, revisions | Запланирован |

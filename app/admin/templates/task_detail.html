@@ -1,151 +1,155 @@
-{% extends "base.html" %}
-{% block content %}
-{% include "_pipeline_summary.html" %}
-
-<div class="panel entity-links">
-  <h2>Links</h2>
-  <p>
-    {% if project %}<a href="/admin/projects/{{ project.id }}">Project {{ project.slug }}</a> · {% endif %}
-    {% if discovered_url %}<a href="/admin/discovered-urls">Discovered URL #{{ discovered_url.id }}</a> · {% endif %}
-    {% if task.document %}<a href="/admin/documents/{{ task.document.id }}">Document #{{ task.document.id }}</a> · {% endif %}
-    <a href="/admin/pipeline-events">Pipeline events</a>
-    <a href="/admin/llm-runs">LLM runs</a>
-  </p>
-</div>
-
-<div class="meta grid-meta">
-  <p><strong>URL:</strong> <a href="{{ task.source_url }}" target="_blank">{{ task.source_url }}</a></p>
-  <p><strong>Статус:</strong> <span class="badge status-{{ task.status }}">{{ task.status }}</span></p>
-  <p><strong>Парсер:</strong> <code>{{ task.parser_type }}</code></p>
-  <p><strong>Rewriter (env):</strong> <code>{{ settings.rewriter_provider }}</code></p>
-  <p><strong>Создана:</strong> {{ task.created_at }}</p>
-  <p><strong>Обновлена:</strong> {{ task.updated_at }}</p>
-  {% if task.started_at %}<p><strong>Старт:</strong> {{ task.started_at }}</p>{% endif %}
-  {% if task.finished_at %}<p><strong>Финиш:</strong> {{ task.finished_at }}</p>{% endif %}
-  {% if task.error_message %}
-  <p class="error"><strong>Ошибка:</strong> {{ task.error_message }}</p>
-  {% endif %}
-</motion>
-
-{% if task.status == 'failed_retryable' %}
-<form method="post" action="/admin/tasks/{{ task.id }}/mark-skipped" style="margin-bottom:1rem">
-  <button type="submit" class="btn">Mark skipped</button>
-</form>
-{% endif %}
-
-{% if review_meta or review_record %}
-<div class="panel">
-  <h2>Review</h2>
-  <p><strong>Take:</strong> {{ review_meta.get('take', review_record.take if review_record else '—') }} | <strong>Score:</strong> {{ review_meta.get('score', review_record.score if review_record else '—') }}</p>
-  <p><strong>Reason:</strong> {{ review_meta.get('reason', review_record.reason if review_record else '—') }}</p>
-  {% if review_record %}<p><a href="/admin/review-queue">Review #{{ review_record.id }}</a></p>{% endif %}
-</div>
-{% endif %}
-{% if seo_record %}
-<div class="panel">
-  <h2>SEO</h2>
-  <p><strong>Title:</strong> {{ seo_record.seo_title or "—" }}</p>
-  <p><strong>Slug:</strong> <code>{{ seo_record.slug or "—" }}</code></p>
-</div>
-{% endif %}
-{% if rewrite_meta %}
-<div class="panel">
-  <h2>Rewrite metadata</h2>
-  <p><strong>Provider:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
-  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
-  <p><strong>Upstream:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
-  <p><strong>Fallback:</strong> {{ 'yes' if rewrite_meta.get('fallback_used') else 'no' }}</p>
-  <p><strong>Success:</strong> {{ rewrite_meta.get('success', '—') }}</p>
-  {% if rewrite_meta.get('llm_run_id') %}
-  <p><a href="/admin/llm-runs">LLM run #{{ rewrite_meta.llm_run_id }}</a></p>
-  {% endif %}
-</div>
-{% endif %}
-
-{% if llm_runs %}
-<div class="panel">
-  <h2>LLM runs</h2>
-  <table class="table compact">
-    <thead><tr><th>ID</th><th>Alias</th><th>OK</th><th>Error</th></tr></thead>
-    <tbody>
-      {% for r in llm_runs %}
-      <tr>
-        <td>#{{ r.id }}</td>
-        <td><code>{{ r.model_alias }}</code></td>
-        <td>{{ 'yes' if r.success else 'no' }}</td>
-        <td class="url">{{ (r.error_message or '—')[:80] }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
-
-{% if publish_runs %}
-<div class="panel">
-  <h2>Publish runs</h2>
-  <table class="table compact">
-    <thead><tr><th>ID</th><th>Status</th><th>Dry</th></tr></thead>
-    <tbody>
-      {% for r in publish_runs %}
-      <tr>
-        <td><a href="/admin/publish-runs">#{{ r.id }}</a></td>
-        <td>{{ r.status }}</td>
-        <td>{{ 'yes' if r.dry_run else 'no' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
-
-{% if task.document %}
-<div class="export-links">
-  <a class="btn primary" href="/admin/documents/{{ task.document.id }}">Open document #{{ task.document.id }}</a>
-  <form method="post" action="/admin/documents/{{ task.document.id }}/rerun-rewrite" style="display:inline">
-    <button type="submit" class="btn">Rerun rewrite</button>
-  </form>
-  <form method="post" action="/admin/documents/{{ task.document.id }}/run-review" style="display:inline">
-    <button type="submit" class="btn">Run review</button>
-  </form>
-  <form method="post" action="/admin/documents/{{ task.document.id }}/run-seo" style="display:inline">
-    <button type="submit" class="btn">Run SEO</button>
-  </form>
-  {% if feature_flags.get('ENABLE_PUBLISHING') and publish_readiness is defined and publish_readiness.ready %}
-  <a class="btn" href="/admin/documents/{{ task.document.id }}#publish">Publish draft</a>
-  {% endif %}
-  <a class="btn" href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
-</div>
-{% endif %}
-
-<h2>Логи задачи</h2>
-<table class="table">
-  <thead><tr><th>Время</th><th>Уровень</th><th>Сообщение</th><th>Payload</th></tr></thead>
-  <tbody>
-    {% for log in logs %}
-    <tr>
-      <td>{{ log.created_at.strftime('%H:%M:%S') if log.created_at else '—' }}</td>
-      <td><span class="badge level-{{ log.level }}">{{ log.level }}</span></td>
-      <td>{{ log.message }}</td>
-      <td class="url">{% if log.payload_json %}<code>{{ log.payload_json }}</code>{% else %}—{% endif %}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="4">Логов нет</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-{% if pipeline_events %}
-<div class="panel">
-  <h2>Pipeline events</h2>
-  <table class="table compact">
-    <thead><tr><th>Stage</th><th>Status</th><th>Time</th></tr></thead>
-    <tbody>
-      {% for e in pipeline_events %}
-      <tr><td><code>{{ e.stage }}</code></td><td>{{ e.status }}</td><td>{{ e.created_at }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
-{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+{% include "_pipeline_summary.html" %}
+
+<div class="page-header">
+  <p class="page-subtitle">Задача #{{ task.id }} — pipeline, связи, метаданные и логи.</p>
+</div>
+
+<div class="panel entity-links">
+  <h2>Ссылки</h2>
+  <p>
+    {% if project %}<a href="/admin/projects/{{ project.id }}">Проект {{ project.slug }}</a> · {% endif %}
+    {% if discovered_url %}<a href="/admin/discovered-urls">Обнаруженный URL #{{ discovered_url.id }}</a> · {% endif %}
+    {% if task.document %}<a href="/admin/documents/{{ task.document.id }}">Документ #{{ task.document.id }}</a> · {% endif %}
+    <a href="/admin/pipeline-events">События pipeline</a>
+    <a href="/admin/llm-runs">LLM runs</a>
+  </p>
+</div>
+
+<div class="meta grid-meta">
+  <p><strong>URL:</strong> <a href="{{ task.source_url }}" target="_blank">{{ task.source_url }}</a></p>
+  <p><strong>Статус:</strong> <span class="badge status-{{ task.status }}">{{ task.status }}</span></p>
+  <p><strong>Парсер:</strong> <code>{{ task.parser_type }}</code></p>
+  <p><strong>Rewriter (env):</strong> <code>{{ settings.rewriter_provider }}</code></p>
+  <p><strong>Создана:</strong> {{ task.created_at }}</p>
+  <p><strong>Обновлена:</strong> {{ task.updated_at }}</p>
+  {% if task.started_at %}<p><strong>Старт:</strong> {{ task.started_at }}</p>{% endif %}
+  {% if task.finished_at %}<p><strong>Завершено:</strong> {{ task.finished_at }}</p>{% endif %}
+  {% if task.error_message %}
+  <p class="error"><strong>Ошибка:</strong> {{ task.error_message }}</p>
+  {% endif %}
+</div>
+
+{% if task.status == 'failed_retryable' %}
+<form method="post" action="/admin/tasks/{{ task.id }}/mark-skipped" style="margin-bottom:1rem">
+  <button type="submit" class="btn">Пропустить</button>
+</form>
+{% endif %}
+
+{% if review_meta or review_record %}
+<div class="panel">
+  <h2>Review</h2>
+  <p><strong>Решение:</strong> {{ review_meta.get('take', review_record.take if review_record else '—') }} | <strong>Оценка:</strong> {{ review_meta.get('score', review_record.score if review_record else '—') }}</p>
+  <p><strong>Причина:</strong> {{ review_meta.get('reason', review_record.reason if review_record else '—') }}</p>
+  {% if review_record %}<p><a href="/admin/review-queue">Review #{{ review_record.id }}</a></p>{% endif %}
+</div>
+{% endif %}
+{% if seo_record %}
+<div class="panel">
+  <h2>SEO</h2>
+  <p><strong>Заголовок:</strong> {{ seo_record.seo_title or "—" }}</p>
+  <p><strong>Slug:</strong> <code>{{ seo_record.slug or "—" }}</code></p>
+</div>
+{% endif %}
+{% if rewrite_meta %}
+<div class="panel">
+  <h2>Метаданные rewrite</h2>
+  <p><strong>Provider:</strong> {{ rewrite_meta.get('provider', '—') }}</p>
+  <p><strong>Model alias:</strong> <code>{{ rewrite_meta.get('model_alias', '—') }}</code></p>
+  <p><strong>Upstream:</strong> {{ rewrite_meta.get('upstream_model', '—') }}</p>
+  <p><strong>Fallback:</strong> {{ 'да' if rewrite_meta.get('fallback_used') else 'нет' }}</p>
+  <p><strong>Success:</strong> {{ rewrite_meta.get('success', '—') }}</p>
+  {% if rewrite_meta.get('llm_run_id') %}
+  <p><a href="/admin/llm-runs">LLM run #{{ rewrite_meta.llm_run_id }}</a></p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if llm_runs %}
+<div class="panel">
+  <h2>LLM runs</h2>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Alias</th><th>OK</th><th>Ошибка</th></tr></thead>
+    <tbody>
+      {% for r in llm_runs %}
+      <tr>
+        <td>#{{ r.id }}</td>
+        <td><code>{{ r.model_alias }}</code></td>
+        <td>{{ 'да' if r.success else 'нет' }}</td>
+        <td class="url">{{ (r.error_message or '—')[:80] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if publish_runs %}
+<div class="panel">
+  <h2>Запуски публикации</h2>
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Статус</th><th>Dry-run</th></tr></thead>
+    <tbody>
+      {% for r in publish_runs %}
+      <tr>
+        <td><a href="/admin/publish-runs">#{{ r.id }}</a></td>
+        <td>{{ r.status }}</td>
+        <td>{{ 'да' if r.dry_run else 'нет' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if task.document %}
+<div class="export-links">
+  <a class="btn primary" href="/admin/documents/{{ task.document.id }}">Открыть документ #{{ task.document.id }}</a>
+  <form method="post" action="/admin/documents/{{ task.document.id }}/rerun-rewrite" style="display:inline">
+    <button type="submit" class="btn">Повторить rewrite</button>
+  </form>
+  <form method="post" action="/admin/documents/{{ task.document.id }}/run-review" style="display:inline">
+    <button type="submit" class="btn">Запустить review</button>
+  </form>
+  <form method="post" action="/admin/documents/{{ task.document.id }}/run-seo" style="display:inline">
+    <button type="submit" class="btn">Запустить SEO</button>
+  </form>
+  {% if feature_flags.get('ENABLE_PUBLISHING') and publish_readiness is defined and publish_readiness.ready %}
+  <a class="btn" href="/admin/documents/{{ task.document.id }}#publish">Опубликовать черновик</a>
+  {% endif %}
+  <a class="btn" href="/api/documents/{{ task.document.id }}/export/json">JSON</a>
+</div>
+{% endif %}
+
+<h2>Логи задачи</h2>
+<table class="table log-block">
+  <thead><tr><th>Время</th><th>Уровень</th><th>Сообщение</th><th>Payload</th></tr></thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.created_at.strftime('%H:%M:%S') if log.created_at else '—' }}</td>
+      <td><span class="badge level-{{ log.level }}">{{ log.level }}</span></td>
+      <td>{{ log.message }}</td>
+      <td class="url payload-block">{% if log.payload_json %}<code>{{ log.payload_json }}</code>{% else %}—{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Логов нет</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if pipeline_events %}
+<div class="panel">
+  <h2>События pipeline</h2>
+  <table class="table compact">
+    <thead><tr><th>Этап</th><th>Статус</th><th>Время</th></tr></thead>
+    <tbody>
+      {% for e in pipeline_events %}
+      <tr><td><code>{{ e.stage }}</code></td><td>{{ e.status }}</td><td>{{ e.created_at }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
