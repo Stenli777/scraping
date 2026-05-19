@@ -13,6 +13,7 @@ class Project(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     slug: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
     domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     rewrite_profile: Mapped[str] = mapped_column(String(64), default="default")

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h1>{{ meta.agent_name }}</h1>
+  <p class="muted">{{ meta.purpose }}</p>
+  <p><strong>Технический ключ:</strong> <code>{{ template.key }}</code></p>
+  <p><strong>Этап pipeline:</strong> {{ meta.stage }}</p>
+  <p><strong>Активная глобальная версия:</strong> <code>{{ active.version }}</code> ({{ active.source }})</p>
+  <p><strong>Проектных переопределений (активных):</strong> {{ override_count }}</p>
+</div>
+
+<div class="panel">
+  <h2>Версии (глобальные)</h2>
+  <table class="table">
+    <thead>
+      <tr><th>Версия</th><th>Активна</th><th>Создана</th><th>Заметки</th><th>Превью</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for v in versions %}
+      <tr>
+        <td><code>{{ v.version }}</code></td>
+        <td>{% if v.is_active %}да{% else %}—{% endif %}</td>
+        <td>{{ v.created_at }}</td>
+        <td>{{ v.notes or "—" }}</td>
+        <td><pre class="content" style="max-height:6em;overflow:auto">{{ (v.content_md or "")[:300] }}</pre></td>
+        <td>
+          {% if not v.is_active %}
+          <form method="post" action="/admin/prompts/{{ template.key }}/versions/{{ v.id }}/activate" style="display:inline">
+            <button type="submit" class="btn">Активировать</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Новая глобальная версия</h2>
+  <p class="muted">Формат JSON: <code>{"system": "...", "user": "..."}</code> — в user допустимы переменные <code>{title}</code>, <code>{content}</code> и др.</p>
+  <form method="post" action="/admin/prompts/{{ template.key }}/versions" class="form">
+    <label>Метка версии <input name="version" required placeholder="v2"></label>
+    <label>Заметки оператора <input name="notes"></label>
+    <label>Содержимое (JSON)
+      <textarea name="content_md" rows="14" required placeholder='{"system":"...","user":"..."}'></textarea>
+    </label>
+    <label><input type="checkbox" name="activate"> Активировать сразу</label>
+    <button type="submit" class="btn primary">Создать версию</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>Последние LLM-запуски (аудит)</h2>
+  <table class="table">
+    <thead>
+      <tr><th>ID</th><th>Дата</th><th>Модель</th><th>Успех</th><th>мс</th><th>prompt_template</th></tr>
+    </thead>
+    <tbody>
+      {% for r in llm_runs %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ r.created_at }}</td>
+        <td><code>{{ r.model_alias }}</code></td>
+        <td>{{ "да" if r.success else "нет" }}</td>
+        <td>{{ r.latency_ms or "—" }}</td>
+        <td><code>{{ r.prompt_template or "—" }}</code></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">Запусков пока нет</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p><a class="btn" href="/admin/agents">← К списку агентов</a></p>
+{% endblock %}

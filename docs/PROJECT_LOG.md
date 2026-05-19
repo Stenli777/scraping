@@ -376,3 +376,15 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 2. Doc #5 — publish_draft по решению оператора (RC approved).
 3. Autobit #11/#13 — review + quality; при готовности — RC + pilot review.
 4. Doc #10 — strategy/topics/RC перед pilot.
+
+---
+
+## 2026-05-19 — Этап 4X: Projects + Agents (prompt overrides) + RU admin
+
+- **Agent** = UI-абстракция над `prompt_templates` (ключи не менялись).
+- Админка: `/admin/projects` (список, создание, редактирование), `/admin/agents`, `/admin/projects/{id}/agents`.
+- Backward compat: `/admin/prompts` → redirect `/admin/agents`; POST версий на `/admin/prompts/{key}/versions`.
+- API: `GET /api/projects/{id}/agents/{key}/effective-prompt`, smoke/disable override.
+- Migration **024**: `projects.description`.
+- `prompt_service`: source `global` | `project_override` | `code_fallback`.
+- Скрипт: `scripts/check_project_agent_admin.py`.

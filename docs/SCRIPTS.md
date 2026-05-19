@@ -88,3 +88,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 ## 4W audit (ops, on-server)
 - `/tmp/4w_full_audit.py`, `/tmp/4w_ops.py` — одноразовые; удалять после ops.
 - Регрессия: `scripts/run_pilot_first5_check.py --refresh`, `scripts/smoke/run_all.py`.
+- `scripts/check_project_agent_admin.py` — smoke admin/API agents (4X)

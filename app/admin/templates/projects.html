@@ -1,21 +1,32 @@
 {% extends "base.html" %}
 {% block content %}
+<p><a class="btn primary" href="/admin/projects/new">+ Создать проект</a></p>
 <table class="table">
   <thead>
-    <tr><th>ID</th><th>Slug</th><th>Name</th><th>Domain</th><th>Enabled</th><th>Profile</th></tr>
+    <tr>
+      <th>ID</th><th>Slug</th><th>Название</th><th>Домен</th><th>Вкл.</th>
+      <th>Источники</th><th>Документы</th><th>Цели публ.</th><th></th>
+    </tr>
   </thead>
   <tbody>
     {% for p in projects %}
+    {% set m = metrics.get(p.id, {}) %}
     <tr>
       <td>{{ p.id }}</td>
-      <td><a href="/admin/projects/{{ p.id }}"><code>{{ p.slug }}</code></a></td>
+      <td><code>{{ p.slug }}</code></td>
       <td>{{ p.name }}</td>
       <td>{{ p.domain or "—" }}</td>
-      <td>{{ "yes" if p.enabled else "no" }}</td>
-      <td>{{ p.rewrite_profile }}</td>
+      <td>{{ "да" if p.enabled else "нет" }}</td>
+      <td>{{ m.get("source_directories", 0) }}</td>
+      <td>{{ m.get("documents", 0) }}</td>
+      <td>{{ m.get("publish_targets", 0) }}</td>
+      <td>
+        <a class="btn" href="/admin/projects/{{ p.id }}/edit">Изменить</a>
+        <a class="btn" href="/admin/projects/{{ p.id }}/agents">Агенты</a>
+      </td>
     </tr>
     {% else %}
-    <tr><td colspan="6">Проектов нет. Запустите migration 003.</td></tr>
+    <tr><td colspan="9">Проектов нет</td></tr>
     {% endfor %}
   </tbody>
 </table>

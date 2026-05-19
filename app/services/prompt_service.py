@@ -117,11 +117,12 @@ def get_active_prompt(
         return _code_fallback(key)
 
     system, user_tpl = _parse_content(version.content_md)
-    logger.info("Using prompt %s:%s (source=db)", key, version.version)
+    source = "project_override" if project_id and override else "global"
+    logger.info("Using prompt %s:%s (source=%s)", key, version.version, source)
     return ResolvedPrompt(
         key=key,
         version=version.version,
-        source="db",
+        source=source,
         system=system,
         user_template=user_tpl,
         prompt_version_id=version.id,

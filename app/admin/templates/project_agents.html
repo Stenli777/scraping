@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a class="btn" href="/admin/projects/{{ project.id }}/edit">← Проект {{ project.name }}</a></p>
+<div class="panel help-block">
+  <p>Переопределение промпта для этого проекта. Если выключено — используется глобальный агент.</p>
+</div>
+<table class="table">
+  <thead>
+    <tr><th>Агент</th><th>Режим</th><th>Эффективная версия</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for row in agents %}
+    <tr>
+      <td><strong>{{ row.meta.agent_name }}</strong><br><code>{{ row.meta.key }}</code></td>
+      <td>{% if row.uses_override %}<span class="badge">override</span>{% else %}глобальный{% endif %}</td>
+      <td><code>{{ row.effective_version }}</code> ({{ row.effective_source }})</td>
+      <td><a class="btn" href="/admin/projects/{{ project.id }}/agents/{{ row.meta.key }}">Настроить</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

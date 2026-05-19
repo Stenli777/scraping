@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<p>
+  <a class="btn" href="/admin/projects/{{ project.id }}/agents">← Агенты проекта</a>
+  <a class="btn" href="/admin/agents/{{ meta.key }}">Глобальный агент</a>
+</p>
+
+<div class="panel">
+  <h1>{{ meta.agent_name }}</h1>
+  <p>{{ meta.purpose }}</p>
+  <p><strong>Проект:</strong> {{ project.name }} (<code>{{ project.slug }}</code>)</p>
+  <p><strong>Итоговый источник:</strong> {{ effective.source }} · версия <code>{{ effective.version }}</code></p>
+</div>
+
+{% if request.query_params.get('smoke') %}
+<div class="panel"><p class="muted">Smoke-check выполнен (без вызова LLM). См. логи при необходимости.</p></div>
+{% endif %}
+
+<div class="panel">
+  <h2>Итоговый prompt (preview)</h2>
+  <p><strong>System</strong></p>
+  <pre class="content">{{ effective.system or "—" }}</pre>
+  <p><strong>User (шаблон)</strong></p>
+  <pre class="content">{{ effective.user_template or "—" }}</pre>
+  <p><strong>Пример user после подстановки</strong></p>
+  <pre class="content">{{ effective.preview_user or "—" }}</pre>
+  {% if effective.warnings %}
+  <p><strong>Предупреждения:</strong> {{ effective.warnings | join("; ") }}</p>
+  {% endif %}
+  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/smoke" style="display:inline">
+    <button type="submit" class="btn">Проверить (smoke)</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>Глобальный prompt</h2>
+  <p>Источник: {{ global_eff.source }} · <code>{{ global_eff.version }}</code></p>
+</div>
+
+<div class="panel">
+  <h2>Создать переопределение для проекта</h2>
+  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/override" class="form">
+    <label>Метка версии <input name="version" required placeholder="v1"></label>
+    <label>Заметки <input name="notes"></label>
+    <label>System <textarea name="system" rows="5"></textarea></label>
+    <label>User (шаблон) <textarea name="user" rows="8" required></textarea></label>
+    <label><input type="checkbox" name="activate" checked> Включить override</label>
+    <button type="submit" class="btn primary">Сохранить override</button>
+  </form>
+  {% if override and override.enabled %}
+  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/override/disable" style="margin-top:1rem">
+    <button type="submit" class="btn">Отключить override (вернуться к глобальному)</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Последние LLM-запуски</h2>
+  <table class="table compact">
+    <tr><th>ID</th><th>OK</th><th>Model</th><th>Prompt ref</th></tr>
+    {% for r in llm_runs %}
+    <tr>
+      <td>{{ r.id }}</td><td>{{ "да" if r.success else "нет" }}</td>
+      <td>{{ r.model_alias }}</td><td><code>{{ r.prompt_template }}</code></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

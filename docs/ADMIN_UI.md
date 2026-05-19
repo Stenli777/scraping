@@ -180,3 +180,4 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 
 ## 4W — publish failure badges
 - `/admin/publish-runs`, `/admin/failed-items`: badges `historical env`, `test target` для старых token/env ошибок.
+- `/admin/agents` — агенты (промпты RU); `/admin/projects/new`, `/admin/projects/{id}/agents`

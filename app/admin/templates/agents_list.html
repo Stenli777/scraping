@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel help-block">
+  <p><strong>Агенты</strong> — промпты LLM с понятными названиями. Технические ключи не меняются.</p>
+  <p>Глобальный промпт — для всех проектов; переопределение — в <a href="/admin/projects">проекте</a> → «Агенты проекта».</p>
+</div>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Агент</th>
+      <th>Ключ</th>
+      <th>Этап</th>
+      <th>Глобальная версия</th>
+      <th>Источник</th>
+      <th>Переопр. проектов</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in agents %}
+    <tr>
+      <td><strong>{{ a.agent_name }}</strong><br><span class="muted">{{ a.purpose }}</span></td>
+      <td><code>{{ a.key }}</code></td>
+      <td>{{ a.stage }}</td>
+      <td><code>{{ a.active_version }}</code></td>
+      <td>{{ a.active_source }}</td>
+      <td>{{ a.override_count }}</td>
+      <td><a class="btn" href="/admin/agents/{{ a.key }}">Открыть</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

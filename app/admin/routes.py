@@ -517,28 +517,6 @@ def admin_settings(request: Request):
     )
 
 
-@router.get("/admin/projects", response_class=HTMLResponse)
-def admin_projects(request: Request, db: Session = Depends(get_db)):
-    projects = db.query(Project).order_by(Project.id.desc()).limit(100).all()
-    return templates.TemplateResponse(
-        request,
-        "projects.html",
-        {"request": request, "projects": projects, "title": "Проекты"},
-    )
-
-
-@router.get("/admin/projects/{project_id}", response_class=HTMLResponse)
-def admin_project_detail(project_id: int, request: Request, db: Session = Depends(get_db)):
-    project = db.get(Project, project_id)
-    if not project:
-        return RedirectResponse("/admin/projects", status_code=302)
-    return templates.TemplateResponse(
-        request,
-        "project_detail.html",
-        {"request": request, "project": project, "title": f"Проект {project.slug}"},
-    )
-
-
 @router.get("/admin/review-queue", response_class=HTMLResponse)
 def admin_review_queue(request: Request, db: Session = Depends(get_db)):
     reviews = db.query(ReviewResult).order_by(ReviewResult.id.desc()).limit(100).all()
@@ -654,48 +632,6 @@ def admin_ignore_discovered(discovered_url_id: int, db: Session = Depends(get_db
     return RedirectResponse("/admin/discovered-urls", status_code=303)
 
 
-@router.get("/admin/prompts", response_class=HTMLResponse)
-def admin_prompts(request: Request, db: Session = Depends(get_db)):
-    templates_list = db.query(PromptTemplate).order_by(PromptTemplate.key.asc()).all()
-    prompts = []
-    for t in templates_list:
-        active = get_active_prompt(db, t.key)
-        prompts.append(
-            {
-                "key": t.key,
-                "name": t.name,
-                "task_kind": t.task_kind,
-                "active_version": active.version,
-                "active_source": active.source,
-            }
-        )
-    return templates.TemplateResponse(
-        request,
-        "prompts.html",
-        {"request": request, "prompts": prompts, "title": "Промпты"},
-    )
-
-
-@router.get("/admin/prompts/{key}", response_class=HTMLResponse)
-def admin_prompt_detail(key: str, request: Request, db: Session = Depends(get_db)):
-    template = db.query(PromptTemplate).filter(PromptTemplate.key == key).first()
-    if not template:
-        return RedirectResponse("/admin/prompts", status_code=302)
-    active = get_active_prompt(db, key)
-    versions = list_prompt_versions(db, key)
-    return templates.TemplateResponse(
-        request,
-        "prompt_detail.html",
-        {
-            "request": request,
-            "template": template,
-            "active": active,
-            "versions": versions,
-            "title": f"Prompt {key}",
-        },
-    )
-
-
 @router.post("/admin/prompts/{key}/versions")
 def admin_create_prompt_version(
     key: str,
@@ -714,7 +650,7 @@ def admin_create_prompt_version(
         notes=notes,
         activate=activate == "on",
     )
-    return RedirectResponse(f"/admin/prompts/{key}", status_code=303)
+    return RedirectResponse(f"/admin/agents/{key}", status_code=303)
 
 
 @router.post("/admin/prompts/{key}/versions/{version_id}/activate")
@@ -722,7 +658,7 @@ def admin_activate_prompt_version(
     key: str, version_id: int, db: Session = Depends(get_db)
 ):
     activate_prompt_version(db, key, version_id)
-    return RedirectResponse(f"/admin/prompts/{key}", status_code=303)
+    return RedirectResponse(f"/admin/agents/{key}", status_code=303)
 
 
 @router.get("/admin/quality-scores", response_class=HTMLResponse)
@@ -1619,3 +1555,6 @@ router.include_router(pilot_admin_router)
 
 from app.admin.manual_url_routes import router as manual_url_router
 router.include_router(manual_url_router)
+
+from app.admin.agent_admin_routes import router as agent_admin_router
+router.include_router(agent_admin_router)

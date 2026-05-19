@@ -23,6 +23,7 @@ from app.api.pilots import router as pilots_router
 from app.api.system import router as system_router
 from app.api.llm import router as llm_router
 from app.api.prompts import router as prompts_router
+from app.api.project_agents import router as project_agents_router
 from app.api.publish import router as publish_router
 from app.api.mock_crmflow24 import router as mock_crmflow24_router
 from app.api.quality import router as quality_router
@@ -64,6 +65,7 @@ app.include_router(seo_router)
 app.include_router(publish_router)
 app.include_router(mock_crmflow24_router)
 app.include_router(prompts_router)
+app.include_router(project_agents_router)
 app.include_router(quality_router)
 app.include_router(editorial_router)
 app.include_router(hermes_router)
