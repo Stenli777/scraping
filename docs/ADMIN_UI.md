@@ -2,6 +2,9 @@
 
 Base: **https://scrap.crmflow24.ru/admin**
 
+**План редизайна (2026-05-19):** [admin-ui-redesign-plan.md](./admin-ui-redesign-plan.md) · [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md)
+
+
 | URL | Страница |
 |-----|----------|
 | `/admin` | Dashboard — ID, URL, статус, парсер, документ |
