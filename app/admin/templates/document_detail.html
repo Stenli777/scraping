@@ -200,7 +200,8 @@
     <form method="post" action="/admin/documents/{{ document.id }}/run-quality" style="display:inline">
       <button type="submit" class="btn">Run quality</button>
     </form>
-    
+  </p>
+</div>
 
 {% if feature_flags.get('ENABLE_ANALYTICS') %}
 
@@ -290,16 +291,6 @@
 </div>
 {% endif %}
 
-{% if feature_flags.get('ENABLE_HERMES') %}
-    <form method="post" action="/admin/documents/{{ document.id }}/hermes/research" style="display:inline">
-      <button type="submit" class="btn">Hermes research</button>
-    </form>
-    <form method="post" action="/admin/documents/{{ document.id }}/hermes/critique" style="display:inline">
-      <button type="submit" class="btn">Hermes critique</button>
-    </form>
-    {% endif %}
-  </p>
-</div>
 
 {% set review_meta = review_meta or meta.get('review') or {} %}
 {% if review_meta %}
@@ -341,29 +332,6 @@
 
 
 
-{% if feature_flags.get('ENABLE_ANALYTICS') %}
-</p>
-  <p><strong>Published:</strong> {{ doc_publication.published_at or '—' }}</p>
-  {% if doc_performance %}
-  <h3>Performance</h3>
-  <p>Score: <strong>{{ doc_performance.performance_score or '—' }}</strong> · Views: {{ doc_performance.latest_views or '—' }} · CTR: {{ doc_performance.latest_ctr or '—' }} · Trend: {{ doc_performance.trend }} · Status: {{ doc_performance.status }}</p>
-  {% endif %}
-  {% if doc_analytics_snapshots %}
-  <h3>Recent snapshots</h3>
-  <table class="table">
-    <thead><tr><th>Date</th><th>Views</th><th>CTR</th><th>Source</th></tr></thead>
-    <tbody>
-      {% for s in doc_analytics_snapshots %}
-      <tr><td>{{ s.snapshot_date }}</td><td>{{ s.views or '—' }}</td><td>{{ s.ctr or '—' }}</td><td>{{ s.source }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-  {% else %}
-  <p class="warn-box">No publication record (publish draft first, non-dry-run).</p>
-  {% endif %}
-</div>
-{% endif %}
 
 {% if feature_flags.get('ENABLE_MEDIA_PIPELINE') %}
 <div class="panel" id="media">

@@ -6,7 +6,8 @@
 > **Этап 3 выполнен** (ветка `admin-ui-p0-pages-stage-3`): P0 templates + help-блоки + tabs + table-scroll.  
 > **Stage 3B:** fix filter `/admin/discovered-urls?status=...` (query order в routes.py).  
 > **Stage 4 Batch 4 (audit-only):** high-risk templates audit — [admin-ui-high-risk-audit.md](./admin-ui-high-risk-audit.md).  
-> **Следующий шаг:** Batch 5 — display-only русификация `document_detail.html` + `release_candidate_detail.html` по плану audit.  
+> **Stage 4C (backend fix):** ветка `admin-ui-document-detail-fix-stage-4b` — `/admin/documents/{id}` 500 → `job_to_dict(None)` guard.  
+> **Следующий шаг:** merge 4C → master; Batch 5 — display-only русификация high-risk templates по [admin-ui-high-risk-audit.md](./admin-ui-high-risk-audit.md).  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
 
