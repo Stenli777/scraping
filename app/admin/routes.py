@@ -45,6 +45,7 @@ from app.services.discovery_service import (
 )
 from app.services.publish_service import publish_draft_for_document
 from app.services.publish_target_health_service import check_all_publish_targets_health
+from app.services.publish_failure_labels import publish_failure_kind
 from app.services.publish_retry_service import get_retry_chain, is_retryable_publish_run
 from app.services.review_service import run_review_for_document
 from app.services.rewrite_service import rerun_rewrite_for_document
@@ -126,6 +127,11 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 def admin_failed_items(request: Request, db: Session = Depends(get_db)):
     items = get_failed_items(db)
     stale = list_stale_running_tasks(db)
+    targets = {tgt.id: tgt for tgt in db.query(PublishTarget).all()}
+    publish_failure_kinds = {
+        r.id: publish_failure_kind(r, targets.get(r.publish_target_id))
+        for r in items.get("failed_publish_runs", [])
+    }
     return templates.TemplateResponse(
         request,
         "failed_items.html",
@@ -133,6 +139,7 @@ def admin_failed_items(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "items": items,
             "stale_tasks": stale,
+            "publish_failure_kinds": publish_failure_kinds,
             "title": "Сбои и зависшие",
         },
     )
@@ -477,6 +484,10 @@ def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
     runs = db.query(PublishRun).order_by(PublishRun.id.desc()).limit(100).all()
     retryable = {r.id: is_retryable_publish_run(r) for r in runs}
     chains = {r.id: get_retry_chain(db, r.id) for r in runs[:30]}
+    targets = {t.id: t for t in db.query(PublishTarget).all()}
+    failure_kinds = {
+        r.id: publish_failure_kind(r, targets.get(r.publish_target_id)) for r in runs
+    }
     return templates.TemplateResponse(
         request,
         "publish_runs.html",
@@ -485,6 +496,7 @@ def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
             "runs": runs,
             "retryable": retryable,
             "chains": chains,
+            "failure_kinds": failure_kinds,
             "title": "Запуски публикации",
         },
     )

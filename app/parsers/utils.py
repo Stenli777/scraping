@@ -94,7 +94,8 @@ def meta_content(soup: BeautifulSoup, *names: str) -> str | None:
     for name in names:
         tag = soup.find("meta", attrs={"name": name}) or soup.find("meta", attrs={"property": name})
         if tag and tag.get("content"):
-            return tag["content"].strip()
+            val = tag.get("content")
+            return val.strip() if isinstance(val, str) else str(val).strip()
     return None
 
 

@@ -22,6 +22,8 @@ from app.services.prompt_service import render_prompt
 
 logger = logging.getLogger(__name__)
 
+REWRITE_MAX_CONTENT_CHARS = 12000
+
 
 def _extract_title_from_markdown(text: str) -> str:
     for line in text.splitlines():
@@ -35,6 +37,22 @@ def _profile_block(profile_context: str | None) -> str:
     if not profile_context or not profile_context.strip():
         return ""
     return f"Профиль проекта:\n{profile_context.strip()}\n"
+
+def _truncate_rewrite_content(request: RewriteRequest) -> str:
+    raw = (request.content or "").strip()
+    if len(raw) <= REWRITE_MAX_CONTENT_CHARS:
+        return raw
+    logger.warning(
+        "Rewrite input truncated task_id=%s chars=%s max=%s",
+        request.task_id,
+        len(raw),
+        REWRITE_MAX_CONTENT_CHARS,
+    )
+    request.metadata = dict(request.metadata or {})
+    request.metadata["input_truncated"] = True
+    request.metadata["input_original_chars"] = len(raw)
+    return raw[:REWRITE_MAX_CONTENT_CHARS]
+
 
 
 def execute_rewrite(
@@ -55,7 +73,7 @@ def execute_rewrite(
         "profile_block": _profile_block(ctx),
         "source_url": request.source_url or "не указан",
         "title": request.title or "Без названия",
-        "content": request.content.strip(),
+        "content": _truncate_rewrite_content(request),
     }
     messages, resolved = render_prompt(
         db, "rewrite_article", context, project_id=request.project_id

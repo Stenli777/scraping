@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 from app.core.config import get_settings
-from app.llm.exceptions import ProviderError
+from app.llm.exceptions import BadRequestError, ProviderError, RateLimitError
 from app.llm.models import CompletionResult
 from app.llm.registry import resolve_model_route
 
@@ -86,8 +86,8 @@ class LLMClient:
 
         for attempt in range(max_retries + 1):
             try:
-                with httpx.Client(timeout=timeout) as client:
-                    response = client.post(
+                with httpx.Client(timeout=timeout) as http:
+                    response = http.post(
                         self._endpoint(),
                         json=payload,
                         headers=self._headers(),
@@ -95,6 +95,23 @@ class LLMClient:
                     response.raise_for_status()
                     data = response.json()
                 break
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                if status == 429 and attempt < max_retries:
+                    delay = min(60, 5 * (2**attempt))
+                    logger.warning(
+                        "CLIProxy 429 rate limit alias=%s attempt=%s sleep=%ss",
+                        alias,
+                        attempt + 1,
+                        delay,
+                    )
+                    time.sleep(delay)
+                    continue
+                if status == 429:
+                    raise RateLimitError(f"CLIProxyAPI HTTP 429: {exc}") from exc
+                if status == 400:
+                    raise BadRequestError(f"CLIProxyAPI HTTP 400: {exc}") from exc
+                raise ProviderError(f"CLIProxyAPI HTTP error: {exc}") from exc
             except httpx.HTTPError as exc:
                 if attempt >= max_retries:
                     raise ProviderError(f"CLIProxyAPI HTTP error: {exc}") from exc

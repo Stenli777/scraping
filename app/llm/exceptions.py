@@ -8,3 +8,11 @@ class ModelRoutingError(LLMError):
 
 class ProviderError(LLMError):
     """Upstream provider failure."""
+
+
+class RateLimitError(ProviderError):
+    """HTTP 429 / rate limit — retry with cooldown."""
+
+
+class BadRequestError(ProviderError):
+    """HTTP 400 — payload/model issue; may need truncation."""

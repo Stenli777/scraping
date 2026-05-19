@@ -112,7 +112,8 @@
       {% for r in items.failed_publish_runs %}
       <tr>
         <td><a href="/admin/publish-runs">#{{ r.id }}</a></td>
-        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span>
+        {% if publish_failure_kinds.get(r.id) == 'historical_env' %} <span class="badge" title="Историческая ошибка env">historical</span>{% elif publish_failure_kinds.get(r.id) == 'test_target' %} <span class="badge" title="Тестовая цель">test</span>{% endif %}</td>
         <td><a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a></td>
         <td class="url">{{ (r.error_message or '—')[:120] }}</td>
       </tr>

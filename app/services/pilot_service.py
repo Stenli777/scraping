@@ -326,6 +326,14 @@ def compute_next_action(
         return post_draft
 
     missing = readiness.get("missing") or []
+    rc_summary_early = get_latest_candidate_summary(db, document_id)
+    rc_approved = False
+    if rc_summary_early and rc_summary_early.get("id"):
+        rc_early = db.get(ContentReleaseCandidate, rc_summary_early["id"])
+        rc_approved = bool(rc_early and rc_early.status == RC_APPROVED)
+    if rc_approved:
+        missing = [m for m in missing if not m.startswith("quality")]
+        blockers = [b for b in (blockers or []) if b != "quality_needs_revision"]
     if "rewritten_text" in missing:
         return "run_rewrite"
     if any(m.startswith("review") for m in missing):
