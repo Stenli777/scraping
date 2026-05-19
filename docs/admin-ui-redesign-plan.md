@@ -26,7 +26,16 @@
 
 **Примечание:** Scrap admin слушает порт **8800** (не 8000 — там Hermes). Editorial route: `/admin/editorial-queue` (не `/admin/editorial`).
 
-## Цели
+## Правило ведения документации
+
+- После каждого UI/UX этапа и bugfix обязательно обновлять `docs/PROJECT_LOG.md`.
+- В `PROJECT_LOG.md` писать: ветку, commit, изменённые файлы, команды, smoke/curl, ошибки, restart/deploy, следующий шаг.
+- `docs/admin-ui-redesign-plan.md` обновлять при изменении roadmap/status этапов.
+- `docs/admin-ui-routes-inventory.md` обновлять только при изменении или уточнении routes/forms/POST.
+- Документация должна быть закоммичена вместе с этапом или отдельным docs commit.
+- Документация должна быть синхронизирована и на сервере `/opt/scrap`, и в локальной копии через git.
+- Если pre-existing bug стал виден после UI-правки — фиксировать отдельным Stage X.B bugfix в `PROJECT_LOG.md`.
+
 
 1. Перейти от перегруженного **горизонтального** меню к **вертикальному sidebar** с группами и pipeline-first иерархией.
 2. Унифицировать кнопки, табы-фильтры, таблицы, бейджи статусов.
