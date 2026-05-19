@@ -452,3 +452,14 @@
 - **Команды:** check_health PASS; run_all PASS; curl GET :8800 P0 pages — 200
 - **Ошибки:** нет
 - **Следующий шаг:** Этап 4 — русификация display layer на P1 и остальных страницах
+
+---
+
+## 2026-05-19 — Admin UI Stage 3B: fix discovered-urls status filter
+
+- **Ветка:** admin-ui-p0-pages-stage-3
+- **Проблема:** GET `/admin/discovered-urls?status=...` возвращал 500 — `filter()` вызывался после `limit(200)` в SQLAlchemy
+- **Исправление:** `app/admin/routes.py` — filter по status до order_by/limit
+- **Smoke:** добавлен `scripts/smoke/check_admin_discovered.py` (discovered-urls + status=discovered/enqueued)
+- **Команды:** curl GET status filters — 200; check_health PASS; run_all PASS
+- **Следующий шаг:** merge admin-ui-p0-pages-stage-3 в master после ручной проверки tabs

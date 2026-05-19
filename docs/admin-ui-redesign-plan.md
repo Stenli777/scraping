@@ -4,6 +4,7 @@
 > **Этап 1 выполнен** (ветка `admin-ui-sidebar-stage-1`, commit `f69e118`, merge `eebb951`).  
 > **Этап 2 выполнен** (ветка `admin-ui-kit-stage-2`, merge `f87e5c9`).  
 > **Этап 3 выполнен** (ветка `admin-ui-p0-pages-stage-3`): P0 templates + help-блоки + tabs + table-scroll.  
+> **Stage 3B:** fix filter `/admin/discovered-urls?status=...` (query order в routes.py).  
 > **Следующий этап:** Этап 4 — русификация display layer на остальных страницах.  
 > Детальная таблица маршрутов: [admin-ui-routes-inventory.md](./admin-ui-routes-inventory.md).  
 > Существующий обзор: [ADMIN_UI.md](./ADMIN_UI.md).
