@@ -463,3 +463,20 @@
 - **Smoke:** добавлен `scripts/smoke/check_admin_discovered.py` (discovered-urls + status=discovered/enqueued)
 - **Команды:** curl GET status filters — 200; check_health PASS; run_all PASS
 - **Следующий шаг:** merge admin-ui-p0-pages-stage-3 в master после ручной проверки tabs
+
+
+---
+
+## 2026-05-19 — Admin UI Этап 4 Batch 1: P1 safe pages i18n
+
+- **Ветка:** admin-ui-i18n-stage-4
+- **Base commit:** 5cb33cc (merge stage 3 + 3B в master)
+- **Batch:** Stage 4 Batch 1 — display-only русификация safe P1 templates
+- **Что изменено:** русские заголовки, колонки, кнопки, empty states, page-header/help-block на dashboard, failed_items, review_queue, source_directories, source_directory_detail, manual_urls; CSS .description-list, .page-title
+- **Файлы:** 6 templates, admin.css (append), PROJECT_LOG, admin-ui-redesign-plan.md
+- **Forms сохранены:** failed_items POST reset-stale, mark-skipped; source_directory_detail POST discover; manual_urls POST project_id, source_directory_id, urls_text, enqueue=value=true — action/method/name/value без изменений
+- **Backend:** не менялся (title в routes остаётся EN — только template display layer)
+- **Команды:** check_health PASS; check_admin_discovered PASS; run_all PASS; curl GET :8800 admin, tasks/new, discovered-urls, status filters, editorial-queue, failed-items, review-queue, source-directories, manual-urls — 200
+- **Ошибки:** нет
+- **Restart/deploy:** не требовался
+- **Следующий шаг:** Stage 4 Batch 2 (task_detail, _pipeline_summary, publications, draft_reviews_list, release_candidates_list) или merge Batch 1 после ручной проверки

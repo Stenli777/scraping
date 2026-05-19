@@ -1,11 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="page-header">
+  <p class="page-subtitle">Результаты LLM review: решение take/reject, оценка, тип контента и риски.</p>
+</div>
+
+<aside class="help-block">
+  <p class="help-block-title">О странице</p>
+  <p>Очередь проверки после review-стадии pipeline. Статусы и значения enum отображаются как в БД.</p>
+</aside>
+
+<div class="table-scroll">
 <table class="table">
   <thead>
     <tr>
-      <th>ID</th><th>Task</th><th>Doc</th><th>Project</th>
-      <th>Take</th><th>Score</th><th>Type</th><th>Angle</th>
-      <th>Risks</th><th>LLM run</th><th>Time</th>
+      <th>ID</th><th>Задача</th><th>Док.</th><th>Проект</th>
+      <th>Решение</th><th>Оценка</th><th>Тип</th><th>Угол</th>
+      <th>Риски</th><th>LLM run</th><th>Время</th>
     </tr>
   </thead>
   <tbody>
@@ -24,8 +34,9 @@
       <td>{{ r.created_at }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="11">Записей review пока нет</td></tr>
+    <tr><td colspan="11">Нет записей review</td></tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% endblock %}
