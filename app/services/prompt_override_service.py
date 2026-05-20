@@ -13,6 +13,7 @@ from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
 from app.models.prompt_version import PromptVersion
 from app.services.prompt_service import (
+    ensure_prompt_template,
     PROMPT_KEYS,
     ResolvedPrompt,
     _parse_content,
@@ -188,15 +189,32 @@ def create_project_override_version(
     if not version_label.startswith("p"):
         version_label = f"p{project_id}-{version_label}"
 
-    record = create_prompt_version(
-        db,
-        key,
-        version=version_label,
-        content_md=content_md,
-        created_by="admin",
-        notes=notes or operator_note,
-        activate=False,
-    )
+    ensure_prompt_template(db, key)
+    try:
+        record = create_prompt_version(
+            db,
+            key,
+            version=version_label,
+            content_md=content_md,
+            created_by="admin",
+            notes=notes or operator_note,
+            activate=False,
+        )
+    except ValueError as exc:
+        if "already exists" not in str(exc):
+            raise
+        import time
+
+        version_label = f"{version_label}-{int(time.time())}"
+        record = create_prompt_version(
+            db,
+            key,
+            version=version_label,
+            content_md=content_md,
+            created_by="admin",
+            notes=notes or operator_note,
+            activate=False,
+        )
 
     template = _template(db, key)
     if not template:

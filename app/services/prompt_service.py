@@ -213,6 +213,35 @@ def list_prompt_versions(db: Session, key: str) -> list[PromptVersion]:
     )
 
 
+
+
+def ensure_prompt_template(
+    db: Session,
+    key: str,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+    task_kind: str | None = None,
+    enabled: bool = True,
+) -> PromptTemplate:
+    """Create prompt_templates row if missing (e.g. topic_cleanup_v1 code-only)."""
+    from app.services.agent_registry import get_agent_meta
+
+    existing = db.scalar(select(PromptTemplate).where(PromptTemplate.key == key))
+    if existing:
+        return existing
+    meta = get_agent_meta(key)
+    template = PromptTemplate(
+        key=key,
+        name=name or meta.get("agent_name") or key,
+        description=description or meta.get("purpose"),
+        task_kind=task_kind or meta.get("stage") or "other",
+        enabled=enabled,
+    )
+    db.add(template)
+    db.flush()
+    return template
+
 def create_prompt_version(
     db: Session,
     key: str,
