@@ -8,32 +8,39 @@
 
 <div class="panel">
   <h1>Документы проекта — {{ project.name }}</h1>
-  <form method="get" class="form-inline form-row form-row-3">
-    <label>Editorial <input name="status" value="{{ filter_status }}"></label>
+  <form method="get" class="form-inline admin-filters form-row form-row-4">
+    <label>Editorial <input name="status" value="{{ filter_status }}" class="admin-input"></label>
     <label>Публикация
-      <select name="has_publication">
+      <select name="has_publication" class="admin-select filter-select">
         <option value="">—</option>
         <option value="yes" {% if filter_publication == 'yes' %}selected{% endif %}>есть</option>
         <option value="no" {% if filter_publication == 'no' %}selected{% endif %}>нет</option>
       </select>
     </label>
     <label>Пилот
-      <select name="in_pilot">
+      <select name="in_pilot" class="admin-select filter-select">
         <option value="">—</option>
         <option value="yes" {% if filter_pilot == 'yes' %}selected{% endif %}>в пилоте</option>
         <option value="no" {% if filter_pilot == 'no' %}selected{% endif %}>не в пилоте</option>
       </select>
     </label>
-    <button type="submit" class="btn">Фильтр</button>
+    <label>На странице
+      <select name="page_size" class="admin-select page-size-select">
+        {% for n in page_size_choices %}
+        <option value="{{ n }}" {% if page_size == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="btn">Применить</button>
   </form>
+  <p class="muted">Показано {{ documents|length }} из {{ total }}</p>
 </div>
 
-<div class="panel table-scroll inner-scroll">
-<table class="table compact">
+<div class="panel admin-table-panel">
+<div class="admin-table-viewport">
+<table class="table compact admin-data-table">
   <thead>
-    <tr>
-      <th>ID</th><th>Заголовок</th><th>Review</th><th>Quality</th><th>Editorial</th><th>Publication</th><th>Пилот</th><th></th>
-    </tr>
+    <tr><th>ID</th><th>Заголовок</th><th>Review</th><th>Quality</th><th>Editorial</th><th>Publication</th><th>Пилот</th><th></th></tr>
   </thead>
   <tbody>
     {% for d in documents %}
@@ -48,14 +55,21 @@
       <td><a class="btn" href="/admin/documents/{{ d.id }}">Открыть</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="8" class="muted">Нет документов</td></tr>
+    <tr><td colspan="8" class="empty-state">Нет документов</td></tr>
     {% endfor %}
   </tbody>
 </table>
 </div>
+</div>
 
-<div class="admin-nav-block">
+{% if total > page_size %}
+<div class="form-actions">
+  {% if offset > 0 %}<a class="btn" href="?page_size={{ page_size }}&offset={{ offset - page_size }}">← Назад</a>{% endif %}
+  {% if offset + page_size < total %}<a class="btn" href="?page_size={{ page_size }}&offset={{ offset + page_size }}">Вперёд →</a>{% endif %}
+</div>
+{% endif %}
+
+<div class="admin-nav-block bottom">
   <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
-  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
 </div>
 {% endblock %}

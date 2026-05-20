@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.content_pilot import ContentPilot, ContentPilotItem
@@ -12,26 +12,42 @@ from app.models.publication_record import PublicationRecord
 from app.models.review_result import ReviewResult
 from app.models.scraping_task import ScrapingTask
 
+PAGE_SIZE_CHOICES = (10, 50, 100)
+
+
+def normalize_page_size(page_size: int | str | None, *, default: int = 50) -> int:
+    try:
+        n = int(page_size) if page_size is not None else default
+    except (TypeError, ValueError):
+        n = default
+    return n if n in PAGE_SIZE_CHOICES else default
+
 
 def list_project_tasks(
     db: Session,
     project_id: int,
     *,
     status: str | None = None,
-    limit: int = 200,
-) -> list[dict]:
-    q = (
-        select(ScrapingTask)
-        .where(ScrapingTask.project_id == project_id)
-        .order_by(ScrapingTask.id.desc())
-        .limit(limit)
-    )
+    page_size: int = 50,
+    offset: int = 0,
+) -> dict:
+    filters = [ScrapingTask.project_id == project_id]
     if status:
-        q = q.where(ScrapingTask.status == status)
-    rows = []
-    for task in db.scalars(q).all():
+        filters.append(ScrapingTask.status == status)
+    total = int(
+        db.scalar(select(func.count()).select_from(ScrapingTask).where(*filters)) or 0
+    )
+    rows_q = (
+        select(ScrapingTask)
+        .where(*filters)
+        .order_by(ScrapingTask.id.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    items = []
+    for task in db.scalars(rows_q).all():
         doc = task.document
-        rows.append(
+        items.append(
             {
                 "id": task.id,
                 "status": task.status,
@@ -42,7 +58,7 @@ def list_project_tasks(
                 "updated_at": task.updated_at,
             }
         )
-    return rows
+    return {"items": items, "total": total, "page_size": page_size, "offset": offset}
 
 
 def _doc_title(document: ParsedDocument) -> str:
@@ -60,14 +76,47 @@ def list_project_documents(
     status: str | None = None,
     has_publication: bool | None = None,
     in_pilot: bool | None = None,
-    limit: int = 200,
-) -> list[dict]:
-    q = (
-        select(ParsedDocument)
+    page_size: int = 50,
+    offset: int = 0,
+) -> dict:
+    base = (
+        select(ParsedDocument.id)
         .join(ScrapingTask, ParsedDocument.task_id == ScrapingTask.id)
         .where(ScrapingTask.project_id == project_id)
-        .order_by(ParsedDocument.id.desc())
-        .limit(limit)
+    )
+    if status:
+        base = base.where(ParsedDocument.editorial_status == status)
+    if has_publication is True:
+        base = base.where(
+            ParsedDocument.id.in_(
+                select(PublicationRecord.document_id).where(
+                    PublicationRecord.publication_status != "draft"
+                )
+            )
+        )
+    elif has_publication is False:
+        base = base.where(
+            ~ParsedDocument.id.in_(select(PublicationRecord.document_id))
+        )
+    if in_pilot is True:
+        base = base.where(
+            ParsedDocument.id.in_(
+                select(ContentPilotItem.document_id)
+                .join(ContentPilot, ContentPilotItem.pilot_id == ContentPilot.id)
+                .where(ContentPilot.project_id == project_id)
+            )
+        )
+    elif in_pilot is False:
+        pilot_ids = select(ContentPilotItem.document_id).join(
+            ContentPilot, ContentPilotItem.pilot_id == ContentPilot.id
+        ).where(ContentPilot.project_id == project_id)
+        base = base.where(~ParsedDocument.id.in_(pilot_ids))
+
+    total = int(db.scalar(select(func.count()).select_from(base.subquery())) or 0)
+    doc_ids = list(
+        db.scalars(
+            base.order_by(ParsedDocument.id.desc()).offset(offset).limit(page_size)
+        ).all()
     )
     pilot_doc_ids: set[int] = set(
         db.scalars(
@@ -76,9 +125,11 @@ def list_project_documents(
             .where(ContentPilot.project_id == project_id)
         ).all()
     )
-
-    rows: list[dict] = []
-    for doc in db.scalars(q).all():
+    items: list[dict] = []
+    for doc_id in doc_ids:
+        doc = db.get(ParsedDocument, doc_id)
+        if not doc:
+            continue
         review = db.scalar(
             select(ReviewResult)
             .where(ReviewResult.document_id == doc.id)
@@ -97,29 +148,16 @@ def list_project_documents(
         review_status = "—"
         if review:
             review_status = f"{'take' if review.take else 'skip'} ({review.score or '—'})"
-        quality_status = str(quality.overall_score) if quality else "—"
-        publication_status = publication.publication_status if publication else "—"
-        is_pilot = doc.id in pilot_doc_ids
-        if status and doc.editorial_status != status:
-            continue
-        if has_publication is True and publication_status == "—":
-            continue
-        if has_publication is False and publication_status != "—":
-            continue
-        if in_pilot is True and not is_pilot:
-            continue
-        if in_pilot is False and is_pilot:
-            continue
-        rows.append(
+        items.append(
             {
                 "id": doc.id,
                 "title": _doc_title(doc),
                 "source_url": doc.source_url,
                 "review_status": review_status,
-                "quality_status": quality_status,
+                "quality_status": str(quality.overall_score) if quality else "—",
                 "editorial_status": doc.editorial_status,
-                "publication_status": publication_status,
-                "in_pilot": is_pilot,
+                "publication_status": publication.publication_status if publication else "—",
+                "in_pilot": doc.id in pilot_doc_ids,
             }
         )
-    return rows
+    return {"items": items, "total": total, "page_size": page_size, "offset": offset}

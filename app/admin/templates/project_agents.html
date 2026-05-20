@@ -3,30 +3,42 @@
 {% set nav = nav or {} %}
 <div class="admin-nav-block">
   <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.tasks_url }}">Задачи проекта</a>
+  <a class="btn" href="{{ nav.documents_url }}">Документы проекта</a>
   <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
 </div>
+
 <div class="panel help-block">
-  <p>Переопределение промпта для этого проекта. Если выключено — используется глобальный агент.</p>
+  <p><strong>Глобальные агенты</strong> — базовые шаблоны для всех проектов (см. <a href="/admin/agents">/admin/agents</a>).
+  Здесь — <strong>проектные настройки</strong>: override заменяет глобальный prompt только для <em>{{ project.name }}</em>.
+  Новый проект использует глобальные версии, пока вы не сохраните проектную.</p>
 </div>
-<div class="panel table-scroll inner-scroll">
-<table class="table">
+
+<div class="panel admin-table-panel">
+<div class="admin-table-viewport">
+<table class="table compact admin-data-table">
   <thead>
-    <tr><th>Агент</th><th>Режим</th><th>Эффективная версия</th><th></th></tr>
+    <tr>
+      <th>Агент</th><th>Ключ</th><th>Глобальная версия</th><th>Override</th><th>Активная для проекта</th><th></th>
+    </tr>
   </thead>
   <tbody>
     {% for row in agents %}
     <tr>
-      <td><strong>{{ row.meta.agent_name }}</strong><br><code>{{ row.meta.key }}</code></td>
-      <td>{% if row.uses_override %}<span class="badge">проектная версия</span>{% else %}глобальный{% endif %}</td>
+      <td><strong>{{ row.meta.agent_name }}</strong>{% if not row.pipeline_agent %}<br><span class="badge muted">custom</span>{% endif %}</td>
+      <td><code>{{ row.meta.key }}</code></td>
+      <td><code>{{ row.global_version }}</code> ({{ row.global_source }})</td>
+      <td>{% if row.uses_override %}<span class="badge">включён</span>{% else %}—{% endif %}</td>
       <td><code>{{ row.effective_version }}</code> ({{ row.effective_source }})</td>
-      <td><a class="btn" href="/admin/projects/{{ project.id }}/agents/{{ row.meta.key }}">Настроить</a></td>
+      <td><a class="btn" href="/admin/projects/{{ project.id }}/agents/{{ row.meta.key }}">Настроить для проекта</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 </div>
-<div class="admin-nav-block">
+</div>
+
+<div class="admin-nav-block bottom">
   <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
-  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
 </div>
 {% endblock %}

@@ -3,19 +3,29 @@
 {% set nav = nav or {} %}
 <div class="admin-nav-block">
   <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
+  <a class="btn" href="{{ nav.agents_url }}">Агенты проекта</a>
   <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
 </div>
 
 <div class="panel">
   <h1>Задачи проекта — {{ project.name }}</h1>
-  <form method="get" class="form-inline">
-    <label>Статус <input name="status" value="{{ filter_status }}" placeholder="done, failed…"></label>
-    <button type="submit" class="btn">Фильтр</button>
+  <form method="get" class="form-inline admin-filters">
+    <label>Статус <input name="status" value="{{ filter_status }}" placeholder="done, failed…" class="admin-input"></label>
+    <label>На странице
+      <select name="page_size" class="admin-select page-size-select">
+        {% for n in page_size_choices %}
+        <option value="{{ n }}" {% if page_size == n %}selected{% endif %}>{{ n }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit" class="btn">Применить</button>
   </form>
+  <p class="muted">Показано {{ tasks|length }} из {{ total }} (offset {{ offset }})</p>
 </div>
 
-<div class="panel table-scroll inner-scroll">
-<table class="table compact">
+<div class="panel admin-table-panel">
+<div class="admin-table-viewport">
+<table class="table compact admin-data-table">
   <thead>
     <tr><th>ID</th><th>Статус</th><th>URL</th><th>Парсер</th><th>Документ</th><th>Создана</th><th>Обновлена</th><th></th></tr>
   </thead>
@@ -32,14 +42,21 @@
       <td><a class="btn" href="/admin/tasks/{{ t.id }}">Открыть</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="8" class="muted">Нет задач</td></tr>
+    <tr><td colspan="8" class="empty-state">Нет задач для этого проекта</td></tr>
     {% endfor %}
   </tbody>
 </table>
 </div>
+</div>
 
-<div class="admin-nav-block">
+{% if total > page_size %}
+<div class="form-actions">
+  {% if offset > 0 %}<a class="btn" href="?page_size={{ page_size }}&offset={{ offset - page_size }}{% if filter_status %}&status={{ filter_status }}{% endif %}">← Назад</a>{% endif %}
+  {% if offset + page_size < total %}<a class="btn" href="?page_size={{ page_size }}&offset={{ offset + page_size }}{% if filter_status %}&status={{ filter_status }}{% endif %}">Вперёд →</a>{% endif %}
+</div>
+{% endif %}
+
+<div class="admin-nav-block bottom">
   <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
-  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
 </div>
 {% endblock %}
