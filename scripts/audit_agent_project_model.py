@@ -26,7 +26,7 @@ from app.models.prompt_version import PromptVersion
 from app.models.scraping_task import ScrapingTask
 from app.services.agent_catalog_service import get_global_agent_catalog, get_project_agent_catalog
 from app.services.agent_registry import KNOWN_AGENT_KEYS, get_agent_meta
-from app.services.prompt_override_service import get_project_override
+from app.services.prompt_override_service import audit_override_integrity, get_project_override
 from app.services.prompt_service import get_active_prompt
 
 
@@ -205,6 +205,21 @@ def db_constraints(db: Session) -> None:
         print(f"table={row[0]}\tconstraint={row[1]}\ttype={row[2]}")
 
 
+
+
+def print_override_integrity(db: Session) -> int:
+    print("\n=== Override integrity ===")
+    report = audit_override_integrity(db)
+    print(f"overall={report['overall']} fail={report['fail_count']} warn={report['warn_count']} "
+          f"duplicate_pair_groups={report['duplicate_pair_groups']}")
+    for item in report.get("issues", [])[:30]:
+        print(f"  {item.get('severity')} {item.get('kind')} project={item.get('project_id')} "
+              f"key={item.get('agent_key')} ids={item.get('override_ids')}")
+    if report["overall"] == "FAIL":
+        return 1
+    return 0
+
+
 def http_check(base: str) -> None:
     try:
         import httpx
@@ -231,14 +246,24 @@ def http_check(base: str) -> None:
             text = r.text
             keys = sorted(set(keys_pat.findall(text)))
             proj_links = sorted(set(re.findall(r"/admin/projects/(\d+)/", text)))
+            catalog_marker = "Общий каталог" in text
+            project_title = "Агенты проекта" in text
             has_help = "Источник для этого проекта" in text
             print(
-                f"URL={url}\tstatus={r.status_code}\thelp_marker={has_help}\t"
+                f"URL={url}\tstatus={r.status_code}\tcatalog_marker={catalog_marker}\t"
+                f"project_title={project_title}\thelp_marker={has_help}\t"
                 f"admin_project_id_links={proj_links}\tkeys_found={len(keys)}"
             )
+            if path == "/admin/agents" and not catalog_marker:
+                print("  WARN: /admin/agents missing catalog marker")
             if path == "/admin/projects/4/agents":
                 foreign = [x for x in proj_links if x != "4"]
-                print(f"  project_scoped_page_foreign_project_link_ids={foreign}")
+                if foreign:
+                    print(f"  FAIL: foreign project links {foreign}")
+                if not project_title:
+                    print("  FAIL: missing project page title marker")
+                if "4AC Scope B" in text or "zz-4ac-scope-b" in text:
+                    print("  FAIL: leaked test project B name on project 4 page")
                 print(f"  sample_keys={keys[:20]}")
 
 
@@ -249,12 +274,14 @@ def main() -> int:
     args = parser.parse_args()
 
     db = SessionLocal()
+    integrity_rc = 0
     try:
         db_constraints(db)
         print_projects(db)
         print_templates(db)
         print_versions(db)
         print_overrides(db)
+        integrity_rc = print_override_integrity(db)
         effective_matrix(db)
         llm_audit(db)
         g = get_global_agent_catalog(db)
@@ -268,7 +295,7 @@ def main() -> int:
     finally:
         db.close()
     print("\n=== DONE (read-only) ===")
-    return 0
+    return integrity_rc
 
 
 if __name__ == "__main__":

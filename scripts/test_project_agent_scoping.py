@@ -39,6 +39,37 @@ def _ensure_project(db, slug: str, name: str) -> Project:
     return create_project(db, parsed, enabled=False)
 
 
+
+def _test_override_uniqueness(db, project_id: int, key: str = "seo_enrich") -> bool:
+    from sqlalchemy import select
+
+    from app.models.project_prompt_override import ProjectPromptOverride
+    from app.models.prompt_template import PromptTemplate
+
+    tpl = db.scalar(select(PromptTemplate).where(PromptTemplate.key == key))
+    if not tpl:
+        return True
+    create_project_override_version(
+        db, project_id, key, version="uniq-a", system="s1", user="u1", activate=True
+    )
+    create_project_override_version(
+        db, project_id, key, version="uniq-b", system="s2", user="u2", activate=True
+    )
+    rows = list(
+        db.scalars(
+            select(ProjectPromptOverride).where(
+                ProjectPromptOverride.project_id == project_id,
+                ProjectPromptOverride.prompt_template_id == tpl.id,
+            )
+        ).all()
+    )
+    enabled = [r for r in rows if r.enabled]
+    if len(enabled) > 1:
+        print(f"FAIL: {len(enabled)} enabled overrides for {key}")
+        return False
+    print("PASS override uniqueness")
+    return True
+
 def main() -> int:
     db = SessionLocal()
     try:
@@ -100,6 +131,8 @@ def main() -> int:
             print("FAIL: project B seo should not be project_override from A")
             return 1
 
+        if not _test_override_uniqueness(db, pa.id):
+            return 1
         print("PASS project agent scoping")
         return 0
     except Exception as exc:
