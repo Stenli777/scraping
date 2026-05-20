@@ -40,10 +40,11 @@ def main() -> int:
         "/admin/agents/new",
         f"/admin/agents/seo_enrich",
         f"/admin/projects/{pid}/agents",
+        f"/admin/projects/4/agents",
         f"/admin/projects/{pid}/agents/review_article",
         f"/admin/projects/{pid}/tasks?page_size=10",
     ]
-    failed = []
+    failed: list[str] = []
     with httpx.Client(timeout=30) as client:
         for path in paths:
             ok, code = check_url(client, path)
@@ -54,6 +55,17 @@ def main() -> int:
             ("/admin/agents", ["Проект", "Technical key", "admin-table-viewport"], None),
             ("/admin/agents/new", ["project_id", "base_agent", "Custom / manual"], None),
             ("/admin/agents/seo_enrich", ["Операторская сводка", "Проектные настройки", "Usage audit"], None),
+            (
+                f"/admin/projects/{pid}/agents",
+                [
+                    "Источник для этого проекта",
+                    "применимы к этому проекту",
+                    "review_article",
+                    "seo_enrich",
+                ],
+                None,
+            ),
+            (f"/admin/projects/4/agents", ["Источник для этого проекта"], None),
             (f"/admin/projects/{pid}/agents/review_article", ["<details", 'name="system"'], ["???"]),
             ("/admin/projects/new", ["form-compact"], None),
         ]
