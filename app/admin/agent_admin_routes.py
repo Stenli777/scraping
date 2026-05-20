@@ -17,9 +17,9 @@ from app.models.prompt_template import PromptTemplate
 from app.services.agent_catalog_service import (
     BASE_AGENT_CHOICES,
     build_agent_catalog,
+    get_project_agent_catalog,
     list_project_overrides_for_agent,
     stage_label,
-    _last_llm_run,
 )
 from app.services.agent_registry import (
     KNOWN_AGENT_KEYS,
@@ -529,46 +529,7 @@ def admin_project_agents(project_id: int, request: Request, db: Session = Depend
     project = db.get(Project, project_id)
     if not project:
         return RedirectResponse("/admin/projects", status_code=302)
-    rows = []
-    seen_pa: set[str] = set()
-    for key in KNOWN_AGENT_KEYS:
-        seen_pa.add(key)
-        meta = get_agent_meta(key)
-        override = get_project_override(db, project_id, key)
-        global_active = get_active_prompt(db, key)
-        eff = get_active_prompt(db, key, project_id=project_id)
-        rows.append(
-            {
-                "meta": meta,
-                "uses_override": bool(override and override.enabled),
-                "global_version": global_active.version if global_active else "—",
-                "global_source": global_active.source if global_active else "—",
-                "effective_source": eff.source,
-                "effective_version": eff.version,
-                "override": override,
-                "pipeline_agent": True,
-            }
-        )
-    for template in db.scalars(
-        select(PromptTemplate).where(PromptTemplate.key.not_in(list(KNOWN_AGENT_KEYS)))
-    ).all():
-        key = template.key
-        meta = get_agent_meta(key)
-        override = get_project_override(db, project_id, key)
-        global_active = get_active_prompt(db, key)
-        eff = get_active_prompt(db, key, project_id=project_id)
-        rows.append(
-            {
-                "meta": meta,
-                "uses_override": bool(override and override.enabled),
-                "global_version": global_active.version if global_active else "—",
-                "global_source": global_active.source if global_active else "—",
-                "effective_source": eff.source,
-                "effective_version": eff.version,
-                "override": override,
-                "pipeline_agent": False,
-            }
-        )
+    rows = get_project_agent_catalog(db, project_id)
     return tpl.TemplateResponse(
         request,
         "project_agents.html",
