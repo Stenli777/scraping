@@ -8,13 +8,13 @@
 </div>
 
 {% if request.query_params.get('saved') %}
-<div class="panel alert-block success-block"><p>Версия агента сохранена.{% if request.query_params.get('activated') %} Проектная настройка активна.{% endif %}</p></div>
+<div class="panel alert-block alert-success alert-block"><p>Версия агента сохранена.{% if request.query_params.get('activated') %} Проектная настройка активна.{% endif %}</p></div>
 {% endif %}
 {% if request.query_params.get('disabled') %}
-<div class="panel alert-block success-block"><p>Проектная настройка отключена — используется глобальный prompt.</p></div>
+<div class="panel alert-block alert-success alert-block"><p>Проектная настройка отключена — используется глобальный prompt.</p></div>
 {% endif %}
 {% if request.query_params.get('error') %}
-<div class="panel alert-block" style="background:#fee"><p>{{ request.query_params.get('error') }}</p></div>
+<div class="panel alert-error alert-block" style="background:#fee"><p>{{ request.query_params.get('error') }}</p></div>
 {% endif %}
 
 <div class="panel">

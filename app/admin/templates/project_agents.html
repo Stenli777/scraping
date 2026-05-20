@@ -3,15 +3,12 @@
 {% set nav = nav or {} %}
 <div class="admin-nav-block">
   <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
-  <a class="btn" href="{{ nav.tasks_url }}">Задачи проекта</a>
-  <a class="btn" href="{{ nav.documents_url }}">Документы проекта</a>
-  <a class="btn" href="{{ nav.projects_url }}">← К списку проектов</a>
+  <a class="btn" href="/admin/agents/new?project_id={{ project.id }}">Создать агента для проекта</a>
+  <a class="btn" href="/admin/agents">К списку всех агентов</a>
 </div>
 
 <div class="panel help-block">
-  <p><strong>Глобальные агенты</strong> — базовые шаблоны для всех проектов (см. <a href="/admin/agents">/admin/agents</a>).
-  Здесь — <strong>проектные настройки</strong>: override заменяет глобальный prompt только для <em>{{ project.name }}</em>.
-  Новый проект использует глобальные версии, пока вы не сохраните проектную.</p>
+  <p>Новый проект сначала использует <strong>глобальные</strong> агенты. Строка с источником <code>project_override</code> — проектная настройка.</p>
 </div>
 
 <div class="panel admin-table-panel">
@@ -19,18 +16,20 @@
 <table class="table compact admin-data-table">
   <thead>
     <tr>
-      <th>Агент</th><th>Ключ</th><th>Глобальная версия</th><th>Override</th><th>Активная для проекта</th><th></th>
+      <th>Агент</th><th>Тип</th><th>Pipeline</th><th>Используется</th><th>Источник</th><th>Версия</th><th>Последний запуск</th><th></th>
     </tr>
   </thead>
   <tbody>
     {% for row in agents %}
     <tr>
-      <td><strong>{{ row.meta.agent_name }}</strong>{% if not row.pipeline_agent %}<br><span class="badge muted">custom</span>{% endif %}</td>
-      <td><code>{{ row.meta.key }}</code></td>
-      <td><code>{{ row.global_version }}</code> ({{ row.global_source }})</td>
-      <td>{% if row.uses_override %}<span class="badge">включён</span>{% else %}—{% endif %}</td>
-      <td><code>{{ row.effective_version }}</code> ({{ row.effective_source }})</td>
-      <td><a class="btn" href="/admin/projects/{{ project.id }}/agents/{{ row.meta.key }}">Настроить для проекта</a></td>
+      <td><strong>{{ row.meta.agent_name }}</strong><br><code>{{ row.meta.key }}</code></td>
+      <td>{{ row.type_label }}</td>
+      <td>{{ row.pipeline_label }}</td>
+      <td>{% if row.uses_override %}<span class="badge">проектная</span>{% else %}<span class="muted">глобальный</span>{% endif %}</td>
+      <td><code>{{ row.effective_source }}</code></td>
+      <td><code>{{ row.effective_version }}</code></td>
+      <td>{% if row.last_run %}#{{ row.last_run.id }}{% else %}—{% endif %}</td>
+      <td><a class="btn" href="/admin/projects/{{ project.id }}/agents/{{ row.meta.key }}">Настроить</a></td>
     </tr>
     {% endfor %}
   </tbody>

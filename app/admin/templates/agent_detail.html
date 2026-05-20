@@ -1,29 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="panel">
-  <h1>{{ meta.agent_name }}</h1>
-  <p class="muted">{{ meta.purpose }}</p>
-  <p><strong>Технический ключ:</strong> <code>{{ template.key }}</code></p>
-  <p><strong>Этап pipeline:</strong> {{ meta.stage }}</p>
-  <p><strong>Активная глобальная версия:</strong> <code>{{ active.version }}</code> ({{ active.source }})</p>
-  <p><strong>Проектных переопределений (активных):</strong> {{ override_count }}</p>
+<div class="admin-nav-block">
+  <a class="btn" href="/admin/agents">← К каталогу агентов</a>
+  {% if request.query_params.get('created') %}<span class="alert-success alert-block" style="display:inline-block;margin:0">Агент создан</span>{% endif %}
 </div>
 
-<div class="panel">
-  <h2>Версии (глобальные)</h2>
-  <table class="table">
-    <thead>
-      <tr><th>Версия</th><th>Активна</th><th>Создана</th><th>Заметки</th><th>Превью</th><th></th></tr>
-    </thead>
+<section class="panel">
+  <h2>Операторская сводка</h2>
+  <p><strong>{{ meta.agent_name }}</strong> — {{ meta.purpose }}</p>
+  <ul class="meta-list">
+    <li><strong>Technical key:</strong> <code>{{ template.key }}</code></li>
+    <li><strong>Тип / stage:</strong> {{ type_label }}</li>
+    <li><strong>Pipeline:</strong> {{ pipeline_label }}</li>
+    <li><strong>Активная глобальная версия:</strong> <code>{{ active.version }}</code> ({{ active.source }})</li>
+  </ul>
+</section>
+
+<section class="panel help-block">
+  <h2>Где используется в pipeline</h2>
+  <p>{{ meta.pipeline_usage }}</p>
+  <p><strong>Принимает:</strong> {{ meta.accepts }}</p>
+  <p><strong>Возвращает:</strong> {{ meta.returns }}</p>
+</section>
+
+<section class="panel">
+  <h2>Активная глобальная версия</h2>
+  <details><summary>System / User prompt (preview)</summary>
+  <p><strong>System</strong></p>
+  <pre class="content prompt-preview scroll-y">{{ active.system or "—" }}</pre>
+  <p><strong>User</strong></p>
+  <pre class="content prompt-preview scroll-y">{{ active.user_template or "—" }}</pre>
+  </details>
+</section>
+
+<section class="panel admin-table-panel">
+  <h2>Проектные настройки этого агента</h2>
+  <div class="admin-table-viewport">
+  <table class="table compact">
+    <thead><tr><th>Проект</th><th>Источник</th><th>Версия</th><th>Обновлено</th><th></th></tr></thead>
+    <tbody>
+      {% for po in project_overrides %}
+      <tr>
+        <td>{{ po.project.name }}</td>
+        <td><code>{{ po.source }}</code>{% if not po.enabled %} (выкл.){% endif %}</td>
+        <td><code>{{ po.version }}</code></td>
+        <td class="nowrap">{{ po.updated_at }}</td>
+        <td><a class="btn" href="{{ po.configure_url }}">Настроить</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">Проектных override пока нет — используется глобальный prompt</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Версии глобального агента</h2>
+  <div class="admin-table-viewport">
+  <table class="table compact">
+    <thead><tr><th>Версия</th><th>Активна</th><th>Создана</th><th>Заметки</th><th></th></tr></thead>
     <tbody>
       {% for v in versions %}
       <tr>
         <td><code>{{ v.version }}</code></td>
         <td>{% if v.is_active %}да{% else %}—{% endif %}</td>
-        <td>{{ v.created_at }}</td>
+        <td class="nowrap">{{ v.created_at }}</td>
         <td>{{ v.notes or "—" }}</td>
-        <td><pre class="content" style="max-height:6em;overflow:auto">{{ (v.content_md or "")[:300] }}</pre></td>
         <td>
+          <details><summary>Превью</summary><pre class="content scroll-y">{{ (v.content_md or "")[:500] }}</pre></details>
           {% if not v.is_active %}
           <form method="post" action="/admin/prompts/{{ template.key }}/versions/{{ v.id }}/activate" style="display:inline">
             <button type="submit" class="btn">Активировать</button>
@@ -34,43 +79,41 @@
       {% endfor %}
     </tbody>
   </table>
-</div>
-
-<div class="panel">
-  <h2>Новая глобальная версия</h2>
-  <p class="muted">Формат JSON: <code>{"system": "...", "user": "..."}</code> — в user допустимы переменные <code>{title}</code>, <code>{content}</code> и др.</p>
+  </div>
+  <details class="collapsible-panel"><summary>Новая глобальная версия (JSON)</summary>
   <form method="post" action="/admin/prompts/{{ template.key }}/versions" class="form">
-    <label>Метка версии <input name="version" required placeholder="v2"></label>
-    <label>Заметки оператора <input name="notes"></label>
-    <label>Содержимое (JSON)
-      <textarea name="content_md" rows="14" required placeholder='{"system":"...","user":"..."}'></textarea>
-    </label>
-    <label><input type="checkbox" name="activate"> Активировать сразу</label>
-    <button type="submit" class="btn primary">Создать версию</button>
+    <label>Метка версии <input name="version" required></label>
+    <label>Заметки <input name="notes"></label>
+    <label>JSON <textarea name="content_md" rows="10" required placeholder='{"system":"...","user":"..."}'></textarea></label>
+    <label><input type="checkbox" name="activate"> Активировать</label>
+    <button type="submit" class="btn primary">Создать</button>
   </form>
-</div>
+  </details>
+</section>
 
-<div class="panel">
-  <h2>Последние LLM-запуски (аудит)</h2>
-  <table class="table">
-    <thead>
-      <tr><th>ID</th><th>Дата</th><th>Модель</th><th>Успех</th><th>мс</th><th>prompt_template</th></tr>
-    </thead>
+<section class="panel admin-table-panel">
+  <h2>Usage audit — последние LLM-запуски</h2>
+  <div class="admin-table-viewport">
+  <table class="table compact">
+    <thead><tr><th>ID</th><th>Дата</th><th>Project</th><th>Model</th><th>OK</th><th>мс</th><th>prompt_template</th></tr></thead>
     <tbody>
       {% for r in llm_runs %}
       <tr>
         <td>{{ r.id }}</td>
-        <td>{{ r.created_at }}</td>
+        <td class="nowrap">{{ r.created_at }}</td>
+        <td>{{ r.project_id or "—" }}</td>
         <td><code>{{ r.model_alias }}</code></td>
         <td>{{ "да" if r.success else "нет" }}</td>
         <td>{{ r.latency_ms or "—" }}</td>
         <td><code>{{ r.prompt_template or "—" }}</code></td>
       </tr>
       {% else %}
-      <tr><td colspan="6">Запусков пока нет</td></tr>
+      <tr><td colspan="7" class="muted">Запусков нет</td></tr>
       {% endfor %}
     </tbody>
   </table>
-</div>
-<p><a class="btn" href="/admin/agents">← К списку агентов</a></p>
+  </div>
+</section>
+
+<div class="admin-nav-block bottom"><a class="btn" href="/admin/agents">← К каталогу</a></div>
 {% endblock %}
