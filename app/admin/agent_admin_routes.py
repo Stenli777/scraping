@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
@@ -19,8 +21,10 @@ from app.services.agent_registry import (
     source_label_ru,
 )
 from app.services.project_admin_list_helpers import (
+    PAGE_SIZE_CHOICES,
     list_project_documents,
     list_project_tasks,
+    normalize_page_size,
 )
 from app.services.project_admin_service import (
     can_delete_project,
@@ -40,6 +44,7 @@ from app.services.prompt_override_service import (
     smoke_render_prompt,
 )
 from app.services.prompt_service import (
+    ensure_prompt_template,
     activate_prompt_version,
     create_prompt_version,
     get_active_prompt,
@@ -76,8 +81,10 @@ def _project_nav(project: Project, *, agent_key: str | None = None) -> dict:
 def admin_agents_list(request: Request, db: Session = Depends(get_db)):
     tpl = _admin_templates(request)
     rows = []
+    seen: set[str] = set()
     for meta in list_agents():
         key = meta["key"]
+        seen.add(key)
         template = db.scalar(select(PromptTemplate).where(PromptTemplate.key == key))
         active = get_active_prompt(db, key) if template else None
         rows.append(
@@ -85,8 +92,24 @@ def admin_agents_list(request: Request, db: Session = Depends(get_db)):
                 **meta,
                 "template": template,
                 "active_version": active.version if active else "—",
-                "active_source": active.source if active else "—",
+                "active_source": active.source if active else "code_fallback",
                 "override_count": count_project_overrides(db, key),
+                "pipeline_agent": True,
+            }
+        )
+    for template in db.scalars(select(PromptTemplate).order_by(PromptTemplate.key)).all():
+        if template.key in seen:
+            continue
+        meta = get_agent_meta(template.key)
+        active = get_active_prompt(db, template.key)
+        rows.append(
+            {
+                **meta,
+                "template": template,
+                "active_version": active.version if active else "—",
+                "active_source": active.source if active else "—",
+                "override_count": count_project_overrides(db, template.key),
+                "pipeline_agent": False,
             }
         )
     return tpl.TemplateResponse(
@@ -344,7 +367,9 @@ def admin_project_agents(project_id: int, request: Request, db: Session = Depend
     if not project:
         return RedirectResponse("/admin/projects", status_code=302)
     rows = []
+    seen_pa: set[str] = set()
     for key in KNOWN_AGENT_KEYS:
+        seen_pa.add(key)
         meta = get_agent_meta(key)
         override = get_project_override(db, project_id, key)
         global_active = get_active_prompt(db, key)
@@ -353,10 +378,32 @@ def admin_project_agents(project_id: int, request: Request, db: Session = Depend
             {
                 "meta": meta,
                 "uses_override": bool(override and override.enabled),
-                "global_version": global_active.version,
+                "global_version": global_active.version if global_active else "—",
+                "global_source": global_active.source if global_active else "—",
                 "effective_source": eff.source,
                 "effective_version": eff.version,
                 "override": override,
+                "pipeline_agent": True,
+            }
+        )
+    for template in db.scalars(
+        select(PromptTemplate).where(PromptTemplate.key.not_in(list(KNOWN_AGENT_KEYS)))
+    ).all():
+        key = template.key
+        meta = get_agent_meta(key)
+        override = get_project_override(db, project_id, key)
+        global_active = get_active_prompt(db, key)
+        eff = get_active_prompt(db, key, project_id=project_id)
+        rows.append(
+            {
+                "meta": meta,
+                "uses_override": bool(override and override.enabled),
+                "global_version": global_active.version if global_active else "—",
+                "global_source": global_active.source if global_active else "—",
+                "effective_source": eff.source,
+                "effective_version": eff.version,
+                "override": override,
+                "pipeline_agent": False,
             }
         )
     return tpl.TemplateResponse(
@@ -414,20 +461,28 @@ def admin_project_tasks(
     project_id: int,
     request: Request,
     status: str | None = None,
+    page_size: int | None = None,
+    offset: int = 0,
     db: Session = Depends(get_db),
 ):
     tpl = _admin_templates(request)
     project = db.get(Project, project_id)
     if not project:
         return RedirectResponse("/admin/projects", status_code=302)
-    tasks = list_project_tasks(db, project_id, status=status or None)
+    ps = normalize_page_size(page_size)
+    off = max(0, int(offset or 0))
+    result = list_project_tasks(db, project_id, status=status or None, page_size=ps, offset=off)
     return tpl.TemplateResponse(
         request,
         "project_tasks.html",
         {
             "request": request,
             "project": project,
-            "tasks": tasks,
+            "tasks": result["items"],
+            "total": result["total"],
+            "page_size": result["page_size"],
+            "offset": result["offset"],
+            "page_size_choices": PAGE_SIZE_CHOICES,
             "filter_status": status or "",
             "title": f"Задачи проекта — {project.name}",
             "nav": _project_nav(project),
@@ -442,6 +497,8 @@ def admin_project_documents(
     status: str | None = None,
     has_publication: str | None = None,
     in_pilot: str | None = None,
+    page_size: int | None = None,
+    offset: int = 0,
     db: Session = Depends(get_db),
 ):
     tpl = _admin_templates(request)
@@ -458,12 +515,16 @@ def admin_project_documents(
         pilot_filter = True
     elif in_pilot == "no":
         pilot_filter = False
-    documents = list_project_documents(
+    ps = normalize_page_size(page_size)
+    off = max(0, int(offset or 0))
+    result = list_project_documents(
         db,
         project_id,
         status=status or None,
         has_publication=pub_filter,
         in_pilot=pilot_filter,
+        page_size=ps,
+        offset=off,
     )
     return tpl.TemplateResponse(
         request,
@@ -471,7 +532,11 @@ def admin_project_documents(
         {
             "request": request,
             "project": project,
-            "documents": documents,
+            "documents": result["items"],
+            "total": result["total"],
+            "page_size": result["page_size"],
+            "offset": result["offset"],
+            "page_size_choices": PAGE_SIZE_CHOICES,
             "filter_status": status or "",
             "filter_publication": has_publication or "",
             "filter_pilot": in_pilot or "",
@@ -479,6 +544,100 @@ def admin_project_documents(
             "nav": _project_nav(project),
         },
     )
+
+
+
+
+CORE_AGENT_KEYS = frozenset(KNOWN_AGENT_KEYS)
+
+
+@router.get("/admin/agents/new", response_class=HTMLResponse)
+def admin_agent_new_form(request: Request):
+    tpl = _admin_templates(request)
+    return tpl.TemplateResponse(
+        request,
+        "agent_new.html",
+        {
+            "request": request,
+            "errors": {},
+            "form": {
+                "agent_name": "",
+                "key": "",
+                "stage": "other",
+                "purpose": "",
+                "system": "",
+                "user": "",
+                "version": "v1",
+                "schema_notes": "",
+                "enabled": True,
+            },
+            "title": "Создать custom-агента",
+        },
+    )
+
+
+@router.post("/admin/agents/new", response_class=HTMLResponse)
+def admin_agent_new_create(
+    request: Request,
+    db: Session = Depends(get_db),
+    agent_name: str = Form(...),
+    key: str = Form(...),
+    stage: str = Form("other"),
+    purpose: str = Form(""),
+    system: str = Form(...),
+    user: str = Form(...),
+    version: str = Form("v1"),
+    schema_notes: str = Form(""),
+    enabled: str | None = Form(None),
+):
+    tpl = _admin_templates(request)
+    form = {
+        "agent_name": agent_name,
+        "key": key.strip(),
+        "stage": stage,
+        "purpose": purpose,
+        "system": system,
+        "user": user,
+        "version": version,
+        "schema_notes": schema_notes,
+        "enabled": enabled == "on",
+    }
+    errors: dict[str, str] = {}
+    k = form["key"]
+    if not k or k != k.lower() or not k.replace("_", "").isalnum():
+        errors["key"] = "Ключ: snake_case, латиница, цифры, underscore"
+    if k in CORE_AGENT_KEYS:
+        errors["key"] = "Ключ зарезервирован для pipeline-агента"
+    if db.scalar(select(PromptTemplate).where(PromptTemplate.key == k)):
+        errors["key"] = "Ключ уже существует"
+    if errors:
+        return tpl.TemplateResponse(
+            request,
+            "agent_new.html",
+            {"request": request, "errors": errors, "form": form, "title": "Создать custom-агента"},
+            status_code=400,
+        )
+    import json
+
+    template = ensure_prompt_template(
+        db,
+        k,
+        name=agent_name,
+        description=purpose or schema_notes or None,
+        task_kind=stage,
+        enabled=form["enabled"],
+    )
+    content_md = json.dumps({"system": system, "user": user}, ensure_ascii=False)
+    create_prompt_version(
+        db,
+        k,
+        version=version.strip() or "v1",
+        content_md=content_md,
+        created_by="admin",
+        notes=schema_notes or purpose or None,
+        activate=True,
+    )
+    return RedirectResponse(f"/admin/agents/{template.key}?created=1", status_code=303)
 
 
 @router.post("/admin/projects/{project_id}/agents/{key}/override")
@@ -492,17 +651,28 @@ def admin_project_agent_create_override(
     action: str = Form("save_and_activate"),
     db: Session = Depends(get_db),
 ):
-    create_project_override_version(
-        db,
-        project_id,
-        key,
-        version=version,
-        system=system,
-        user=user,
-        notes=notes or None,
-        activate=action == "save_and_activate",
+    try:
+        create_project_override_version(
+            db,
+            project_id,
+            key,
+            version=version,
+            system=system,
+            user=user,
+            notes=notes or None,
+            activate=action == "save_and_activate",
+        )
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/projects/{project_id}/agents/{key}?error={quote(str(exc))}",
+            status_code=303,
+        )
+    qs = "saved=1"
+    if action == "save_and_activate":
+        qs += "&activated=1"
+    return RedirectResponse(
+        f"/admin/projects/{project_id}/agents/{key}?{qs}", status_code=303
     )
-    return RedirectResponse(f"/admin/projects/{project_id}/agents/{key}", status_code=303)
 
 
 @router.post("/admin/projects/{project_id}/agents/{key}/override/disable")
@@ -510,7 +680,9 @@ def admin_project_agent_disable_override(
     project_id: int, key: str, db: Session = Depends(get_db)
 ):
     disable_project_override(db, project_id, key)
-    return RedirectResponse(f"/admin/projects/{project_id}/agents/{key}", status_code=303)
+    return RedirectResponse(
+        f"/admin/projects/{project_id}/agents/{key}?disabled=1", status_code=303
+    )
 
 
 @router.post("/admin/projects/{project_id}/agents/{key}/smoke")

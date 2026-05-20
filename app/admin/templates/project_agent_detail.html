@@ -7,6 +7,16 @@
   <a class="btn" href="{{ nav.projects_url or '/admin/projects' }}">← К списку проектов</a>
 </div>
 
+{% if request.query_params.get('saved') %}
+<div class="panel alert-block success-block"><p>Версия агента сохранена.{% if request.query_params.get('activated') %} Проектная настройка активна.{% endif %}</p></div>
+{% endif %}
+{% if request.query_params.get('disabled') %}
+<div class="panel alert-block success-block"><p>Проектная настройка отключена — используется глобальный prompt.</p></div>
+{% endif %}
+{% if request.query_params.get('error') %}
+<div class="panel alert-block" style="background:#fee"><p>{{ request.query_params.get('error') }}</p></div>
+{% endif %}
+
 <div class="panel">
   <h1>{{ meta.agent_name }}</h1>
   <p class="muted">{{ meta.purpose }}</p>
@@ -15,62 +25,30 @@
 </div>
 
 <div class="panel help-block">
+  <p><strong>Глобальные агенты</strong> — базовые шаблоны для всех проектов.
+  <strong>Агенты проекта</strong> — переопределения только для этого проекта.
+  Новый проект использует глобальные агенты, пока вы не сохраните проектную версию.</p>
   <h2>Что делает этот агент</h2>
   <ul>
     <li><strong>Pipeline:</strong> {{ meta.pipeline_usage }}</li>
     <li><strong>Принимает:</strong> {{ meta.accepts }}</li>
     <li><strong>Возвращает:</strong> {{ meta.returns }}</li>
-    <li><strong>Настройка проекта:</strong> {{ meta.override_effect }}</li>
   </ul>
 </div>
 
 {% if edit_form.fallback_notice or effective.fallback_notice %}
-<div class="panel alert-block">
-  <p>{{ edit_form.fallback_notice or effective.fallback_notice }}</p>
-</div>
+<div class="panel alert-block"><p>{{ edit_form.fallback_notice or effective.fallback_notice }}</p></div>
 {% endif %}
-
-{% if request.query_params.get('smoke') %}
-<div class="panel"><p class="muted">Smoke-check выполнен (без вызова LLM).</p></div>
-{% endif %}
-
-<div class="panel">
-  <h2>Текущий активный текст агента</h2>
-  <p class="muted">Источник: {{ effective.source_label_ru or effective.source }} · версия <code>{{ effective.version }}</code></p>
-  <p><strong>System prompt</strong></p>
-  <pre class="content prompt-preview scroll-y">{{ effective.system or "—" }}</pre>
-  <p><strong>Инструкция для задачи (user prompt)</strong></p>
-  <pre class="content prompt-preview scroll-y">{{ effective.user_template or "—" }}</pre>
-  <p><strong>Пример итогового запроса после подстановки переменных</strong></p>
-  <pre class="content prompt-preview scroll-y">{{ effective.preview_user or "—" }}</pre>
-  {% if effective.expected_variables %}
-  <p><strong>Ожидаемые переменные:</strong> <code>{{ effective.expected_variables | join(", ") }}</code></p>
-  {% endif %}
-  {% if effective.warnings %}
-  <p><strong>Предупреждения:</strong> {{ effective.warnings | join("; ") }}</p>
-  {% endif %}
-  <details><summary>Raw JSON (техническое)</summary>
-  <pre class="content scroll-y">{{ effective | tojson(indent=2) }}</pre></details>
-  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/smoke" style="display:inline">
-    <button type="submit" class="btn">Проверить (smoke)</button>
-  </form>
-</div>
-
-<div class="panel">
-  <h2>Глобальный prompt</h2>
-  <p>Источник: {{ global_eff.source }} · <code>{{ global_eff.version }}</code></p>
-</div>
 
 <div class="panel">
   <h2>Настройка агента для этого проекта</h2>
-  <p class="field-help"><strong>System prompt</strong> — общая роль и правила агента.</p>
-  <p class="field-help"><strong>User prompt</strong> — шаблон задачи, куда подставляются данные документа.</p>
-  <p class="field-help"><strong>Project override</strong> — проектная версия агента, которая заменяет глобальный prompt только для этого проекта.</p>
-  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/override" class="form">
+  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/override" class="form form-compact">
     <label>Название версии <input name="version" value="{{ edit_form.version }}" required placeholder="v1"></label>
-    <label>Комментарий к версии <input name="notes" value="{{ edit_form.notes }}"></label>
-    <label>System prompt <textarea name="system" rows="6" class="agent-editor">{{ edit_form.system }}</textarea></label>
-    <label>Инструкция для задачи (user prompt) <textarea name="user" rows="10" class="agent-editor" required>{{ edit_form.user }}</textarea></label>
+    <label>Комментарий <input name="notes" value="{{ edit_form.notes }}"></label>
+    <label>System prompt <span class="field-help">— роль и правила</span>
+      <textarea name="system" rows="8" class="agent-editor scroll-y">{{ edit_form.system }}</textarea></label>
+    <label>Инструкция для задачи (user prompt) <span class="field-help">— шаблон с переменными</span>
+      <textarea name="user" rows="12" class="agent-editor scroll-y" required>{{ edit_form.user }}</textarea></label>
     <div class="form-actions">
       <button type="submit" name="action" value="save_version" class="btn">Сохранить новую версию агента</button>
       <button type="submit" name="action" value="save_and_activate" class="btn primary">Сохранить и сделать активной для проекта</button>
@@ -83,24 +61,33 @@
   {% endif %}
 </div>
 
-<div class="panel">
-  <h2>Последние LLM-запуски</h2>
-  <div class="table-scroll inner-scroll">
-  <table class="table compact">
-    <tr><th>ID</th><th>OK</th><th>Model</th><th>Prompt ref</th></tr>
-    {% for r in llm_runs %}
-    <tr>
-      <td>{{ r.id }}</td><td>{{ "да" if r.success else "нет" }}</td>
-      <td>{{ r.model_alias }}</td><td><code>{{ r.prompt_template }}</code></td>
-    </tr>
-    {% endfor %}
-  </table>
-  </div>
-</div>
+<details class="panel collapsible-panel">
+  <summary>Текущий активный текст агента (preview)</summary>
+  <p class="muted">Источник: {{ effective.source_label_ru or effective.source }} · <code>{{ effective.version }}</code></p>
+  <details><summary>System prompt</summary><pre class="content prompt-preview scroll-y">{{ effective.system or "—" }}</pre></details>
+  <details><summary>User prompt (шаблон)</summary><pre class="content prompt-preview scroll-y">{{ effective.user_template or "—" }}</pre></details>
+  <details><summary>Пример итогового запроса после подстановки переменных</summary>
+  <pre class="content prompt-preview scroll-y">{{ effective.preview_user or "—" }}</pre></details>
+  {% if effective.expected_variables %}<p><strong>Переменные:</strong> <code>{{ effective.expected_variables | join(", ") }}</code></p>{% endif %}
+  <details><summary>Raw JSON</summary><pre class="content scroll-y">{{ effective | tojson(indent=2) }}</pre></details>
+  <form method="post" action="/admin/projects/{{ project.id }}/agents/{{ meta.key }}/smoke"><button type="submit" class="btn">Проверить (smoke)</button></form>
+</details>
 
-<div class="admin-nav-block">
-  <a class="btn" href="{{ nav.agents_url or ('/admin/projects/' ~ project.id ~ '/agents') }}">← К списку агентов проекта</a>
-  <a class="btn" href="{{ nav.project_edit_url or ('/admin/projects/' ~ project.id ~ '/edit') }}">← К проекту</a>
-  <a class="btn" href="{{ nav.projects_url or '/admin/projects' }}">← К списку проектов</a>
+<details class="panel collapsible-panel">
+  <summary>Глобальный prompt ({{ global_eff.source }}, {{ global_eff.version }})</summary>
+  <pre class="content scroll-y">{{ global_eff.system or "—" }}</pre>
+</details>
+
+<details class="panel collapsible-panel">
+  <summary>Последние LLM-запуски ({{ llm_runs|length }})</summary>
+  <div class="admin-table-viewport">
+  <table class="table compact"><tr><th>ID</th><th>OK</th><th>Model</th><th>Prompt ref</th></tr>
+  {% for r in llm_runs %}<tr><td>{{ r.id }}</td><td>{{ "да" if r.success else "нет" }}</td><td>{{ r.model_alias }}</td><td><code>{{ r.prompt_template }}</code></td></tr>{% endfor %}
+  </table></div>
+</details>
+
+<div class="admin-nav-block bottom">
+  <a class="btn" href="{{ nav.agents_url }}">← К списку агентов проекта</a>
+  <a class="btn" href="{{ nav.project_edit_url }}">← К проекту</a>
 </div>
 {% endblock %}
