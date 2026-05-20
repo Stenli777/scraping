@@ -1,27 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="panel help-block">
-  <p><strong>Глобальные агенты</strong> — базовые LLM-шаблоны для всех проектов. Технические ключи не меняются.</p>
-  <p><strong>Агенты проекта</strong> — в карточке проекта → «Агенты проекта»: переопределение глобального prompt только для выбранного проекта.</p>
-  <p><a class="btn primary" href="/admin/agents/new">+ Создать custom-агента</a></p>
+  <h1>Агенты</h1>
+  <p>Агент — это prompt template с ролью в pipeline. <strong>Глобальный агент</strong> действует для всех проектов.
+  <strong>Проектная настройка</strong> переопределяет его только внутри выбранного проекта.</p>
+  <div class="form-actions">
+    <a class="btn primary" href="/admin/agents/new">Создать агента</a>
+    <a class="btn" href="/admin/projects">Настроить агентов проекта</a>
+  </div>
 </div>
+
+<form method="get" class="panel form-inline admin-filters form-row form-row-4">
+  <label>Проект
+    <select name="project" class="admin-select filter-select">
+      <option value="">Все</option>
+      <option value="global" {% if filter_project == 'global' %}selected{% endif %}>Только глобальные</option>
+      {% for p in projects %}
+      <option value="{{ p.id }}" {% if filter_project == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Тип/роль
+    <select name="role" class="admin-select filter-select">
+      <option value="">Все</option>
+      <option value="review" {% if filter_role == 'review' %}selected{% endif %}>Рецензент</option>
+      <option value="rewrite" {% if filter_role == 'rewrite' %}selected{% endif %}>Писатель</option>
+      <option value="seo" {% if filter_role == 'seo' %}selected{% endif %}>SEO</option>
+      <option value="quality" {% if filter_role == 'quality' %}selected{% endif %}>Редактор качества</option>
+      <option value="strategy" {% if filter_role == 'strategy' %}selected{% endif %}>Темы</option>
+      <option value="custom" {% if filter_role == 'custom' %}selected{% endif %}>Custom</option>
+    </select>
+  </label>
+  <label>Pipeline
+    <select name="pipeline" class="admin-select filter-select">
+      <option value="">Все</option>
+      <option value="yes" {% if filter_pipeline == 'yes' %}selected{% endif %}>В pipeline</option>
+      <option value="no" {% if filter_pipeline == 'no' %}selected{% endif %}>Не в pipeline</option>
+    </select>
+  </label>
+  <button type="submit" class="btn">Фильтр</button>
+</form>
+
 <div class="panel admin-table-panel">
 <div class="admin-table-viewport">
 <table class="table compact admin-data-table">
   <thead>
-    <tr><th>Агент</th><th>Ключ</th><th>Этап</th><th>Глобальная версия</th><th>Источник</th><th>Проектных override</th><th></th></tr>
+    <tr>
+      <th>Агент</th><th>Тип</th><th>Technical key</th><th>Проект</th><th>Источник</th>
+      <th>Активная версия</th><th>Pipeline</th><th>Overrides</th><th>Последний запуск</th><th>Действия</th>
+    </tr>
   </thead>
   <tbody>
-    {% for a in agents %}
+    {% for r in catalog %}
     <tr>
-      <td><strong>{{ a.agent_name }}</strong><br><span class="muted">{{ a.purpose }}</span></td>
-      <td><code>{{ a.key }}</code></td>
-      <td>{{ a.stage }}{% if not a.pipeline_agent %} <span class="badge muted">не в pipeline</span>{% endif %}</td>
-      <td><code>{{ a.active_version }}</code></td>
-      <td>{{ a.active_source }}</td>
-      <td>{{ a.override_count }}</td>
-      <td><a class="btn" href="/admin/agents/{{ a.key }}">Открыть</a></td>
+      <td><strong>{{ r.agent_name }}</strong></td>
+      <td>{{ r.type_label }}</td>
+      <td><code>{{ r.key }}</code></td>
+      <td>{{ r.project_name }}</td>
+      <td><code>{{ r.source }}</code></td>
+      <td><code>{{ r.active_version }}</code></td>
+      <td>{{ r.pipeline_label }}</td>
+      <td>{{ r.override_count }}</td>
+      <td>{% if r.last_run %}#{{ r.last_run.id }} {{ "OK" if r.last_run.success else "FAIL" }}{% else %}—{% endif %}</td>
+      <td class="action-cell">
+        <a class="btn" href="{{ r.open_url }}">Глобальный</a>
+        {% if r.project_url %}<a class="btn" href="{{ r.project_url }}">Проект</a>{% endif %}
+      </td>
     </tr>
+    {% else %}
+    <tr><td colspan="10" class="empty-state">Нет агентов по фильтру</td></tr>
     {% endfor %}
   </tbody>
 </table>

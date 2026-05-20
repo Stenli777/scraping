@@ -14,6 +14,13 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.project import Project
 from app.models.prompt_template import PromptTemplate
+from app.services.agent_catalog_service import (
+    BASE_AGENT_CHOICES,
+    build_agent_catalog,
+    list_project_overrides_for_agent,
+    stage_label,
+    _last_llm_run,
+)
 from app.services.agent_registry import (
     KNOWN_AGENT_KEYS,
     get_agent_meta,
@@ -78,45 +85,191 @@ def _project_nav(project: Project, *, agent_key: str | None = None) -> dict:
 
 
 @router.get("/admin/agents", response_class=HTMLResponse)
-def admin_agents_list(request: Request, db: Session = Depends(get_db)):
+def admin_agents_list(
+    request: Request,
+    project: str | None = None,
+    role: str | None = None,
+    pipeline: str | None = None,
+    db: Session = Depends(get_db),
+):
     tpl = _admin_templates(request)
-    rows = []
-    seen: set[str] = set()
-    for meta in list_agents():
-        key = meta["key"]
-        seen.add(key)
-        template = db.scalar(select(PromptTemplate).where(PromptTemplate.key == key))
-        active = get_active_prompt(db, key) if template else None
-        rows.append(
-            {
-                **meta,
-                "template": template,
-                "active_version": active.version if active else "—",
-                "active_source": active.source if active else "code_fallback",
-                "override_count": count_project_overrides(db, key),
-                "pipeline_agent": True,
-            }
-        )
-    for template in db.scalars(select(PromptTemplate).order_by(PromptTemplate.key)).all():
-        if template.key in seen:
-            continue
-        meta = get_agent_meta(template.key)
-        active = get_active_prompt(db, template.key)
-        rows.append(
-            {
-                **meta,
-                "template": template,
-                "active_version": active.version if active else "—",
-                "active_source": active.source if active else "—",
-                "override_count": count_project_overrides(db, template.key),
-                "pipeline_agent": False,
-            }
-        )
+    projects = db.query(Project).order_by(Project.name).all()
+    catalog = build_agent_catalog(
+        db,
+        project_filter=project or "",
+        role_filter=role or "",
+        pipeline_filter=pipeline or "",
+    )
     return tpl.TemplateResponse(
         request,
         "agents_list.html",
-        {"request": request, "agents": rows, "title": "Агенты (промпты)"},
+        {
+            "request": request,
+            "catalog": catalog,
+            "projects": projects,
+            "filter_project": project or "",
+            "filter_role": role or "",
+            "filter_pipeline": pipeline or "",
+            "title": "Агенты",
+        },
     )
+
+
+@router.get("/admin/agents/new", response_class=HTMLResponse)
+def admin_agent_new_form(
+    request: Request,
+    project_id: str | None = None,
+    base_agent: str | None = None,
+    db: Session = Depends(get_db),
+):
+    tpl = _admin_templates(request)
+    projects = db.query(Project).order_by(Project.name).all()
+    return tpl.TemplateResponse(
+        request,
+        "agent_new.html",
+        {
+            "request": request,
+            "errors": {},
+            "projects": projects,
+            "base_agent_choices": BASE_AGENT_CHOICES,
+            "form": {
+                "project_id": project_id or "",
+                "base_agent": base_agent or "__custom__",
+                "agent_name": "",
+                "key": "",
+                "purpose": "",
+                "system": "",
+                "user": "",
+                "version": "v1",
+                "schema_notes": "",
+                "enabled": True,
+                "activate_for_project": bool(project_id),
+            },
+            "title": "Создать агента",
+        },
+    )
+
+
+@router.post("/admin/agents/new", response_class=HTMLResponse)
+def admin_agent_new_create(
+    request: Request,
+    db: Session = Depends(get_db),
+    project_id: str = Form(""),
+    base_agent: str = Form("__custom__"),
+    agent_name: str = Form(""),
+    key: str = Form(""),
+    stage: str = Form("other"),
+    purpose: str = Form(""),
+    system: str = Form(...),
+    user: str = Form(...),
+    version: str = Form("v1"),
+    schema_notes: str = Form(""),
+    enabled: str | None = Form(None),
+    activate_for_project: str | None = Form(None),
+):
+    tpl = _admin_templates(request)
+    projects = db.query(Project).order_by(Project.name).all()
+    pid = int(project_id) if project_id.isdigit() else None
+    is_custom = base_agent == "__custom__"
+    agent_key = key.strip() if is_custom else base_agent
+    form = {
+        "project_id": project_id,
+        "base_agent": base_agent,
+        "agent_name": agent_name,
+        "key": agent_key,
+        "stage": stage,
+        "purpose": purpose,
+        "system": system,
+        "user": user,
+        "version": version,
+        "schema_notes": schema_notes,
+        "enabled": enabled == "on",
+        "activate_for_project": activate_for_project == "on",
+    }
+    errors: dict[str, str] = {}
+
+    if not is_custom and not pid:
+        errors["project_id"] = "Для pipeline-агента выберите проект"
+    if is_custom:
+        if not agent_key or agent_key != agent_key.lower() or not agent_key.replace("_", "").isalnum():
+            errors["key"] = "Ключ: snake_case, латиница"
+        if agent_key in CORE_AGENT_KEYS:
+            errors["key"] = "Ключ зарезервирован"
+        if db.scalar(select(PromptTemplate).where(PromptTemplate.key == agent_key)):
+            errors["key"] = "Ключ уже существует"
+        if not agent_name.strip():
+            errors["agent_name"] = "Укажите название"
+
+    if errors:
+        return tpl.TemplateResponse(
+            request,
+            "agent_new.html",
+            {
+                "request": request,
+                "errors": errors,
+                "form": form,
+                "projects": projects,
+                "base_agent_choices": BASE_AGENT_CHOICES,
+                "title": "Создать агента",
+            },
+            status_code=400,
+        )
+
+    meta = get_agent_meta(agent_key) if not is_custom else None
+    ver = version.strip() or "v1"
+
+    if not is_custom and pid:
+        create_project_override_version(
+            db,
+            pid,
+            agent_key,
+            version=ver,
+            system=system,
+            user=user,
+            notes=schema_notes or purpose or None,
+            activate=activate_for_project or True,
+        )
+        return RedirectResponse(
+            f"/admin/projects/{pid}/agents/{agent_key}?saved=1&activated=1",
+            status_code=303,
+        )
+
+    tpl_name = agent_name.strip() if is_custom else get_agent_meta(agent_key)["agent_name"]
+    tpl_stage = stage if is_custom else get_agent_meta(agent_key).get("stage", "other")
+    template = ensure_prompt_template(
+        db,
+        agent_key,
+        name=tpl_name,
+        description=purpose or schema_notes or None,
+        task_kind=tpl_stage,
+        enabled=form["enabled"],
+    )
+    content_md = json.dumps({"system": system, "user": user}, ensure_ascii=False)
+    create_prompt_version(
+        db,
+        agent_key,
+        version=ver,
+        content_md=content_md,
+        created_by="admin",
+        notes=schema_notes or purpose or None,
+        activate=not pid,
+    )
+    if pid and (activate_for_project or is_custom):
+        create_project_override_version(
+            db,
+            pid,
+            agent_key,
+            version=ver,
+            system=system,
+            user=user,
+            notes=schema_notes or None,
+            activate=True,
+        )
+        return RedirectResponse(
+            f"/admin/projects/{pid}/agents/{agent_key}?saved=1&activated=1",
+            status_code=303,
+        )
+    return RedirectResponse(f"/admin/agents/{template.key}?created=1", status_code=303)
 
 
 @router.get("/admin/agents/{key}", response_class=HTMLResponse)
@@ -124,11 +277,17 @@ def admin_agent_detail(key: str, request: Request, db: Session = Depends(get_db)
     tpl = _admin_templates(request)
     template = db.scalar(select(PromptTemplate).where(PromptTemplate.key == key))
     if not template:
+        ensure_prompt_template(db, key)
+        db.commit()
+        template = db.scalar(select(PromptTemplate).where(PromptTemplate.key == key))
+    if not template:
         return RedirectResponse("/admin/agents", status_code=302)
     meta = get_agent_meta(key)
     active = get_active_prompt(db, key)
     versions = list_prompt_versions(db, key)
-    llm_runs = list_recent_llm_runs_for_prompt(db, key)
+    llm_runs = list_recent_llm_runs_for_prompt(db, key, limit=20)
+    project_overrides = list_project_overrides_for_agent(db, key)
+    is_pipeline = key in KNOWN_AGENT_KEYS
     return tpl.TemplateResponse(
         request,
         "agent_detail.html",
@@ -139,7 +298,11 @@ def admin_agent_detail(key: str, request: Request, db: Session = Depends(get_db)
             "active": active,
             "versions": versions,
             "llm_runs": llm_runs,
-            "override_count": count_project_overrides(db, key),
+            "project_overrides": project_overrides,
+            "type_label": stage_label(meta.get("stage", "other")),
+            "pipeline_label": (
+                f"Да: {meta.get('stage')}" if is_pipeline else "Нет: manual/custom"
+            ),
             "title": meta["agent_name"],
         },
     )
@@ -549,95 +712,6 @@ def admin_project_documents(
 
 
 CORE_AGENT_KEYS = frozenset(KNOWN_AGENT_KEYS)
-
-
-@router.get("/admin/agents/new", response_class=HTMLResponse)
-def admin_agent_new_form(request: Request):
-    tpl = _admin_templates(request)
-    return tpl.TemplateResponse(
-        request,
-        "agent_new.html",
-        {
-            "request": request,
-            "errors": {},
-            "form": {
-                "agent_name": "",
-                "key": "",
-                "stage": "other",
-                "purpose": "",
-                "system": "",
-                "user": "",
-                "version": "v1",
-                "schema_notes": "",
-                "enabled": True,
-            },
-            "title": "Создать custom-агента",
-        },
-    )
-
-
-@router.post("/admin/agents/new", response_class=HTMLResponse)
-def admin_agent_new_create(
-    request: Request,
-    db: Session = Depends(get_db),
-    agent_name: str = Form(...),
-    key: str = Form(...),
-    stage: str = Form("other"),
-    purpose: str = Form(""),
-    system: str = Form(...),
-    user: str = Form(...),
-    version: str = Form("v1"),
-    schema_notes: str = Form(""),
-    enabled: str | None = Form(None),
-):
-    tpl = _admin_templates(request)
-    form = {
-        "agent_name": agent_name,
-        "key": key.strip(),
-        "stage": stage,
-        "purpose": purpose,
-        "system": system,
-        "user": user,
-        "version": version,
-        "schema_notes": schema_notes,
-        "enabled": enabled == "on",
-    }
-    errors: dict[str, str] = {}
-    k = form["key"]
-    if not k or k != k.lower() or not k.replace("_", "").isalnum():
-        errors["key"] = "Ключ: snake_case, латиница, цифры, underscore"
-    if k in CORE_AGENT_KEYS:
-        errors["key"] = "Ключ зарезервирован для pipeline-агента"
-    if db.scalar(select(PromptTemplate).where(PromptTemplate.key == k)):
-        errors["key"] = "Ключ уже существует"
-    if errors:
-        return tpl.TemplateResponse(
-            request,
-            "agent_new.html",
-            {"request": request, "errors": errors, "form": form, "title": "Создать custom-агента"},
-            status_code=400,
-        )
-    import json
-
-    template = ensure_prompt_template(
-        db,
-        k,
-        name=agent_name,
-        description=purpose or schema_notes or None,
-        task_kind=stage,
-        enabled=form["enabled"],
-    )
-    content_md = json.dumps({"system": system, "user": user}, ensure_ascii=False)
-    create_prompt_version(
-        db,
-        k,
-        version=version.strip() or "v1",
-        content_md=content_md,
-        created_by="admin",
-        notes=schema_notes or purpose or None,
-        activate=True,
-    )
-    return RedirectResponse(f"/admin/agents/{template.key}?created=1", status_code=303)
 
 
 @router.post("/admin/projects/{project_id}/agents/{key}/override")
