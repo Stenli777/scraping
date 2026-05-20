@@ -246,3 +246,4 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 - Страница проекта **никогда** не показывает overrides другого project_id.
 - Custom-агент другого проекта не попадает в список, пока для текущего проекта нет override на его template.
 - Базовые pipeline-агенты видны для каждого проекта; без override источник — global или code_fallback.
+- Project agent detail: блок **Effective prompt resolution** (source, version, override_id, warnings, llm_runs).

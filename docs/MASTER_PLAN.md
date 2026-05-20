@@ -70,3 +70,4 @@ Reconciliation UI (in master), Autobit24 pipeline audit, CLIProxy 429/400 harden
 - [x] **4AC** — project-scoped /admin/projects/{id}/agents vs global /admin/agents; regression 	est_project_agent_scoping.py.
 
 - [x] **4AD** — audit agent/project DB model + docs/AGENT_PROJECT_MODEL_AUDIT.md + scripts/audit_agent_project_model.py.
+- [x] **4AE** — override UNIQUE + effective prompt diagnostics + Autobit flow check.

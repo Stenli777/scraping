@@ -130,3 +130,12 @@ Custom project agent = **глобальный** `prompt_template` + **override**
 ## Приложение: snapshot project #4 (сервис)
 
 На момент аудита `get_project_agent_catalog(db, 4)` возвращает **9** строк: 5 pipeline + 4 custom-ключа с override для проекта 4 (тестовые `zz_test_custom_4ab_*`). Это **ожидаемо** при наличии данных тестов; для «чистого» проекта останутся только 5 pipeline до первого override/custom.
+
+## 4AE implementation (2026-05-20)
+
+- **Final decision:** Option A confirmed in production.
+- **Uniqueness:** one row per `(project_id, prompt_template_id)`; DB constraint `uq_project_prompt_overrides_project_template`.
+- **Active override:** at most one `enabled=true` per pair; enforced in `create_project_override_version` and `disable_project_override`.
+- **Diagnostics:** `get_effective_prompt_resolution_diagnostic()` + admin UI block; `audit_override_integrity()` in audit script.
+- **Cleanup policy:** `scripts/cleanup_project_prompt_overrides.py` (dry-run default) if duplicate rows ever appear.
+

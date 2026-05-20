@@ -91,3 +91,5 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 - `scripts/check_project_agent_admin.py` — smoke admin/API agents (4X)
 - scripts/audit_agent_project_model.py — read-only снимок projects/prompts/overrides + optional --http (этап 4AD).
 - scripts/test_project_agent_scoping.py — регрессия изоляции агентов между проектами (4AC).
+- `scripts/cleanup_project_prompt_overrides.py` — dry-run disable duplicate enabled overrides (4AE).
+- `scripts/check_autobit_content_flow.py` — Autobit docs/tasks status (4AE).

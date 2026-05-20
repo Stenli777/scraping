@@ -496,4 +496,12 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 - Read-only аудит связки projects ↔ prompt_templates ↔ prompt_versions ↔ project_prompt_overrides ↔ llm_runs; сервисы prompt_service, gent_catalog_service, gent_registry, админ-маршруты.
 - Скрипт: scripts/audit_agent_project_model.py (--http — проверка маркеров страниц).
 - Документ: docs/AGENT_PROJECT_MODEL_AUDIT.md — заключение: **вариант A** (текущая схема + overrides), без новой таблицы bindings на этом этапе.
+## 2026-05-20 — этап 4AE (override uniqueness + diagnostics)
+
+- **Решение зафиксировано:** Option A — `prompt_templates` + `project_prompt_overrides` (без bindings, без `project_id` на шаблонах).
+- Migration **025:** `UNIQUE(project_id, prompt_template_id)` на `project_prompt_overrides`.
+- Сервис: `create_project_override_version` upsert + отключение лишних enabled; `IntegrityError` → повторный upsert.
+- UI: блок **Effective prompt resolution** на `/admin/projects/{id}/agents/{key}`; «Общий каталог» на `/admin/agents`.
+- Audit: секция **Override integrity**; расширен `--http`.
+- Autobit docs #10/#11/#13: rewrite done, editorial `generated` — next review/quality; pilot: не добавлять до RC.
 
