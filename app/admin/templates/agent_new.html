@@ -1,31 +1,70 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="admin-nav-block"><a class="btn" href="/admin/agents">← К списку агентов</a></div>
+<div class="admin-nav-block"><a class="btn" href="/admin/agents">← К каталогу агентов</a></div>
+
 <div class="panel help-block">
-  <p><strong>Custom-агент</strong> появится в списке и может иметь project override.
-  <strong>Не участвует в pipeline</strong>, пока разработчик явно не подключит его к стадии.</p>
+  <p class="alert-warning alert-block">Custom agent <strong>не участвует в pipeline автоматически</strong>.
+  Системные ключи: <code>review_article</code>, <code>rewrite_article</code>, <code>seo_enrich</code>,
+  <code>quality_review</code>, <code>topic_cleanup_v1</code>. Подключение custom — только разработчиком.</p>
+  <p id="existing-agent-hint" class="muted" style="display:none">Вы настраиваете <strong>существующий pipeline-агент для проекта</strong> — новый technical key не создаётся.</p>
 </div>
+
 {% if errors %}
-<div class="panel alert-block" style="background:#fee">{% for k,v in errors.items() %}<p><strong>{{ k }}:</strong> {{ v }}</p>{% endfor %}</div>
+<div class="panel alert-error alert-block">{% for k,v in errors.items() %}<p><strong>{{ k }}:</strong> {{ v }}</p>{% endfor %}</div>
 {% endif %}
-<form method="post" class="form panel form-compact">
+
+<form method="post" class="form panel form-compact" id="agent-new-form">
   <div class="form-row form-row-2">
-    <label>Название агента <input name="agent_name" value="{{ form.agent_name }}" required></label>
-    <label>Технический ключ <input name="key" value="{{ form.key }}" required pattern="[a-z][a-z0-9_]*" placeholder="my_custom_agent"></label>
+    <label>Проект
+      <select name="project_id" id="project_id" class="admin-select">
+        <option value="">Глобальный (без проекта)</option>
+        {% for p in projects %}
+        <option value="{{ p.id }}" {% if form.project_id == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Базовый тип агента
+      <select name="base_agent" id="base_agent" class="admin-select" required>
+        {% for val, label in base_agent_choices %}
+        <option value="{{ val }}" {% if form.base_agent == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
   </div>
-  <div class="form-row form-row-2">
-    <label>Этап (stage) <input name="stage" value="{{ form.stage }}" placeholder="other"></label>
-    <label>Название версии <input name="version" value="{{ form.version }}" placeholder="v1"></label>
+
+  <div id="custom-fields" class="form-row form-row-2">
+    <label>Название агента <input name="agent_name" value="{{ form.agent_name }}"></label>
+    <label>Technical key <input name="key" id="custom_key" value="{{ form.key }}" pattern="[a-z][a-z0-9_]*" placeholder="my_custom_agent"></label>
   </div>
+
   <label>Назначение <textarea name="purpose" rows="2">{{ form.purpose }}</textarea></label>
   <label>System prompt <textarea name="system" rows="6" class="agent-editor scroll-y" required>{{ form.system }}</textarea></label>
   <label>User prompt <textarea name="user" rows="8" class="agent-editor scroll-y" required>{{ form.user }}</textarea></label>
-  <label>Заметки / schema <textarea name="schema_notes" rows="2">{{ form.schema_notes }}</textarea></label>
-  <label><input type="checkbox" name="enabled" {% if form.enabled %}checked{% endif %}> Включён в каталоге</label>
+  <div class="form-row form-row-2">
+    <label>Название версии <input name="version" value="{{ form.version }}" placeholder="v1"></label>
+    <label>Заметки <input name="schema_notes" value="{{ form.schema_notes }}"></label>
+  </div>
+  <label id="activate-row"><input type="checkbox" name="activate_for_project" {% if form.activate_for_project %}checked{% endif %}> Сделать активной для выбранного проекта</label>
+  <label><input type="checkbox" name="enabled" {% if form.enabled %}checked{% endif %}> Включён в каталоге (global template)</label>
   <div class="form-actions">
-    <button type="submit" class="btn primary">Создать агента</button>
+    <button type="submit" class="btn primary">Сохранить</button>
     <a class="btn" href="/admin/agents">Отмена</a>
   </div>
 </form>
-<div class="admin-nav-block bottom"><a class="btn" href="/admin/agents">← К списку агентов</a></div>
+<script>
+(function(){
+  const base = document.getElementById('base_agent');
+  const custom = document.getElementById('custom-fields');
+  const hint = document.getElementById('existing-agent-hint');
+  const keyInput = document.getElementById('custom_key');
+  function upd(){
+    const isCustom = base.value === '__custom__';
+    custom.style.display = isCustom ? '' : 'none';
+    hint.style.display = isCustom ? 'none' : 'block';
+    if (!isCustom) { keyInput.removeAttribute('required'); } else { keyInput.setAttribute('required',''); }
+  }
+  base.addEventListener('change', upd); upd();
+})();
+</script>
+<div class="admin-nav-block bottom"><a class="btn" href="/admin/agents">← К каталогу</a></div>
 {% endblock %}
