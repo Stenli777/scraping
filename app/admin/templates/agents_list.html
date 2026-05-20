@@ -1,27 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="panel help-block">
-  <p><strong>Агенты</strong> — промпты LLM с понятными названиями. Технические ключи не меняются.</p>
-  <p>Глобальный промпт — для всех проектов; переопределение — в <a href="/admin/projects">проекте</a> → «Агенты проекта».</p>
+  <p><strong>Глобальные агенты</strong> — базовые LLM-шаблоны для всех проектов. Технические ключи не меняются.</p>
+  <p><strong>Агенты проекта</strong> — в карточке проекта → «Агенты проекта»: переопределение глобального prompt только для выбранного проекта.</p>
+  <p><a class="btn primary" href="/admin/agents/new">+ Создать custom-агента</a></p>
 </div>
-<table class="table">
+<div class="panel admin-table-panel">
+<div class="admin-table-viewport">
+<table class="table compact admin-data-table">
   <thead>
-    <tr>
-      <th>Агент</th>
-      <th>Ключ</th>
-      <th>Этап</th>
-      <th>Глобальная версия</th>
-      <th>Источник</th>
-      <th>Переопр. проектов</th>
-      <th></th>
-    </tr>
+    <tr><th>Агент</th><th>Ключ</th><th>Этап</th><th>Глобальная версия</th><th>Источник</th><th>Проектных override</th><th></th></tr>
   </thead>
   <tbody>
     {% for a in agents %}
     <tr>
       <td><strong>{{ a.agent_name }}</strong><br><span class="muted">{{ a.purpose }}</span></td>
       <td><code>{{ a.key }}</code></td>
-      <td>{{ a.stage }}</td>
+      <td>{{ a.stage }}{% if not a.pipeline_agent %} <span class="badge muted">не в pipeline</span>{% endif %}</td>
       <td><code>{{ a.active_version }}</code></td>
       <td>{{ a.active_source }}</td>
       <td>{{ a.override_count }}</td>
@@ -30,4 +25,6 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
+</div>
 {% endblock %}
