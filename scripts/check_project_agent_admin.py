@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke-check project/agent admin pages (read-only by default)."""
+"""Smoke-check project/agent admin pages."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ PATHS = [
     "/admin/projects",
     "/admin/projects/new",
     "/admin/agents",
+    "/admin/agents/new",
     "/admin/agents/quality_review",
     "/admin/prompts/quality_review",
 ]
@@ -21,8 +22,7 @@ PATHS = [
 
 def check_url(client: httpx.Client, path: str) -> tuple[bool, int, str]:
     r = client.get(f"{BASE}{path}", follow_redirects=True)
-    ok = r.status_code == 200
-    return ok, r.status_code, str(r.url)
+    return r.status_code == 200, r.status_code, str(r.url)
 
 
 def check_body(client: httpx.Client, path: str, must: list[str], must_not: list[str]) -> tuple[bool, str]:
@@ -41,47 +41,61 @@ def check_body(client: httpx.Client, path: str, must: list[str], must_not: list[
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--create-test-project", action="store_true", help="Not implemented in MVP")
     parser.add_argument("--project-id", type=int, default=1)
     args = parser.parse_args()
-
-    if args.create_test_project:
-        print("WARN: --create-test-project not implemented; use admin UI")
-        return 0
-
     pid = args.project_id
+
     paths = list(PATHS) + [
         f"/admin/projects/{pid}/edit",
         f"/admin/projects/{pid}/agents",
         f"/admin/projects/{pid}/tasks",
-        f"/admin/projects/{pid}/documents",
+        f"/admin/projects/{pid}/tasks?page_size=10",
+        f"/admin/projects/{pid}/documents?page_size=50",
         f"/api/projects/{pid}/agents/quality_review/effective-prompt",
     ]
     failed: list[str] = []
     with httpx.Client(timeout=30) as client:
         for path in paths:
             ok, code, final = check_url(client, path)
-            status = "PASS" if ok else "FAIL"
-            print(f"[{status}] {path} -> {code} {final}")
+            print(f"[{'PASS' if ok else 'FAIL'}] {path} -> {code}")
             if not ok:
                 failed.append(path)
 
-        agent_checks = [
+        checks = [
             (
                 f"/admin/projects/{pid}/agents/review_article",
-                ["Сохранить новую версию агента", "Сохранить и сделать активной для проекта", 'name="system"', 'name="user"'],
+                [
+                    "Сохранить новую версию агента",
+                    "Сохранить и сделать активной для проекта",
+                    'name="system"',
+                    "<details",
+                ],
                 [],
             ),
             (
                 f"/admin/projects/{pid}/agents/topic_cleanup_v1",
-                ["fallback"],
+                ["fallback", "<details"],
                 ["???"],
             ),
+            (
+                f"/admin/projects/new",
+                ["form-compact", "form-row"],
+                [],
+            ),
+            (
+                f"/admin/projects/{pid}/tasks?page_size=100",
+                ["page_size", "page-size-select", "10", "50", "100", "admin-table-viewport"],
+                [],
+            ),
+            (
+                f"/admin/projects/{pid}/documents",
+                ["admin-select", "admin-table-viewport", "page_size"],
+                [],
+            ),
         ]
-        for path, must, must_not in agent_checks:
+        for path, must, must_not in checks:
             ok, detail = check_body(client, path, must, must_not)
-            status = "PASS" if ok else "FAIL"
-            print(f"[{status}] body {path} -> {detail}")
+            print(f"[{'PASS' if ok else 'FAIL'}] body {path} -> {detail}")
             if not ok:
                 failed.append(path)
 

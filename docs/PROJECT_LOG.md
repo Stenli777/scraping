@@ -441,3 +441,18 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 - Feat: project tasks/documents admin pages.
 - Compact project edit form + inner scroll CSS.
 - check_project_agent_admin.py расширен.
+
+## 2026-05-20 — этап 4AA (UX hardening + save-flow)
+
+### Исправлено
+- **500 при сохранении агента**: отсутствовал `prompt_templates` для `topic_cleanup_v1` → `ensure_prompt_template()` перед созданием версии; дубликат версии — auto-suffix timestamp; ошибки → redirect `?error=`, не 500.
+- Примеры prompt свернуты в `<details>`; форма редактирования наверху.
+- Таблицы tasks/documents: `page_size` 10/50/100, `admin-table-viewport`, styled selects.
+- `/admin/agents/new` — создание custom-агента (не в pipeline до явного подключения).
+- `scripts/test_agent_save_flow.py` — regression save/activate/disable на test project.
+
+### UX-правила
+1. Длинные примеры — только в `<details>`.
+2. POST submit страниц — regression smoke (`test_agent_save_flow.py`).
+3. Таблицы проекта — полная ширина, page size selector, inner scroll.
+4. Select — класс `.admin-select`, единый стиль.
