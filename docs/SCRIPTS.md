@@ -89,4 +89,5 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/check_public_publication.py --pub
 - `/tmp/4w_full_audit.py`, `/tmp/4w_ops.py` — одноразовые; удалять после ops.
 - Регрессия: `scripts/run_pilot_first5_check.py --refresh`, `scripts/smoke/run_all.py`.
 - `scripts/check_project_agent_admin.py` — smoke admin/API agents (4X)
+- scripts/audit_agent_project_model.py — read-only снимок projects/prompts/overrides + optional --http (этап 4AD).
 - scripts/test_project_agent_scoping.py — регрессия изоляции агентов между проектами (4AC).

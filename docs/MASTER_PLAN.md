@@ -68,3 +68,5 @@ Public publication confirmation + post-publish tracking. Не реализова
 Reconciliation UI (in master), Autobit24 pipeline audit, CLIProxy 429/400 hardening, pilot next_action fix for approved RC.
 
 - [x] **4AC** — project-scoped /admin/projects/{id}/agents vs global /admin/agents; regression 	est_project_agent_scoping.py.
+
+- [x] **4AD** — audit agent/project DB model + docs/AGENT_PROJECT_MODEL_AUDIT.md + scripts/audit_agent_project_model.py.

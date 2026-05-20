@@ -490,3 +490,10 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 
 ### Тесты
 - scripts/test_project_agent_scoping.py — два disabled-проекта, custom + override на A, проверка каталога для A/B и глобального списка.
+
+## 2026-05-20 — этап 4AD (audit agent / project model)
+
+- Read-only аудит связки projects ↔ prompt_templates ↔ prompt_versions ↔ project_prompt_overrides ↔ llm_runs; сервисы prompt_service, gent_catalog_service, gent_registry, админ-маршруты.
+- Скрипт: scripts/audit_agent_project_model.py (--http — проверка маркеров страниц).
+- Документ: docs/AGENT_PROJECT_MODEL_AUDIT.md — заключение: **вариант A** (текущая схема + overrides), без новой таблицы bindings на этом этапе.
+
