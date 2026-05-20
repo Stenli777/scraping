@@ -1095,3 +1095,42 @@ select:disabled { opacity: 0.6; cursor: not-allowed; }
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 .form.panel { overflow: visible; }
+
+/* --- Stage 4AB: readable alerts on dark admin theme --- */
+.alert-success,
+.success-block,
+.flash-success {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #dcfce7;
+}
+.alert-error,
+.alert-block[style*="background:#fee"],
+.flash-error {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fee2e2;
+}
+.alert-warning,
+.alert-block.alert-warning {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11,  0.45);
+  color: #fef3c7;
+}
+.panel.alert-success,
+.panel.alert-error,
+.panel.alert-warning {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm, 6px);
+  margin-bottom: 1rem;
+}
+.panel.alert-success p,
+.panel.alert-error p,
+.panel.alert-warning p {
+  color: inherit;
+  margin: 0;
+}
+.meta-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
