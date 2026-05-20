@@ -1038,3 +1038,60 @@ textarea.agent-editor {
   overflow-x: auto;
   max-width: 100%;
 }
+
+/* --- Stage 4AA: admin selects + table viewport --- */
+select,
+.admin-select,
+.filter-select,
+.page-size-select,
+.form-control select {
+  appearance: none;
+  background-color: var(--bg, #fff);
+  border: 1px solid var(--border, #c5d0de);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.45rem 2rem 0.45rem 0.65rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--text, #1a2332);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%234f637d' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  min-height: 2.25rem;
+}
+select:focus,
+.admin-select:focus {
+  outline: 2px solid var(--accent-muted, #b8d4f0);
+  border-color: var(--accent, #3b82f6);
+}
+select:disabled { opacity: 0.6; cursor: not-allowed; }
+.admin-input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.9rem;
+}
+.admin-table-panel { padding: 0; overflow: hidden; }
+.admin-table-viewport {
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  max-height: min(70vh, 48rem);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.admin-table-viewport .admin-data-table { width: 100%; min-width: 720px; }
+.admin-filters { margin-bottom: 0.75rem; }
+.collapsible-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25rem 0;
+}
+.success-block { background: #e8f5e9; border-left: 3px solid #2e7d32; }
+.panel textarea.scroll-y,
+.panel .agent-editor {
+  max-height: 28rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.form.panel { overflow: visible; }
