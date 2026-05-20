@@ -66,3 +66,5 @@ Public publication confirmation + post-publish tracking. Не реализова
 
 ### 4W (2026-05-19) — stabilization
 Reconciliation UI (in master), Autobit24 pipeline audit, CLIProxy 429/400 hardening, pilot next_action fix for approved RC.
+
+- [x] **4AC** — project-scoped /admin/projects/{id}/agents vs global /admin/agents; regression 	est_project_agent_scoping.py.

@@ -345,3 +345,4 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-produc
 
 CLIProxy **429** — rate limit, retry с backoff. **400** на rewrite — часто переполнение prompt; rewrite обрезается до 12k символов (`input_truncated` в metadata).
 - CRMFlow24 agents: /admin/projects/1/agents; overrides не трогают global prompts.
+- Админ агентов: /admin/agents — глобальный каталог; /admin/projects/{id}/agents — только scoped view проекта (этап 4AC).

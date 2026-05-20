@@ -233,3 +233,16 @@ Read-only summary: latest `published_draft` candidates, publications missing fee
 
 ### Тесты
 - `scripts/test_custom_agent_flow.py` — override, custom+project, global custom.
+
+## 2026-05-20 — этап 4AC (два контекста каталога агентов)
+
+### Agent catalog contexts
+| URL | Назначение |
+|-----|------------|
+| /admin/agents | Общий каталог: глобальные шаблоны, overrides **всех** проектов, custom; фильтр по проекту; колонка «Проект». |
+| /admin/projects/{id}/agents | Только агенты **этого** проекта: pipeline по умолчанию + effective source, custom при наличии project_prompt_override для этого project_id. |
+
+### Visibility rules
+- Страница проекта **никогда** не показывает overrides другого project_id.
+- Custom-агент другого проекта не попадает в список, пока для текущего проекта нет override на его template.
+- Базовые pipeline-агенты видны для каждого проекта; без override источник — global или code_fallback.

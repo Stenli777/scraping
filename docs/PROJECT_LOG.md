@@ -472,3 +472,21 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 
 ### Тесты
 - `scripts/test_custom_agent_flow.py` — override, custom+project, global custom.
+
+## 2026-05-20 — этап 4AC (project-scoped agents view)
+
+### Root cause
+- На /admin/projects/{id}/agents после строк pipeline шёл перебор **всех** prompt_templates с ключами вне реестра → на странице любого проекта отображались **все** custom-агенты и «чужие» сущности без фильтра по project_id.
+
+### Исправление
+- **get_global_agent_catalog** — полный каталог для /admin/agents (alias `build_agent_catalog`).
+- **get_project_agent_catalog(project_id)** — только KNOWN_AGENT_KEYS для проекта + custom-шаблоны, у которых есть **project_prompt_override для данного проекта**; last run — с фильтром LLMRun.project_id.
+- Маршрут `admin_project_agents` переведён на `get_project_agent_catalog`.
+
+### Правила видимости
+- /admin/agents — общий каталог: global, overrides всех проектов, custom; фильтр по проекту; колонка «Проект».
+- /admin/projects/{id}/agents — только этот проект: базовые pipeline-агенты (effective source), активный override проекта, custom только при override/привязке для этого project_id.
+- Страница проекта **не** показывает overrides/custom других проектов.
+
+### Тесты
+- scripts/test_project_agent_scoping.py — два disabled-проекта, custom + override на A, проверка каталога для A/B и глобального списка.
