@@ -456,3 +456,19 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 2. POST submit страниц — regression smoke (`test_agent_save_flow.py`).
 3. Таблицы проекта — полная ширина, page size selector, inner scroll.
 4. Select — класс `.admin-select`, единый стиль.
+
+## 2026-05-20 — этап 4AB (каталог агентов)
+
+### Модель
+- **Глобальный агент** — prompt template для всех проектов.
+- **Проектный агент** — project override для одного проекта.
+- **Custom agent** — новый template; не в pipeline до явного подключения разработчиком.
+
+### UI
+- `/admin/agents` — каталог с колонкой «Проект», фильтры, строки global + project override.
+- `/admin/agents/new` — выбор проекта и базового типа; existing key + project → override без нового key.
+- `/admin/agents/{key}` — структура: сводка, pipeline, версии, проектные настройки, audit.
+- Alert contrast: `.alert-success` / `.alert-error` / `.alert-warning` для тёмной темы.
+
+### Тесты
+- `scripts/test_custom_agent_flow.py` — override, custom+project, global custom.
