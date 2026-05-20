@@ -6,9 +6,11 @@ import json
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.llm_run import LLMRun
+from app.models.project import Project
 from app.models.project_prompt_override import ProjectPromptOverride
 from app.models.prompt_template import PromptTemplate
 from app.models.prompt_version import PromptVersion
@@ -172,6 +174,203 @@ def get_override_edit_defaults(db: Session, project_id: int, key: str) -> dict[s
         "notes": notes,
         "fallback_notice": fallback_notice,
     }
+def _disable_extra_overrides(
+    db: Session,
+    project_id: int,
+    template_id: int,
+    *,
+    keep_id: int | None = None,
+) -> int:
+    """Disable enabled overrides for pair except keep_id (application-level de-dupe)."""
+    rows = list(
+        db.scalars(
+            select(ProjectPromptOverride).where(
+                ProjectPromptOverride.project_id == project_id,
+                ProjectPromptOverride.prompt_template_id == template_id,
+            )
+        ).all()
+    )
+    n = 0
+    for row in rows:
+        if keep_id is not None and row.id == keep_id:
+            continue
+        if row.enabled:
+            row.enabled = False
+            n += 1
+    return n
+
+
+def audit_override_integrity(db: Session) -> dict:
+    """Read-only integrity report for project_prompt_overrides."""
+    issues: list[dict] = []
+    fail_count = 0
+    warn_count = 0
+
+    dup_rows = db.execute(
+        select(
+            ProjectPromptOverride.project_id,
+            ProjectPromptOverride.prompt_template_id,
+            func.count().label("total"),
+        )
+        .group_by(ProjectPromptOverride.project_id, ProjectPromptOverride.prompt_template_id)
+        .having(func.count() > 1)
+    ).all()
+
+    for project_id, tpl_id, total in dup_rows:
+        rows = list(
+            db.scalars(
+                select(ProjectPromptOverride)
+                .where(
+                    ProjectPromptOverride.project_id == project_id,
+                    ProjectPromptOverride.prompt_template_id == tpl_id,
+                )
+                .order_by(ProjectPromptOverride.id.desc())
+            ).all()
+        )
+        enabled_rows = [r for r in rows if r.enabled]
+        tpl = db.get(PromptTemplate, tpl_id)
+        proj = db.get(Project, project_id)
+        key = tpl.key if tpl else f"template_id={tpl_id}"
+        entry = {
+            "kind": "duplicate_rows",
+            "project_id": project_id,
+            "project_slug": proj.slug if proj else None,
+            "agent_key": key,
+            "override_ids": [r.id for r in rows],
+            "enabled_ids": [r.id for r in enabled_rows],
+            "total": int(total),
+        }
+        if len(enabled_rows) > 1:
+            fail_count += 1
+            entry["severity"] = "FAIL"
+        else:
+            warn_count += 1
+            entry["severity"] = "WARN"
+        issues.append(entry)
+
+    for ov in db.scalars(select(ProjectPromptOverride)).all():
+        proj = db.get(Project, ov.project_id)
+        tpl = db.get(PromptTemplate, ov.prompt_template_id)
+        pver = db.get(PromptVersion, ov.prompt_version_id)
+        key = tpl.key if tpl else None
+        if not proj:
+            fail_count += 1
+            issues.append({"severity": "FAIL", "kind": "missing_project", "override_id": ov.id})
+        if not tpl:
+            fail_count += 1
+            issues.append({"severity": "FAIL", "kind": "missing_template", "override_id": ov.id})
+        if not pver:
+            fail_count += 1
+            issues.append({"severity": "FAIL", "kind": "missing_version", "override_id": ov.id, "agent_key": key})
+        elif tpl and pver.prompt_template_id != tpl.id:
+            fail_count += 1
+            issues.append({"severity": "FAIL", "kind": "version_template_mismatch", "override_id": ov.id})
+
+    if fail_count:
+        overall = "FAIL"
+    elif warn_count:
+        overall = "WARN"
+    else:
+        overall = "PASS"
+    return {
+        "overall": overall,
+        "fail_count": fail_count,
+        "warn_count": warn_count,
+        "duplicate_pair_groups": len(dup_rows),
+        "issues": issues,
+    }
+
+
+def get_effective_prompt_resolution_diagnostic(
+    db: Session,
+    project_id: int,
+    key: str,
+    *,
+    project_name: str | None = None,
+    llm_limit: int = 5,
+) -> dict:
+    """Compact diagnostic for project agent detail UI."""
+    from app.models.project import Project
+
+    project = db.get(Project, project_id)
+    template = _template(db, key)
+    pname = project_name or (project.name if project else str(project_id))
+
+    row_count = enabled_count = 0
+    override_row = None
+    if template:
+        rows = list(
+            db.scalars(
+                select(ProjectPromptOverride).where(
+                    ProjectPromptOverride.project_id == project_id,
+                    ProjectPromptOverride.prompt_template_id == template.id,
+                )
+            ).all()
+        )
+        row_count = len(rows)
+        enabled_count = sum(1 for r in rows if r.enabled)
+        override_row = db.scalar(
+            select(ProjectPromptOverride)
+            .where(
+                ProjectPromptOverride.project_id == project_id,
+                ProjectPromptOverride.prompt_template_id == template.id,
+                ProjectPromptOverride.enabled.is_(True),
+            )
+            .order_by(ProjectPromptOverride.id.desc())
+            .limit(1)
+        )
+
+    try:
+        effective = get_active_prompt(db, key, project_id=project_id)
+        esrc, evers, pvid = effective.source, effective.version, effective.prompt_version_id
+        err = None
+    except ValueError as exc:
+        esrc, evers, pvid, err = "value_error", "—", None, str(exc)
+
+    warnings: list[str] = []
+    if row_count > 1:
+        warnings.append(f"Строк override для пары project+template: {row_count} (enabled={enabled_count})")
+    if enabled_count > 1:
+        warnings.append("Несколько enabled override — оставьте одну активную связь")
+
+    prefix = f"{key}:"
+    llm_samples = list(
+        db.scalars(
+            select(LLMRun)
+            .where(LLMRun.project_id == project_id)
+            .where(LLMRun.prompt_template.isnot(None))
+            .where(LLMRun.prompt_template.like(f"{prefix}%"))
+            .order_by(LLMRun.id.desc())
+            .limit(llm_limit)
+        ).all()
+    )
+
+    return {
+        "project_id": project_id,
+        "project_name": pname,
+        "agent_key": key,
+        "prompt_template_id": template.id if template else None,
+        "prompt_version_id": pvid,
+        "override_id": override_row.id if override_row else None,
+        "override_row_count": row_count,
+        "override_enabled_count": enabled_count,
+        "source": esrc,
+        "version": evers,
+        "warnings": warnings,
+        "resolve_error": err,
+        "llm_runs": [
+            {
+                "id": r.id,
+                "prompt_template": r.prompt_template,
+                "success": r.success,
+                "model": r.model_alias,
+                "at": r.created_at,
+            }
+            for r in llm_samples
+        ],
+    }
+
+
 def create_project_override_version(
     db: Session,
     project_id: int,
@@ -229,6 +428,7 @@ def create_project_override_version(
     if existing:
         existing.prompt_version_id = record.id
         existing.enabled = activate
+        _disable_extra_overrides(db, project_id, template.id, keep_id=existing.id)
     else:
         existing = ProjectPromptOverride(
             project_id=project_id,
@@ -237,8 +437,27 @@ def create_project_override_version(
             enabled=activate,
         )
         db.add(existing)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = db.scalar(
+            select(ProjectPromptOverride).where(
+                ProjectPromptOverride.project_id == project_id,
+                ProjectPromptOverride.prompt_template_id == template.id,
+            )
+        )
+        if not existing:
+            raise
+        existing.prompt_version_id = record.id
+        existing.enabled = activate
+        _disable_extra_overrides(db, project_id, template.id, keep_id=existing.id)
+        db.commit()
     db.refresh(existing)
+    if activate:
+        _disable_extra_overrides(db, project_id, template.id, keep_id=existing.id)
+        db.commit()
+        db.refresh(existing)
     return existing
 
 
@@ -246,14 +465,18 @@ def disable_project_override(db: Session, project_id: int, key: str) -> None:
     template = _template(db, key)
     if not template:
         return
-    row = db.scalar(
+    rows = db.scalars(
         select(ProjectPromptOverride).where(
             ProjectPromptOverride.project_id == project_id,
             ProjectPromptOverride.prompt_template_id == template.id,
         )
-    )
-    if row:
-        row.enabled = False
+    ).all()
+    changed = False
+    for row in rows:
+        if row.enabled:
+            row.enabled = False
+            changed = True
+    if changed:
         db.commit()
 
 
