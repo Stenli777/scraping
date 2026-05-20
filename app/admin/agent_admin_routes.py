@@ -45,6 +45,7 @@ from app.services.prompt_override_service import (
     create_project_override_version,
     disable_project_override,
     get_effective_prompt_details,
+    get_effective_prompt_resolution_diagnostic,
     get_project_override,
     get_override_edit_defaults,
     list_recent_llm_runs_for_prompt,
@@ -558,6 +559,9 @@ def admin_project_agent_detail(
     edit_form = get_override_edit_defaults(db, project_id, key)
     versions = list_prompt_versions(db, key)
     llm_runs = list_recent_llm_runs_for_prompt(db, key, limit=10)
+    resolution = get_effective_prompt_resolution_diagnostic(
+        db, project_id, key, project_name=project.name
+    )
     return tpl.TemplateResponse(
         request,
         "project_agent_detail.html",
@@ -571,6 +575,7 @@ def admin_project_agent_detail(
             "edit_form": edit_form,
             "versions": versions,
             "llm_runs": llm_runs,
+            "resolution": resolution,
             "source_badge": source_label_ru(effective.get("source", "")),
             "title": f"{meta['agent_name']} — {project.name}",
             "nav": _project_nav(project, agent_key=key),

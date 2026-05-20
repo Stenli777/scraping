@@ -25,6 +25,39 @@
 </div>
 
 <div class="panel help-block">
+  <h2>Effective prompt resolution</h2>
+  <p class="muted">Диагностика: какой prompt реально используется для этого проекта и агента.</p>
+  <table class="table compact">
+    <tbody>
+      <tr><th>Проект</th><td>{{ resolution.project_name }} (id={{ resolution.project_id }})</td></tr>
+      <tr><th>Agent key</th><td><code>{{ resolution.agent_key }}</code></td></tr>
+      <tr><th>prompt_template_id</th><td>{{ resolution.prompt_template_id or "—" }}</td></tr>
+      <tr><th>prompt_version_id</th><td>{{ resolution.prompt_version_id or "—" }}</td></tr>
+      <tr><th>override_id</th><td>{{ resolution.override_id or "—" }}</td></tr>
+      <tr><th>override rows (pair)</th><td>{{ resolution.override_row_count }} (enabled={{ resolution.override_enabled_count }})</td></tr>
+      <tr><th>source</th><td><code>{{ resolution.source }}</code></td></tr>
+      <tr><th>version</th><td><code>{{ resolution.version }}</code></td></tr>
+    </tbody>
+  </table>
+  {% if resolution.warnings %}
+  <div class="alert-warning alert-block" style="margin-top:0.75rem">
+    <ul>{% for w in resolution.warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if resolution.resolve_error %}
+  <p class="alert-error">Resolve error: {{ resolution.resolve_error }}</p>
+  {% endif %}
+  {% if resolution.llm_runs %}
+  <details style="margin-top:0.5rem"><summary>Примеры llm_runs (этот проект + key)</summary>
+    <ul class="muted">{% for r in resolution.llm_runs %}
+      <li>#{{ r.id }} · {{ r.prompt_template }} · ok={{ r.success }} · {{ r.model }}</li>
+    {% endfor %}</ul>
+  </details>
+  {% endif %}
+</div>
+
+
+<div class="panel help-block">
   <p><strong>Глобальные агенты</strong> — базовые шаблоны для всех проектов.
   <strong>Агенты проекта</strong> — переопределения только для этого проекта.
   Новый проект использует глобальные агенты, пока вы не сохраните проектную версию.</p>
