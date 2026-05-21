@@ -1,5 +1,15 @@
 # Scrap — Master plan (reconciled)
 
+<!--
+HISTORICAL ROLE: shipped stage checklist (4G–4V) and pipeline layer summary.
+NOT: execution order | governance policy | state machines.
+CANONICAL FOR EXECUTION: ROADMAP.md
+CANONICAL OWNERSHIP: docs/CANONICAL_OWNERSHIP.md
+-->
+
+> **Canonical execution order and maturity:** [ROADMAP.md](ROADMAP.md) — strategic tracks, phases A–E, governance alignment backlog.  
+> This file retains **IMPLEMENTED** stage checklist (4G–4V). ROADMAP = what to do next; MASTER_PLAN = what was shipped.
+
 ## Pipeline layers
 
 1. **Core pipeline** (required): scrape → parse → clean → rewrite → review → SEO → publish
@@ -66,8 +76,3 @@ Public publication confirmation + post-publish tracking. Не реализова
 
 ### 4W (2026-05-19) — stabilization
 Reconciliation UI (in master), Autobit24 pipeline audit, CLIProxy 429/400 hardening, pilot next_action fix for approved RC.
-
-- [x] **4AC** — project-scoped /admin/projects/{id}/agents vs global /admin/agents; regression 	est_project_agent_scoping.py.
-
-- [x] **4AD** — audit agent/project DB model + docs/AGENT_PROJECT_MODEL_AUDIT.md + scripts/audit_agent_project_model.py.
-- [x] **4AE** — override UNIQUE + effective prompt diagnostics + Autobit flow check.

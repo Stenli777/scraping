@@ -1,6 +1,19 @@
 # Scrap — Operations Guide
 
-Руководство для ежедневной ручной работы с контентным конвейером. Без auto-enqueue, auto-publish и scheduler.
+Руководство для ежедневной ручной работы с контентным конвейером. **Current:** без auto-enqueue, auto-publish и scheduler (`ENABLE_AUTOMATION=false`, `ENABLE_SCHEDULER=false`).
+
+## Production publish path (Required)
+
+**Preferred (RC-first):**
+
+```text
+Document ready → Create RC → Run QA → Operator approve → Publish from RC card
+  → POST /api/release-candidates/{id}/publish-draft
+```
+
+**Legacy (deprecated):** `POST /api/documents/{id}/publish-draft` и admin form на карточке документа — тот же stale-revision guard, но **без дисциплины RC QA**. Использовать только для smoke/debug.
+
+**`force=true`:** обязателен `force_reason`; обходит review/quality/editorial/duplicate — см. [CONSOLIDATION_INVENTORY.md](CONSOLIDATION_INVENTORY.md).
 
 ## Daily workflow
 
@@ -12,8 +25,75 @@
 6. Открыть **Document** → проверить **Pipeline Summary** и **Review**
 7. При необходимости **Rerun rewrite**
 8. **Run SEO** если slug/метаданные пустые
-9. Проверить **Publish readiness** → **Publish draft** / dry-run
+9. **Release candidate** → QA → approve → **Publish draft** с карточки RC
 10. Проверить **Publish runs** (`/admin/publish-runs`)
+
+## Runtime diagnostics (Phase B)
+
+**Current:** операторская visibility без изменения pipeline/publish semantics.
+
+| Surface | URL / command |
+|---------|----------------|
+| Admin diagnostics | `/admin/diagnostics` — flags, queue/backlog, publish sample, trust, drift warnings |
+| API (safe JSON) | `GET /api/ops/diagnostics` — без секретов и raw env |
+| Dashboard block | `/admin` — краткий queue/backlog + ссылка на диагностику |
+| Smoke | `PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/check_runtime_diagnostics.py` |
+
+**Не показывает:** токены, ключи, полные значения env. **Не включает** automation/scheduler/auto-publish.
+
+### Phase C — safety hardening
+
+| Guard | Detail |
+|-------|--------|
+| API access | `GET /api/ops/diagnostics` — **localhost only** (403 иначе); совпадает с `uvicorn --host 127.0.0.1` |
+| Admin | `/admin/diagnostics` — тот же operator context, что и остальной `/admin` |
+| Query limits | publish sample 25, stale RC scan 200, LLM failures 20 — см. `meta.sample_limits` в ответе |
+| Drift severity | `info` / `warning` / `critical` — visibility only, без auto-fix |
+| Incident triage | Блок top risks, queue pressure, publish/LLM failure samples |
+
+### Cohesion Phase (G) — authority & boundaries
+
+| Surface | Detail |
+|---------|--------|
+| Authority map | `/admin/diagnostics` → «Runtime authority» — enforced vs governance-only vs decorative |
+| Invariant consistency | Stale approved RC sample, automation/auto-publish flag checks |
+| Smoke | `check_runtime_cohesion.py` |
+
+### Operational Stability Phase (F) — incident readiness
+
+| Surface | Detail |
+|---------|--------|
+| Incident history | `operational_incidents` — kinds: `queue_pressure`, `stale_rc_approved`, `publish_failed`, `force_publish`, `llm_failure_spike`, `drift_critical` |
+| Sync | On `/admin/diagnostics` load — `sync_incidents_from_runtime` (dedupe 30m) |
+| Snapshot compare | Latest vs previous snapshot deltas in diagnostics |
+| Recovery playbook | Read-only scenarios on diagnostics + failed-items |
+| Hygiene CLI | `PYTHONPATH=/opt/scrap .venv/bin/python scripts/ops_runtime_hygiene.py` (dry-run); `--apply-snapshots` / `--apply-incidents` optional bounded retention |
+| Smoke | `check_operational_incidents.py` |
+
+**Not:** ticketing, alerting, Prometheus, auto-retry orchestration.
+
+### Runtime Safety Phase (E) — operator hardening
+
+| Guard | Detail |
+|-------|--------|
+| Stale RC approve | `approve_release_candidate` raises; admin buttons disabled when `revision_stale` |
+| Stale RC publish | Unchanged from Phase A — blocked at service layer |
+| Force publish (admin) | Checkbox `force_confirm` + `force_reason`; errors via `?op_error=` banner |
+| Legacy publish UI | Collapsed under «Legacy publish»; RC-first warning above |
+| Diagnostics drift | `approved_stale_rc` — sample of approved RCs binding stale revision (visibility only) |
+| Publish runs | Rows with `force_used` highlighted |
+
+**Not changed:** `force=true` still bypasses review/quality/editorial/duplicate when reason given; automation/scheduler off.
+
+### Phase D — operational history (bounded snapshots)
+
+| Item | Detail |
+|------|--------|
+| Storage | `operational_snapshots` — compact `metrics_json` per capture |
+| Capture | Auto on `/admin/diagnostics` (throttle 15 min); manual: `PYTHONPATH=/opt/scrap .venv/bin/python scripts/capture_operational_snapshot.py` |
+| Retention | 30 days + max 500 rows |
+| Trends | Queue, LLM failures, recurring drift IDs, incident episodes (read-only) |
+| Not | Prometheus, realtime streaming, incident ticketing |
 
 ## End-to-end path (entity links)
 
@@ -78,6 +158,8 @@ ENABLE_PUBLISHING=false
 | Нет SEO slug | Run SEO на document |
 | Нет rewritten_text | Rerun rewrite |
 | Publish blocked | Publish readiness → missing list |
+| Backlog / stale | `/admin/diagnostics` → queue section; `/admin/failed-items` для действий |
+| Drift warnings | `/admin/diagnostics` → governance/runtime drift (visibility only) |
 | Discovery всё blocked | Ослабить allow_patterns или другой source |
 | Duplicate URLs | Нормально; enqueue не создаст дубль task |
 
@@ -344,6 +426,3 @@ PYTHONPATH=/opt/scrap .venv/bin/python scripts/smoke/run_all.py --include-produc
 В admin (`/admin/publish-runs`, `/admin/failed-items`) отображаются badges: `historical env`, `test target`.
 
 CLIProxy **429** — rate limit, retry с backoff. **400** на rewrite — часто переполнение prompt; rewrite обрезается до 12k символов (`input_truncated` в metadata).
-- CRMFlow24 agents: /admin/projects/1/agents; overrides не трогают global prompts.
-- Админ агентов: /admin/agents — глобальный каталог; /admin/projects/{id}/agents — только scoped view проекта (этап 4AC).
-- Override integrity: `scripts/audit_agent_project_model.py` (секция Override integrity); cleanup: `cleanup_project_prompt_overrides.py --execute`.

@@ -2,9 +2,18 @@
 
 # Scrap Platform — Architecture
 
+<!--
+CURRENT ROLE: runtime architecture, modules, integration boundaries.
+NOT: execution phase order (→ ROADMAP) | policy (→ governance) | canonical state diagrams (→ STATE_MACHINES).
+SECONDARY: may reference stages; do not duplicate ROADMAP phase list.
+CANONICAL OWNERSHIP: docs/CANONICAL_OWNERSHIP.md
+-->
+
 ## 1. System Overview
 
 Scrap — production-oriented AI-powered scraping and content pipeline platform.
+
+**Execution roadmap (phases, maturity, tracks):** [ROADMAP.md](ROADMAP.md)
 
 **Primary goals:**
 
@@ -38,9 +47,9 @@ Domain: https://scrap.crmflow24.ru
 | PostgreSQL | storage |
 | CLIProxyAPI | unified LLM gateway |
 | LM Studio | local inference |
-| Hermes | future orchestration layer |
+| Hermes | optional orchestration (implemented, default off) |
 
-Hermes is already installed on the same server, but it is not part of Scrap runtime yet.
+Hermes is installed on the same server (`/hermes`). Scrap includes an **optional** connector (`app/hermes/`, API, admin actions). **Worker pipeline does not call Hermes.**
 
 Paths:
 
@@ -51,12 +60,11 @@ Paths:
 Rules:
 
 - Scrap may call CLIProxyAPI via API.
-- Scrap must not modify Hermes files.
+- Scrap must not modify Hermes server files under `/hermes`.
 - Scrap must not modify CLIProxyAPI files.
-- Hermes integration is future-stage only.
-- Scrap must remain fully operational if Hermes is unavailable.
-- Hermes must be treated as optional orchestration infrastructure.
-- Any Hermes integration must be done through explicit API contracts and model routing policy.
+- `ENABLE_HERMES=false` (default) — Scrap must remain fully operational if Hermes is down.
+- Hermes LLM paths use CLIProxy fallback per routing policy when orchestrate unavailable.
+- Any Hermes use is explicit API/admin only — not fetch/parse/clean stages.
 
 ---
 
@@ -572,9 +580,9 @@ Low-quality content must not auto-publish.
 
 ### CURRENT STATUS
 
-Hermes is NOT runtime-critical.
+Hermes is NOT runtime-critical for the scrape pipeline.
 
-Hermes is future orchestration layer.
+**IMPLEMENTED (optional, default off):** `app/hermes/`, API `/api/hermes/*`, admin research/critique when `ENABLE_HERMES=true`. Worker fetch/parse/clean/rewrite **does not** call Hermes.
 
 ### Hermes Responsibilities
 
@@ -630,22 +638,9 @@ LM Studio / OpenAI / OpenRouter
 
 ## 13.1 Hermes Integration Boundary
 
-На текущем этапе Hermes НЕ подключается в runtime.
+**Current:** connector shipped; `ENABLE_HERMES=false` by default. All LLM for pipeline stages goes through CLIProxyAPI.
 
-Scrap должен сначала получить стабильный LLM abstraction layer через CLIProxyAPI.
-
-Hermes можно подключать только после появления:
-- typed LLM contracts;
-- workflow schemas;
-- task statuses;
-- llm_runs audit log;
-- stable retry/error handling.
-
-Первый Hermes-compatible слой:
-- `app/workflows/`
-- workflow definitions в YAML/JSON;
-- request/response contracts;
-- без прямого вызова Hermes из парсеров или worker core.
+**Target (not required for manual ops):** richer workflow chains via explicit API — not worker core.
 
 Запрещено:
 - вызывать Hermes из fetch/parse/clean stages;
@@ -1172,4 +1167,3 @@ Candidate snapshot is bound to `document_revision_id`; revision change requires 
 После ручной публикации в CRMFlow24 admin Scrap проверяет публичную видимость (blog, sitemap, rss) и по команде оператора подтверждает `publication_status=published`. Public URL: `https://crmflow24.ru/blog/<slug>` (из SEO slug). Admin/draft URL не считается public. `analytics_ready` = published + visibility public + `public_confirmed_at` set.
 - **4R flow:** public confirmed → analytics_ready → manual snapshot import → content_performance + campaign/cluster summaries (read-time).
 - **4S:** `content_pilots` / `content_pilot_items`; deterministic pilot scoring; manual add only.
-- LLM audit: llm_runs.prompt_template = key:version#source (global|project_override|code_fallback)

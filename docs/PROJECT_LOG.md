@@ -14,6 +14,139 @@
 
 ---
 
+## 2026-05-20 — Phase D: Lightweight Operational History & Trend Visibility
+
+- **Что изменено:** таблица `operational_snapshots` (миграция 027); `operational_snapshot_service` — capture throttled 15m, retention 30d/500 rows, queue/LLM/drift trends, incident memory; интеграция в `build_runtime_diagnostics`; admin history panel; `scripts/capture_operational_snapshot.py`; smoke `check_operational_history.py`.
+- **Файлы:** model, service, migration, diagnostics template, smoke, docs.
+- **Команды:** `alembic upgrade head` (026→027); `check_operational_history.py` PASS; `compileall` OK.
+- **Результат:** bounded operational memory без Prometheus/realtime; publish/automation не менялись.
+- **Следующий шаг:** commit; periodic capture via cron optional: `capture_operational_snapshot.py`.
+
+---
+
+## 2026-05-21 — Runtime Cohesion & Boundary Enforcement (G1–G6) + Git tag v0.4-runtime-hardening
+
+- **Что изменено:** G1/G4 — `runtime_authority_service` + `authority_boundaries` в diagnostics (runtime_enforced / governance_only / decorative / deprecated / dangerous); G3 — `invariant_consistency` (stale approved RC sample, flags); G2/G5 — cohesion notes, trust «decorative» labels, удалены дубликаты governance docs в `docs/` root; smoke `check_runtime_cohesion.py`.
+- **Git:** логические коммиты на hermes, push `master`, tag `v0.4-runtime-hardening` (см. отчёт пользователю).
+- **Команды:** `compileall`; cohesion/governance/diagnostics smokes PASS.
+- **Не делали:** trust engine, automation on, Stage 5, queue rewrite.
+
+---
+
+## 2026-05-21 — Operational Stability & Incident Readiness (F1–F7)
+
+- **Что изменено:** F1 — таблица `operational_incidents` (миграция 028), `operational_incident_service` (sync из diagnostics, dedupe 30m, retention 30d/300); F2 — `build_snapshot_comparison` (latest vs previous); F3 — `runtime_hygiene_service` + `scripts/ops_runtime_hygiene.py`; F4 — `build_recovery_playbook` + блоки на `/admin/diagnostics` и `/admin/failed-items`; F5 — UI incident history, snapshot comparison, hygiene panel; F6 — `git_dirty_summary` в `repo_checks`, подсказки в `pre_deploy_check`; smoke `check_operational_incidents.py` в `run_all`.
+- **Файлы:** migration 028, models/services, `runtime_diagnostics_service`, admin templates, scripts, docs.
+- **Команды:** `alembic upgrade head` (027→028); `compileall` OK; `check_operational_incidents.py` PASS; `check_runtime_diagnostics.py` PASS; `check_governance_invariants.py` PASS; `ops_runtime_hygiene.py` OK.
+- **Результат:** bounded incident memory + recovery hints без ticketing/alerting/metrics platform; publish/automation/Stage 5 не менялись.
+- **Не делали:** Prometheus, auto-remediation, destructive cleanup audit tables, automation enable.
+
+---
+
+## 2026-05-21 — Runtime Safety Phase (E1–E6): RC approve stale, force/legacy UX, diagnostics
+
+- **Что изменено:** E1 — `approve_release_candidate` блокирует stale revision (как publish); QA check `revision_current`; admin/RC UI отключает approve/publish при stale. E2 — `force_confirm` checkbox на legacy publish; `_admin_op_error_redirect` + `op_error` на document/RC; подсветка force в `publish_runs`. E3 — legacy publish в `<details>`; RC-first warn-box. E4/E5 — drift warning `approved_stale_rc` в diagnostics; `lm_studio` deprecation marker в registry. Исправлен `NameError` для `_count_approved_stale_release_candidates`.
+- **Файлы:** `release_candidate_service.py`, `admin/routes.py`, `document_detail.html`, `release_candidate_detail.html`, `publish_runs.html`, `runtime_diagnostics_service.py`, `rewriters/registry.py`; docs (см. коммит).
+- **Команды:** `compileall` OK; `check_governance_invariants.py` PASS; `check_runtime_diagnostics.py` PASS; `run_all.py` — FAIL только `git_clean` (незакоммиченное дерево на hermes).
+- **Результат:** approved RC не может тихо ссылаться на устаревшую ревизию; force/legacy пути явнее для оператора; automation/scheduler/auto-publish/Stage 5 не тронуты.
+- **Не делали:** удаление force, RC auto-invalidate в DB, mass delete, automation enable.
+
+---
+
+## 2026-05-21 — Consolidation Phase: Runtime/Docs/Governance Truth Alignment
+
+- **Что изменено:** truth sync без новых runtime features — `CONSOLIDATION_INVENTORY.md`; ROADMAP (phases A–D **IMPLEMENTED**, TARGET tracks renamed); ARCHITECTURE Hermes optional-implemented; DECISIONS split MVP vs `docs/adr/`; ENFORCEMENT_MATRIX (M4 conditional, trust visibility); HUMAN_OVERRIDE force gate table; OPERATIONS RC-first; admin legacy publish warnings + `force_reason` field on document form; REWRITE_PIPELINE lm_studio deprecated.
+- **Файлы:** `docs/CONSOLIDATION_INVENTORY.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/OPERATIONS.md`, `docs/README.md`, `README.md`, `docs/governance/*` (partial), `app/admin/templates/document_detail.html`
+- **Команды:** `compileall`; `check_governance_invariants.py` PASS; semantics publish/automation unchanged.
+- **Результат:** снижение governance theatre / paper architecture; явные legacy path и force bypass semantics.
+- **Не делали:** Stage 5, automation on, scheduler on, trust engine, mass code delete.
+
+---
+
+## 2026-05-20 — Phase C: Operational Safety Hardening & Incident Readiness
+
+- **Что изменено:** hardening `runtime_diagnostics_service` — limits/constants, severity model (info/warning/critical), incident triage block, LLM failure sample, sanitize secret-like keys; API localhost guard; admin diagnostics labels (read-only, sample-based); smoke расширен (secrets, severity, bounded meta).
+- **Файлы:** `runtime_diagnostics_service.py`, `diagnostics.py`, `diagnostics.html`, `check_runtime_diagnostics.py`, docs.
+- **Команды:** `compileall` OK; `check_runtime_diagnostics.py` all PASS; `systemctl restart scrap-api`.
+- **Результат:** diagnostics bounded и безопаснее; publish/automation semantics не менялись; миграций нет.
+- **Следующий шаг:** commit; Phase D metrics/trends — только после approval.
+
+---
+
+## 2026-05-20 — Phase B: Operational Observability & Runtime Visibility
+
+- **Что изменено:** `runtime_diagnostics_service` (queue summary, publish diagnostics, trust visibility, governance drift warnings); API `GET /api/ops/diagnostics`; admin `/admin/diagnostics`; блок очереди на dashboard; trust column в projects; расширен `publish_runs` (path/rev/force_reason); smoke `check_runtime_diagnostics.py`.
+- **Файлы:** `app/services/runtime_diagnostics_service.py`, `app/api/diagnostics.py`, `app/admin/templates/diagnostics.html`, `dashboard.html`, `projects.html`, `publish_runs.html`, `base.html`, `routes.py`, `main.py`, `scripts/smoke/check_runtime_diagnostics.py`, docs.
+- **Команды:** `compileall`; `check_runtime_diagnostics.py` PASS; `systemctl restart scrap-api scrap-worker`.
+- **Результат:** visibility-only; publish/automation semantics не менялись; миграций нет.
+- **Следующий шаг:** commit на hermes; Phase C metrics/incident readiness — отдельно.
+
+---
+
+## 2026-05-20 — Phase A: Governance Enforcement Hardening (runtime)
+
+- **Что изменено:** универсальная блокировка stale revision при publish (`validate_revision_current_for_publish`); обязательный `force_reason` при `force=true` (API + admin + `publish_runs`); `operator_touched` на документе + guard в automation pipeline_progression; `projects.trust_level` (default 0, read-only в admin); предупреждения RC-first / legacy publish в document detail; smoke `check_governance_invariants.py` в `run_all.py`. Миграция Alembic `026`.
+- **Файлы:** `app/services/publish_service.py`, `revision_service.py`, `human_override_service.py`, `editorial_service.py`, `rewrite_service.py`, `automation_service.py`, `publish_retry_service.py`, `app/api/publish.py`, `app/admin/routes.py`, `app/admin/templates/document_detail.html`, `project_form.html`, models, `alembic/versions/026_governance_phase_a.py`, `scripts/smoke/check_governance_invariants.py`, governance docs (см. коммит).
+- **Команды:** `alembic upgrade head` (025→026); `python -m compileall app`; `scripts/smoke/check_governance_invariants.py` PASS; `run_all.py` — FAIL только `git_clean` / `pre_deploy` (незакоммиченные изменения на сервере).
+- **Результат:** runtime enforcement Phase A без включения automation/scheduler/auto-publish/Stage 5. RC publish stale guard сохранён; direct publish получил тот же stale guard.
+- **Ошибки:** legacy `publish_runs` с `force_used` без `force_reason` (до Phase A) — валидация только для новых publish.
+- **Следующий шаг:** commit на hermes; `systemctl reload` scrap app при деплое; ADR-002 accept при расширении trust audit/history.
+
+---
+
+## 2026-05-20 — Documentation stabilization + canonical ownership layer
+
+- **Что изменено:** `docs/CANONICAL_OWNERSHIP.md`, `docs/adr/ADR_LIFECYCLE.md`; role markers в ROADMAP, MASTER_PLAN, ARCHITECTURE, governance/README, STAGE5; Cursor rules (canonical-doc-ownership, governance-first, no-duplicate-truth, feature-lifecycle); skills (governance-alignment, runtime-alignment-change, feature-flagged-change); обновлены docs/README, governance/README, adr/README. Runtime не менялся.
+- **Файлы:** см. выше + `.cursor/rules/*.mdc`, `.cursor/skills/*/SKILL.md`
+- **Результат:** formal doc authority hierarchy; ADR lifecycle; снижение duplicate-truth / LLM confusion risk.
+- **Следующий шаг:** при правках docs — canonical source first; Phase A runtime alignment отдельно.
+
+---
+
+## 2026-05-20 — Roadmap consolidation + execution governance layer
+
+- **Что изменено:** единый [ROADMAP.md](ROADMAP.md): platform maturity, 8 strategic tracks, runtime maturity ladder L0–L5, phases A–E, current vs target matrix, governance alignment backlog, execution principles, next runtime tasks (Critical/High/Medium/Future). Cross-links: MASTER_PLAN, governance/README, ARCHITECTURE, docs/README. Код/runtime не менялся.
+- **Файлы:** `docs/ROADMAP.md`; `docs/MASTER_PLAN.md`, `docs/governance/README.md`, `docs/ARCHITECTURE.md`, `docs/README.md`, `docs/PROJECT_LOG.md`
+- **Команды:** scp → `/opt/scrap` on hermes
+- **Результат:** разрозненная этапность сведена в один execution entrypoint; Phase A (runtime alignment) зафиксирована как next.
+- **Ошибки:** —
+- **Следующий шаг:** Phase A implementation (stale RC, force_reason, trust_level) behind feature flags — отдельная задача.
+
+---
+
+## 2026-05-20 — Governance iteration 3 (runtime governance)
+
+- **Что изменено:** STATE_MACHINES, ENFORCEMENT_MATRIX, QUEUE_AND_CAPACITY_POLICY, ROLLBACK_POLICY, DATA_RETENTION_POLICY, PROMPT_LIFECYCLE_POLICY; обновлены governance/README, docs/README. Код/runtime не менялся.
+- **Файлы:** `docs/governance/*` (6 new), README updates
+- **Команды:** scp → `/opt/scrap` on hermes
+- **Результат:** state lifecycles, enforcement status matrix, queue/capacity model, rollback/retention/prompt policies.
+- **Ошибки:** —
+- **Следующий шаг:** implement top ENFORCEMENT_MATRIX gaps (stale RC block, force reason); accept ADRs; optional smoke `check_governance_invariants.md` doc-only checklist.
+
+---
+
+## 2026-05-20 — Governance iteration 2
+
+- **Что изменено:** TRUST_POLICY, STAGE5_CONTENT_STUDIO, SYSTEM_INVARIANTS, OPERATOR_RUNBOOK; каталог `docs/adr/` (ADR-001..003); обновлены `docs/governance/README.md`, `docs/README.md`. Код/runtime не менялся.
+- **Файлы:** `docs/governance/TRUST_POLICY.md`, `SYSTEM_INVARIANTS.md`, `STAGE5_CONTENT_STUDIO.md`, `OPERATOR_RUNBOOK.md`, `docs/adr/*`, governance/README, docs/README
+- **Команды:** scp → `/opt/scrap` on hermes
+- **Результат:** trust promotion/demotion policy, Stage 5 phases 5A–5G, 20+ system invariants, operator checklists, three proposed ADRs.
+- **Ошибки:** —
+- **Следующий шаг:** принять ADRs → DECISIONS; iteration 3 ROLLBACK_POLICY, DATA_RETENTION, invariant smoke tests doc.
+
+---
+
+## 2026-05-20 — Governance foundation (iteration 1)
+
+- **Что изменено:** добавлен слой `docs/governance/` (7 policy docs + README); индекс `docs/README.md`; ссылки в корневом `README.md`. Код/runtime не менялся.
+- **Файлы:** `docs/governance/*`, `docs/README.md`, `README.md`
+- **Команды:** scp → `/opt/scrap` on hermes
+- **Результат:** явные политики AI, content model, automation trust levels, publish draft-only, provenance, human override.
+- **Ошибки:** —
+- **Следующий шаг:** итерация 2 — TRUST_POLICY, ROLLBACK, OPERATOR_RUNBOOK, governance ↔ DECISIONS cross-links.
+
+---
+
 ## 2026-05-17 09:22 UTC — Initial scaffold + deploy on hermes
 
 - **Что изменено:** Создан и развёрнут MVP Scrap в `/opt/scrap`.
@@ -376,132 +509,3 @@ elease_candidates_list.html, PROJECT_LOG.md — объединены help (i18n)
 2. Doc #5 — publish_draft по решению оператора (RC approved).
 3. Autobit #11/#13 — review + quality; при готовности — RC + pilot review.
 4. Doc #10 — strategy/topics/RC перед pilot.
-
----
-
-## 2026-05-19 — Этап 4X: Projects + Agents (prompt overrides) + RU admin
-
-- **Agent** = UI-абстракция над `prompt_templates` (ключи не менялись).
-- Админка: `/admin/projects` (список, создание, редактирование), `/admin/agents`, `/admin/projects/{id}/agents`.
-- Backward compat: `/admin/prompts` → redirect `/admin/agents`; POST версий на `/admin/prompts/{key}/versions`.
-- API: `GET /api/projects/{id}/agents/{key}/effective-prompt`, smoke/disable override.
-- Migration **024**: `projects.description`.
-- `prompt_service`: source `global` | `project_override` | `code_fallback`.
-- Скрипт: `scripts/check_project_agent_admin.py`.
-
----
-
-## 2026-05-19 — Этап 4Y: CRMFlow24 agent overrides + LLM proof
-
-### Профиль проекта id=1 (crmflow24)
-- Заполнены tone, audience, content/rewrite/seo/review rules, allowed/blocked topics (через admin service).
-
-### Project overrides (version `p1-crmflow24-v1`)
-| Agent key | Override |
-|-----------|----------|
-| review_article | да |
-| rewrite_article | да |
-| seo_enrich | да |
-| quality_review | да |
-| topic_cleanup_v1 | global/code_fallback (без override) |
-
-### Effective prompt API
-Все 4 ключа: `source=project_override`, system начинается с «Ты Агент-… для проекта CRMFlow24».
-
-### LLM proof
-- Документ **#5** (pilot, RC approved), действие: `run_quality_for_document`.
-- **llm_run #78**: `quality_review:p1-crmflow24-v1#project_override`, `project_id=1`, model `local/qc-reviewer`, success.
-- До override: quality score **82** (needs_revision), рекомендации общие.
-- После override: score **6** (needs_revision), рекомендации про бизнес-ценность CRMFlow24 — видно, что промпт применился.
-
-### Pilot
-- Doc #5: `next_action=publish_draft` (RC approved).
-- Кандидаты: doc #10 score 100, Autobit #11/#13.
-
-### Код
-- `prompt_service.template_ref` → `{key}:{version}#{source}` для аудита в `llm_runs`.
-
-### Скрипт настройки (ops)
-- `/tmp/4y_setup.py` на сервере (повторяемый сид профиля+override).
-
-
-## 2026-05-19 — этап 4Z
-
-- UX: редактор агента проекта (textarea, русские кнопки, nav top/bottom).
-- Fix:  prompts UTF-8 (убраны  в admin preview).
-- Feat: , .
-- Compact: форма  (form-row).
-- CSS: , , , .
--  — body checks + новые URL.
-
-## 2026-05-19 — этап 4Z
-
-- UX: редактор агента проекта (textarea, русские кнопки, nav top/bottom).
-- Fix: topic_cleanup_v1 prompts UTF-8.
-- Feat: project tasks/documents admin pages.
-- Compact project edit form + inner scroll CSS.
-- check_project_agent_admin.py расширен.
-
-## 2026-05-20 — этап 4AA (UX hardening + save-flow)
-
-### Исправлено
-- **500 при сохранении агента**: отсутствовал `prompt_templates` для `topic_cleanup_v1` → `ensure_prompt_template()` перед созданием версии; дубликат версии — auto-suffix timestamp; ошибки → redirect `?error=`, не 500.
-- Примеры prompt свернуты в `<details>`; форма редактирования наверху.
-- Таблицы tasks/documents: `page_size` 10/50/100, `admin-table-viewport`, styled selects.
-- `/admin/agents/new` — создание custom-агента (не в pipeline до явного подключения).
-- `scripts/test_agent_save_flow.py` — regression save/activate/disable на test project.
-
-### UX-правила
-1. Длинные примеры — только в `<details>`.
-2. POST submit страниц — regression smoke (`test_agent_save_flow.py`).
-3. Таблицы проекта — полная ширина, page size selector, inner scroll.
-4. Select — класс `.admin-select`, единый стиль.
-
-## 2026-05-20 — этап 4AB (каталог агентов)
-
-### Модель
-- **Глобальный агент** — prompt template для всех проектов.
-- **Проектный агент** — project override для одного проекта.
-- **Custom agent** — новый template; не в pipeline до явного подключения разработчиком.
-
-### UI
-- `/admin/agents` — каталог с колонкой «Проект», фильтры, строки global + project override.
-- `/admin/agents/new` — выбор проекта и базового типа; existing key + project → override без нового key.
-- `/admin/agents/{key}` — структура: сводка, pipeline, версии, проектные настройки, audit.
-- Alert contrast: `.alert-success` / `.alert-error` / `.alert-warning` для тёмной темы.
-
-### Тесты
-- `scripts/test_custom_agent_flow.py` — override, custom+project, global custom.
-
-## 2026-05-20 — этап 4AC (project-scoped agents view)
-
-### Root cause
-- На /admin/projects/{id}/agents после строк pipeline шёл перебор **всех** prompt_templates с ключами вне реестра → на странице любого проекта отображались **все** custom-агенты и «чужие» сущности без фильтра по project_id.
-
-### Исправление
-- **get_global_agent_catalog** — полный каталог для /admin/agents (alias `build_agent_catalog`).
-- **get_project_agent_catalog(project_id)** — только KNOWN_AGENT_KEYS для проекта + custom-шаблоны, у которых есть **project_prompt_override для данного проекта**; last run — с фильтром LLMRun.project_id.
-- Маршрут `admin_project_agents` переведён на `get_project_agent_catalog`.
-
-### Правила видимости
-- /admin/agents — общий каталог: global, overrides всех проектов, custom; фильтр по проекту; колонка «Проект».
-- /admin/projects/{id}/agents — только этот проект: базовые pipeline-агенты (effective source), активный override проекта, custom только при override/привязке для этого project_id.
-- Страница проекта **не** показывает overrides/custom других проектов.
-
-### Тесты
-- scripts/test_project_agent_scoping.py — два disabled-проекта, custom + override на A, проверка каталога для A/B и глобального списка.
-
-## 2026-05-20 — этап 4AD (audit agent / project model)
-
-- Read-only аудит связки projects ↔ prompt_templates ↔ prompt_versions ↔ project_prompt_overrides ↔ llm_runs; сервисы prompt_service, gent_catalog_service, gent_registry, админ-маршруты.
-- Скрипт: scripts/audit_agent_project_model.py (--http — проверка маркеров страниц).
-- Документ: docs/AGENT_PROJECT_MODEL_AUDIT.md — заключение: **вариант A** (текущая схема + overrides), без новой таблицы bindings на этом этапе.
-## 2026-05-20 — этап 4AE (override uniqueness + diagnostics)
-
-- **Решение зафиксировано:** Option A — `prompt_templates` + `project_prompt_overrides` (без bindings, без `project_id` на шаблонах).
-- Migration **025:** `UNIQUE(project_id, prompt_template_id)` на `project_prompt_overrides`.
-- Сервис: `create_project_override_version` upsert + отключение лишних enabled; `IntegrityError` → повторный upsert.
-- UI: блок **Effective prompt resolution** на `/admin/projects/{id}/agents/{key}`; «Общий каталог» на `/admin/agents`.
-- Audit: секция **Override integrity**; расширен `--http`.
-- Autobit docs #10/#11/#13: rewrite done, editorial `generated` — next review/quality; pilot: не добавлять до RC.
-

@@ -4,9 +4,9 @@
 
 | provider | env | Статус |
 |----------|-----|--------|
-| `mock` | `REWRITER_PROVIDER=mock` | по умолчанию |
-| `cliproxy` | `CLIPROXYAPI_*` | интерфейс готов |
-| `lm_studio` | `LM_STUDIO_BASE_URL` | интерфейс готов |
+| `mock` | `REWRITER_PROVIDER=mock` | dev/fallback |
+| `cliproxy` | `CLIPROXYAPI_*` | **production** |
+| `lm_studio` | `LM_STUDIO_BASE_URL` | **deprecated** — файл есть, **не** в `registry.py` |
 
 ## Подключение CLIProxyAPI
 
