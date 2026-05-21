@@ -5,6 +5,12 @@
   <p class="page-subtitle">Проверки invalid state, stale approved RC, recovery discipline. Read-only scans; remediation — явные действия оператора.</p>
 </div>
 {% if op_msg %}<div class="ok-box">{{ op_msg }}</div>{% endif %}
+{% if confidence %}
+<div class="panel">
+  <h2>Operational confidence</h2>
+  <p>Level: <strong>{{ confidence.confidence_level }}</strong> — {{ confidence.cohesion_note }}</p>
+</div>
+{% endif %}
 {% if op_error %}<div class="warn-box">{{ op_error }}</div>{% endif %}
 
 <div class="panel">

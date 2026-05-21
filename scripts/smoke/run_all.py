@@ -36,6 +36,7 @@ CHECKS_DEFAULT = [
     "check_operational_incidents.py",
     "check_runtime_cohesion.py",
     "check_runtime_integrity.py",
+    "check_runtime_reliability.py",
     "check_scheduler.py",
     "check_pilots.py",
 ]

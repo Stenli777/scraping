@@ -24,6 +24,14 @@
 
 ---
 
+## 2026-05-21 — Runtime Reliability & Operational Confidence (I1–I6)
+
+- **Что изменено:** `runtime_reliability_service` — `operational_confidence` (deterministic bands high/medium/low/critical), `replay_safety` (verdict per retryable run), `confidence_checks`; unified panels в diagnostics/integrity; smoke `check_runtime_reliability.py`.
+- **Git:** после H (`cc0b09d`); commit I + tag `v0.5-runtime-integrity` (см. отчёт).
+- **Не делали:** SLO dashboard, auto-retry, metrics platform.
+
+---
+
 ## 2026-05-21 — Runtime Integrity & Recovery Discipline (H1–H6)
 
 - **Что изменено:** H1 — `runtime_integrity_service`: auto-archive stale open RC при новой ревизии; `supersede_stale_approved_rc` (→ archived + audit note); `/admin/integrity` + batch bounded supersede. H2 — `recovery_discipline` в diagnostics (replay-safe principles, retry sample). H3 — `integrity_report` checks (stale approved, legacy publish indicator, retryable runs). H4 — `ops_integrity_remediate.py` + `apply_bounded_integrity_cleanup`. H5 — admin UX (RC list stale badges, RC detail supersede, nav). Smoke `check_runtime_integrity.py`.

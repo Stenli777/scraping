@@ -141,6 +141,7 @@ def admin_integrity(request: Request, db: Session = Depends(get_db)):
         build_recovery_discipline_report,
         build_runtime_integrity_report,
     )
+    from app.services.runtime_reliability_service import build_operational_confidence
 
     op_msg = request.query_params.get("op_msg")
     op_error = request.query_params.get("op_error")
@@ -152,6 +153,7 @@ def admin_integrity(request: Request, db: Session = Depends(get_db)):
             "title": "Целостность runtime",
             "integrity": build_runtime_integrity_report(db),
             "recovery": build_recovery_discipline_report(db),
+            "confidence": build_operational_confidence(db),
             "op_msg": op_msg,
             "op_error": op_error,
         },

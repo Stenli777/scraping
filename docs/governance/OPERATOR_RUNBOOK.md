@@ -16,7 +16,8 @@ Production workflow для оператора. Дополняет [OPERATIONS.md
 3. Document pipeline — review → rewrite → SEO → **manual** quality.
 4. Editorial queue — approve/reject.
 5. Release candidates — QA → approve → publish draft (**approve/publish disabled in admin if revision stale**).
-6. При инцидентах — `/admin/diagnostics` (incident history, recovery playbook, trends) и `/admin/failed-items` (recovery hints).
+6. При инцидентах — `/admin/diagnostics` (operational confidence, replay safety, incidents) → `/admin/integrity` при stale approved RC.
+7. Перед retry publish — проверить **replay_verdict** в diagnostics; `blocked_*` → новый RC, не retry.
 6. Draft reviews — feedback после CRMFlow24 check.
 7. LLM runs / automation runs — spot-check errors.
 

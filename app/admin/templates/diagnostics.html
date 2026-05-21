@@ -19,7 +19,50 @@
 <div class="panel">
   <h2>Runtime authority (read-only)</h2>
   <p class="field-help">Что реально enforced в коде vs governance-only / decorative. Canonical: <code>docs/governance/ENFORCEMENT_MATRIX.md</code>.</p>
-  {% if diagnostics.authority_boundaries %}
+  
+{% if diagnostics.operational_confidence %}
+<div class="panel {% if diagnostics.operational_confidence.confidence_level == 'critical' %}warn-box{% elif diagnostics.operational_confidence.confidence_level == 'low' %}warn-box{% endif %}">
+  <h2>Operational confidence</h2>
+  <p>Level: <strong>{{ diagnostics.operational_confidence.confidence_level }}</strong>
+    — checks fail={{ diagnostics.operational_confidence.checks_summary.fail }}
+    warn={{ diagnostics.operational_confidence.checks_summary.warn }}
+    · stale approved RC={{ diagnostics.operational_confidence.integrity_stale_approved }}
+    · retryable publish={{ diagnostics.operational_confidence.replay_retryable }}</p>
+  {% if diagnostics.operational_confidence.signals %}
+  <p class="field-help">Signals: {% for s in diagnostics.operational_confidence.signals %}<code>{{ s }}</code> {% endfor %}</p>
+  {% endif %}
+  {% if diagnostics.operational_confidence.trend_note %}<p class="warn-box">{{ diagnostics.operational_confidence.trend_note }}</p>{% endif %}
+  <p class="field-help">{{ diagnostics.operational_confidence.cohesion_note }}</p>
+  <p>
+    <a class="btn" href="/admin/integrity">Integrity</a>
+    <a class="btn" href="/admin/publish-runs">Publish runs</a>
+    <a class="btn" href="/admin/failed-items">Сбои</a>
+  </p>
+</div>
+{% endif %}
+
+{% if diagnostics.replay_safety and diagnostics.replay_safety.retryable_runs %}
+<div class="panel">
+  <h2>Replay safety (sample)</h2>
+  <p class="field-help">Deterministic verdict per retryable run — not auto-retry.</p>
+  <table class="table table-compact">
+    <thead><tr><th>Run</th><th>Doc</th><th>Verdict</th><th>Chain</th></tr></thead>
+    <tbody>
+      {% for r in diagnostics.replay_safety.retryable_runs[:8] %}
+      <tr>
+        <td>#{{ r.id }}</td>
+        <td>#{{ r.document_id }}</td>
+        <td><code>{{ r.replay_verdict }}</code></td>
+        <td>{% for cid in r.retry_chain_ids %}#{{ cid }} {% endfor %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+
+{% if diagnostics.authority_boundaries %}
   <table class="table table-compact">
     <thead><tr><th>Domain</th><th>Authority</th><th>Surface</th></tr></thead>
     <tbody>

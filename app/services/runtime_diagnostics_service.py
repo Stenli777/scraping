@@ -657,6 +657,15 @@ def build_runtime_diagnostics(db: Session) -> dict[str, Any]:
 
     payload["integrity_report"] = build_runtime_integrity_report(db)
     payload["recovery_discipline"] = build_recovery_discipline_report(db)
+    from app.services.runtime_reliability_service import (
+        build_operational_confidence,
+        build_replay_safety_report,
+        build_runtime_confidence_checks,
+    )
+
+    payload["operational_confidence"] = build_operational_confidence(db)
+    payload["replay_safety"] = build_replay_safety_report(db)
+    payload["confidence_checks"] = build_runtime_confidence_checks(db)
     try:
         from app.services.operational_snapshot_service import (
             build_operational_history,
