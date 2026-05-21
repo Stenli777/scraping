@@ -54,6 +54,18 @@
 {% endif %}
 
 
+
+{% if diagnostics.integrity_report %}
+<div class="panel">
+  <h2>Runtime integrity</h2>
+  <p>Stale approved RC: <strong>{{ diagnostics.integrity_report.stale_approved_rc_count }}</strong>
+    — <a href="/admin/integrity">Открыть remediation</a></p>
+  {% if diagnostics.recovery_discipline %}
+  <p class="field-help">Replay-safe: новая ревизия → новый RC; supersede архивирует stale approved без удаления audit.</p>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if diagnostics.incident_triage %}
 <div class="panel warn-box">
   <h2>Incident triage (read-only)</h2>

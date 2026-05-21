@@ -145,16 +145,9 @@ def resolve_production_publish_target(db: Session, project_id: int) -> PublishTa
 
 
 def _archive_stale_candidates(db: Session, document_id: int, revision_id: int) -> None:
-    rows = db.scalars(
-        select(ContentReleaseCandidate).where(
-            ContentReleaseCandidate.document_id == document_id,
-            ContentReleaseCandidate.status.in_(tuple(OPEN_STATUSES)),
-        )
-    ).all()
-    for row in rows:
-        if row.document_revision_id != revision_id:
-            row.status = RC_ARCHIVED
-            row.updated_at = _utcnow()
+    from app.services.runtime_integrity_service import archive_stale_open_rc_for_document
+
+    archive_stale_open_rc_for_document(db, document_id, revision_id, source="create_rc")
 
 
 def create_release_candidate(

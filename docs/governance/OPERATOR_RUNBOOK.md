@@ -72,7 +72,7 @@ Scrap **does not** delete CRMFlow24 drafts automatically.
 |-----------|--------|
 | Wrong draft sent | Archive/delete draft in **CRMFlow24 admin**; mark RC/publication failed in Scrap notes |
 | Wrong revision published | Do not republish without new RC; fix content → new revision → new RC |
-| RC approve/publish fails «revision stale» | Rerun rewrite → **create new RC** (old RC may stay `approved` in DB — diagnostics warns `approved_stale_rc`) |
+| RC approve/publish fails «revision stale» | Rerun rewrite → **create new RC**; или `/admin/integrity` → **Supersede** (archives stale approved, audit kept) |
 | Duplicate publish blocked (409) | Expected; use `force` only with reason **and** admin `force_confirm` if intentional republish |
 
 **Target:** formal `ROLLBACK_POLICY.md` — not in scope iteration 2.

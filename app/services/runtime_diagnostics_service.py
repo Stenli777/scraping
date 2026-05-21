@@ -565,7 +565,8 @@ def build_recovery_playbook(db: Session) -> dict[str, Any]:
                     "Создайте новый RC → QA → approve → publish",
                     "Старый RC оставьте в notes (не удаляйте audit)",
                 ],
-                "link": "/admin/release-candidates",
+                "link": "/admin/integrity",
+                "actions": ["supersede-stale per RC", "create new RC after rerun"],
             }
         )
     if failed_pub:
@@ -580,6 +581,7 @@ def build_recovery_playbook(db: Session) -> dict[str, Any]:
                     "При duplicate 409 — force только с force_reason + подтверждением",
                 ],
                 "link": "/admin/publish-runs",
+                "replay_safe": "Verify revision unchanged or new RC before retry",
             }
         )
     if queue["backlog_pressure"] in ("medium", "high"):
@@ -648,6 +650,13 @@ def build_runtime_diagnostics(db: Session) -> dict[str, Any]:
     payload["authority_boundaries"] = build_authority_boundaries()
     payload["invariant_consistency"] = build_invariant_consistency_checks(db)
     payload["runtime_cohesion"] = build_runtime_cohesion_notes()
+    from app.services.runtime_integrity_service import (
+        build_recovery_discipline_report,
+        build_runtime_integrity_report,
+    )
+
+    payload["integrity_report"] = build_runtime_integrity_report(db)
+    payload["recovery_discipline"] = build_recovery_discipline_report(db)
     try:
         from app.services.operational_snapshot_service import (
             build_operational_history,

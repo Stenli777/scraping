@@ -113,6 +113,9 @@ def create_revision_snapshot(
     meta["current_revision_id"] = record.id
     document.metadata_json = meta
     db.flush()
+    from app.services.runtime_integrity_service import archive_stale_open_rc_for_document
+
+    archive_stale_open_rc_for_document(db, document.id, record.id, source="new_revision")
     return record
 
 

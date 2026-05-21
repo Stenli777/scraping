@@ -20,14 +20,15 @@
 <div class="table-scroll">
 <table class="table">
   <thead>
-    <tr><th>ID</th><th>Документ</th><th>Статус</th><th>QA</th><th>Заблокировано</th><th>Дата создания</th><th></th></tr>
+    <tr><th>ID</th><th>Документ</th><th>Статус</th><th>Rev</th><th>QA</th><th>Блок</th><th>Создан</th><th></th></tr>
   </thead>
   <tbody>
     {% for item in items %}
     <tr>
       <td><a href="/admin/release-candidates/{{ item.id }}">#{{ item.id }}</a></td>
       <td><a href="/admin/documents/{{ item.document_id }}">#{{ item.document_id }}</a></td>
-      <td><code>{{ item.status }}</code></td>
+      <td><code>{{ item.status }}</code>{% if item.needs_supersede %} <span class="badge status-failed_retryable">stale approved</span>{% elif item.revision_stale %} <span class="badge">stale</span>{% endif %}</td>
+      <td>{% if item.revision_stale %}устар.{% else %}ok{% endif %}</td>
       <td>{{ item.qa_score }}</td>
       <td>{{ item.blocking_count }}</td>
       <td>{{ item.created_at }}</td>

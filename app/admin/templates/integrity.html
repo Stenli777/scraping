@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Целостность runtime</h1>
+  <p class="page-subtitle">Проверки invalid state, stale approved RC, recovery discipline. Read-only scans; remediation — явные действия оператора.</p>
+</div>
+{% if op_msg %}<div class="ok-box">{{ op_msg }}</div>{% endif %}
+{% if op_error %}<div class="warn-box">{{ op_error }}</div>{% endif %}
+
+<div class="panel">
+  <h2>Integrity checks</h2>
+  <table class="table table-compact">
+    <thead><tr><th>Check</th><th>Status</th><th>Count</th><th>Message</th></tr></thead>
+    <tbody>
+      {% for c in integrity.checks %}
+      <tr>
+        <td><code>{{ c.id }}</code></td>
+        <td><span class="badge {% if c.status == 'fail' %}status-error{% elif c.status == 'warn' %}status-failed_retryable{% else %}status-done{% endif %}">{{ c.status }}</span></td>
+        <td>{{ c.count }}</td>
+        <td>{{ c.message }}<br><small>{{ c.remediation }}</small></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if integrity.stale_approved_rc %}
+<div class="panel warn-box">
+  <h2>Stale approved RC ({{ integrity.stale_approved_rc_count }})</h2>
+  <p class="field-help">Approve/publish blocked. Supersede → archived (audit preserved) or create new RC after rerun.</p>
+  <table class="table table-compact">
+    <thead><tr><th>RC</th><th>Doc</th><th>Bound rev</th><th>Latest rev</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for r in integrity.stale_approved_rc %}
+      <tr>
+        <td><a href="/admin/release-candidates/{{ r.id }}">#{{ r.id }}</a></td>
+        <td><a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a></td>
+        <td>#{{ r.bound_revision_number }}</td>
+        <td>#{{ r.latest_revision_number }}</td>
+        <td>
+          <form method="post" action="/admin/release-candidates/{{ r.id }}/supersede-stale" style="display:inline">
+            <label><input type="checkbox" name="confirm" required> confirm</label>
+            <button type="submit" class="btn">Supersede (archive)</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <form method="post" action="/admin/integrity/supersede-all-stale" style="margin-top:1rem">
+    <label><input type="checkbox" name="confirm"> Подтверждаю batch supersede (max 20)</label>
+    <button type="submit" class="btn">Supersede all stale approved (bounded)</button>
+  </form>
+</div>
+{% else %}<p class="ok-box">Нет stale approved RC в текущем sample.</p>{% endif %}
+
+<div class="panel">
+  <h2>Recovery discipline</h2>
+  <ul>{% for p in recovery.replay_safe_principles %}<li>{{ p }}</li>{% endfor %}</ul>
+  <p><a class="btn" href="/admin/diagnostics">Диагностика</a> <a class="btn" href="/admin/failed-items">Сбои</a> <a class="btn" href="/admin/publish-runs">Publish runs</a></p>
+</div>
+{% endblock %}

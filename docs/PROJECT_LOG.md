@@ -24,6 +24,15 @@
 
 ---
 
+## 2026-05-21 — Runtime Integrity & Recovery Discipline (H1–H6)
+
+- **Что изменено:** H1 — `runtime_integrity_service`: auto-archive stale open RC при новой ревизии; `supersede_stale_approved_rc` (→ archived + audit note); `/admin/integrity` + batch bounded supersede. H2 — `recovery_discipline` в diagnostics (replay-safe principles, retry sample). H3 — `integrity_report` checks (stale approved, legacy publish indicator, retryable runs). H4 — `ops_integrity_remediate.py` + `apply_bounded_integrity_cleanup`. H5 — admin UX (RC list stale badges, RC detail supersede, nav). Smoke `check_runtime_integrity.py`.
+- **Файлы:** `runtime_integrity_service.py`, `revision_service.py`, `release_candidate_service.py`, admin templates/routes, scripts, docs.
+- **Команды:** `compileall`; integrity/governance/diagnostics smokes PASS; `run_all` FAIL только `git_clean` до commit.
+- **Не делали:** trust engine, automation, RC graph redesign, destructive audit delete.
+
+---
+
 ## 2026-05-21 — Runtime Cohesion & Boundary Enforcement (G1–G6) + Git tag v0.4-runtime-hardening
 
 - **Что изменено:** G1/G4 — `runtime_authority_service` + `authority_boundaries` в diagnostics (runtime_enforced / governance_only / decorative / deprecated / dangerous); G3 — `invariant_consistency` (stale approved RC sample, flags); G2/G5 — cohesion notes, trust «decorative» labels, удалены дубликаты governance docs в `docs/` root; smoke `check_runtime_cohesion.py`.

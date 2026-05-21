@@ -22,7 +22,7 @@
 | C1 | Revision immutable | **fully enforced** | `document_revisions` append-only | critical | — |
 | C2 | Raw not silent overwrite on rerun | **partially enforced** | pipeline rerun paths | high | No DB constraint on raw_html |
 | C3 | RC binds one revision | **partially enforced** | RC create + QA `revision_current` + approve/publish block | critical | RC DB auto-invalidate on create still Target |
-| C4 | Revision change → new RC | **partially enforced** | `validate_revision_current_for_publish` + `approve_release_candidate` stale guard | critical | Pre-existing approved+stale rows — diagnostics `approved_stale_rc` |
+| C4 | Revision change → new RC | **partially enforced** | stale guards + auto-archive open RC on new revision + supersede-stale admin | critical | Historical approved+stale until operator supersede or new RC |
 | C5 | Generated provenance | **planned** | Stage 5 | high | Not built |
 | C6 | No fake scrape URL | **governance-only** | payload builder | critical | No validator for generated (Target) |
 | P1 | publish_run → revision_id | **fully enforced** | publish_service | critical | — |

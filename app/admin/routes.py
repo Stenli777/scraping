@@ -133,6 +133,74 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     )
 
 
+
+
+@router.get("/admin/integrity", response_class=HTMLResponse)
+def admin_integrity(request: Request, db: Session = Depends(get_db)):
+    from app.services.runtime_integrity_service import (
+        build_recovery_discipline_report,
+        build_runtime_integrity_report,
+    )
+
+    op_msg = request.query_params.get("op_msg")
+    op_error = request.query_params.get("op_error")
+    return templates.TemplateResponse(
+        request,
+        "integrity.html",
+        {
+            "request": request,
+            "title": "Целостность runtime",
+            "integrity": build_runtime_integrity_report(db),
+            "recovery": build_recovery_discipline_report(db),
+            "op_msg": op_msg,
+            "op_error": op_error,
+        },
+    )
+
+
+@router.post("/admin/release-candidates/{candidate_id}/supersede-stale")
+def admin_rc_supersede_stale(
+    candidate_id: int,
+    confirm: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    from app.services.release_candidate_service import ReleaseCandidateError
+    from app.services.runtime_integrity_service import supersede_stale_approved_rc
+
+    if confirm != "on":
+        return _admin_op_error_redirect(
+            f"/admin/release-candidates/{candidate_id}",
+            "Подтвердите supersede устаревшего approved RC",
+        )
+    try:
+        supersede_stale_approved_rc(db, candidate_id)
+        db.commit()
+    except ReleaseCandidateError as exc:
+        db.rollback()
+        return _admin_op_error_redirect(f"/admin/release-candidates/{candidate_id}", str(exc))
+    return RedirectResponse(
+        f"/admin/release-candidates/{candidate_id}?op_msg=RC+archived+(stale+superseded)",
+        status_code=303,
+    )
+
+
+@router.post("/admin/integrity/supersede-all-stale")
+def admin_integrity_supersede_all(
+    confirm: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    from app.services.runtime_integrity_service import supersede_stale_approved_batch
+
+    if confirm != "on":
+        return _admin_op_error_redirect("/admin/integrity", "Подтвердите batch supersede")
+    result = supersede_stale_approved_batch(db, limit=20, dry_run=False)
+    db.commit()
+    return RedirectResponse(
+        f"/admin/integrity?op_msg=superseded+{result['count']}+RCs",
+        status_code=303,
+    )
+
+
 @router.get("/admin/failed-items", response_class=HTMLResponse)
 def admin_failed_items(request: Request, db: Session = Depends(get_db)):
     from app.services.runtime_diagnostics_service import build_recovery_playbook
@@ -1356,7 +1424,10 @@ def admin_release_candidates_list(request: Request, db: Session = Depends(get_db
         select(ContentReleaseCandidate).order_by(ContentReleaseCandidate.id.desc()).limit(200)
     ).all()
     items = []
+    from app.services.release_candidate_service import _revision_stale_for_candidate
+
     for r in rows:
+        stale, _ = _revision_stale_for_candidate(db, r)
         items.append({
             "id": r.id,
             "document_id": r.document_id,
@@ -1364,6 +1435,8 @@ def admin_release_candidates_list(request: Request, db: Session = Depends(get_db
             "qa_score": r.qa_score,
             "blocking_count": len(r.blocking_issues_json or []),
             "created_at": r.created_at,
+            "revision_stale": stale,
+            "needs_supersede": stale and r.status == "approved",
         })
     return templates.TemplateResponse(
         request,

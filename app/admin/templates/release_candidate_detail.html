@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% if request.query_params.get("op_msg") %}<div class="ok-box">{{ request.query_params.get("op_msg") }}</div>{% endif %}
 {% if op_error %}
 <div class="warn-box"><strong>Операция отклонена:</strong> {{ op_error }}</div>
 {% endif %}
@@ -92,6 +93,17 @@
     <button class="btn primary" type="button" disabled title="Ревизия устарела">Опубликовать (заблокировано)</button>
     {% endif %}
   </div>
+  {% if detail.status == "approved" and detail.revision_stale %}
+  <div class="panel warn-box">
+    <h3>Integrity: stale approved RC</h3>
+    <p>Ревизия устарела. Publish/approve заблокированы. Supersede архивирует RC без удаления audit.</p>
+    <form method="post" action="/admin/release-candidates/{{ detail.id }}/supersede-stale">
+      <label><input type="checkbox" name="confirm" required> Подтверждаю archive/supersede</label>
+      <button type="submit" class="btn">Supersede stale approved</button>
+    </form>
+    <a class="btn" href="/admin/integrity">Все stale approved</a>
+  </div>
+  {% endif %}
   <div class="danger-zone panel">
     <h3>Опасные действия</h3>
     <form method="post" action="/admin/release-candidates/{{ detail.id }}/reject" style="display:inline"><button class="btn" type="submit">Отклонить</button></form>

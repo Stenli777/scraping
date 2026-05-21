@@ -51,6 +51,17 @@ Document ready → Create RC → Run QA → Operator approve → Publish from RC
 | Drift severity | `info` / `warning` / `critical` — visibility only, без auto-fix |
 | Incident triage | Блок top risks, queue pressure, publish/LLM failure samples |
 
+### Integrity Phase (H) — RC remediation & recovery discipline
+
+| Surface | Detail |
+|---------|--------|
+| Integrity admin | `/admin/integrity` — stale approved RC list, supersede (archive), batch max 20 |
+| Auto-archive | New `document_revision` archives stale open RC (incl. approved) for that document |
+| CLI | `scripts/ops_integrity_remediate.py` (dry-run default; `--apply --supersede-stale-approved`) |
+| Smoke | `check_runtime_integrity.py` |
+
+**Replay-safe:** supersede не удаляет `publish_runs` / revisions; publish stale guard сохранён.
+
 ### Cohesion Phase (G) — authority & boundaries
 
 | Surface | Detail |
