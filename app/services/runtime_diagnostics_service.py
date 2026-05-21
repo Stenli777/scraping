@@ -666,6 +666,17 @@ def build_runtime_diagnostics(db: Session) -> dict[str, Any]:
     payload["operational_confidence"] = build_operational_confidence(db)
     payload["replay_safety"] = build_replay_safety_report(db)
     payload["confidence_checks"] = build_runtime_confidence_checks(db)
+    from app.services.runtime_predictability_service import (
+        build_consistency_guarantees,
+        build_operational_predictability,
+        build_recovery_normalization,
+        build_replay_determinism_report,
+    )
+
+    payload["consistency_guarantees"] = build_consistency_guarantees(db)
+    payload["replay_determinism"] = build_replay_determinism_report(db)
+    payload["recovery_normalization"] = build_recovery_normalization(db)
+    payload["operational_predictability"] = build_operational_predictability(db)
     try:
         from app.services.operational_snapshot_service import (
             build_operational_history,

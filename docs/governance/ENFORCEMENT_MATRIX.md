@@ -131,6 +131,7 @@
 7d. ~~Authority boundary catalog in diagnostics~~ — **done** Cohesion Phase G (`runtime_authority_service`, admin authority panel).
 8. ~~Diagnostics safety/bounds~~ — **done** Phase C (`runtime_diagnostics_service`, localhost API guard, incident triage).
 9. ~~Operational history/trends~~ — **done** Phase D (`operational_snapshots`, bounded retention, not metrics platform).
+10. ~~Replay/retry operator ambiguity~~ — **done** Predictability Phase J (`runtime_predictability_service`, verdict catalog, normalized retry chain visibility).
 
 ---
 

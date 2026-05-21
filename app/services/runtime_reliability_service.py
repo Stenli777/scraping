@@ -48,15 +48,20 @@ def build_replay_safety_report(db: Session) -> dict[str, Any]:
     integrity = build_runtime_integrity_report(db)
     items: list[dict[str, Any]] = []
 
+    from app.services.runtime_predictability_service import resolve_replay_verdict
+
     for sample in integrity.get("retryable_publish_sample", []):
         run_id = sample["id"]
         chain = get_retry_chain(db, run_id)
         chain_ids = [r.id for r in chain]
+        v = resolve_replay_verdict(db, run_id)
         items.append(
             {
                 **sample,
                 "retry_chain_ids": chain_ids,
-                "replay_verdict": _replay_verdict_for_run(db, run_id, integrity["stale_approved_rc_count"]),
+                "replay_verdict": v.get("verdict_id"),
+                "replay_action": v.get("operator_action"),
+                "manual_retry_allowed": v.get("manual_retry_allowed"),
             }
         )
 
@@ -71,21 +76,9 @@ def build_replay_safety_report(db: Session) -> dict[str, Any]:
 
 
 def _replay_verdict_for_run(db: Session, run_id: int, stale_approved_count: int) -> str:
-    from app.models.publish_run import PublishRun
-    from app.services.revision_service import get_latest_revision
+    from app.services.runtime_predictability_service import resolve_replay_verdict
 
-    run = db.get(PublishRun, run_id)
-    if not run or not run.document_revision_id:
-        return "review_chain"
-    if stale_approved_count:
-        return "blocked_stale_rc_exists"
-    rev = db.get(DocumentRevision, run.document_revision_id)
-    if not rev:
-        return "review_chain"
-    latest = get_latest_revision(db, run.document_id)
-    if latest and latest.id != rev.id:
-        return "blocked_new_revision_required"
-    return "retry_allowed_same_revision"
+    return resolve_replay_verdict(db, run_id).get("verdict_id", "review_chain")
 
 
 def build_runtime_confidence_checks(db: Session) -> list[dict[str, Any]]:

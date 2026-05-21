@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
+from typing import Any
 
 from app.core.enums import PublishRunStatus
 from app.models.publish_run import PublishRun
@@ -93,6 +94,19 @@ def get_retry_chain(db: Session, run_id: int) -> list[PublishRun]:
 
     chain.sort(key=lambda r: r.id)
     return chain
+
+
+def describe_retry_chain_for_operator(db: Session, publish_run_id: int) -> dict[str, Any]:
+    """Normalized chain + verdict for admin (phase J)."""
+    from app.services.runtime_predictability_service import (
+        normalize_retry_chain,
+        resolve_replay_verdict,
+    )
+
+    return {
+        "chain": normalize_retry_chain(db, publish_run_id),
+        "verdict": resolve_replay_verdict(db, publish_run_id),
+    }
 
 
 def retry_publish_run(db: Session, publish_run_id: int) -> PublishRetryResult:

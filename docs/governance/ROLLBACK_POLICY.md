@@ -27,7 +27,7 @@
 
 ## Operator recovery visibility (Current)
 
-Diagnostics `/admin/diagnostics`, `/admin/failed-items`, and `/admin/integrity` expose **read-only** recovery/integrity reports. **Supersede stale approved RC** archives the row with notes (audit preserved) — not delete. This is **operator remediation** — not automated rollback. Persistent incident rows: `operational_incidents` (bounded, not ticketing).
+Diagnostics `/admin/diagnostics` (incl. replay_determinism, recovery_normalization, consistency_guarantees), `/admin/failed-items`, and `/admin/integrity` expose **read-only** recovery/integrity/predictability reports. **Supersede stale approved RC** archives the row with notes (audit preserved) — not delete. This is **operator remediation** — not automated rollback. Persistent incident rows: `operational_incidents` (bounded, not ticketing).
 
 ## Incident table
 

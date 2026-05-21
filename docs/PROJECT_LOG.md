@@ -24,10 +24,18 @@
 
 ---
 
+## 2026-05-21 — Runtime Determinism & Operational Predictability (J1–J6)
+
+- **Что изменено:** `runtime_predictability_service` — `resolve_replay_verdict` (catalog + operator_action), `normalize_retry_chain`, `build_replay_determinism_report`, `build_consistency_guarantees`, `build_recovery_normalization`, `build_operational_predictability`; diagnostics/publish_runs/integrity UX; smoke `check_runtime_predictability.py`.
+- **Git:** tag `v0.6-runtime-confidence` (см. отчёт).
+- **Не делали:** auto-retry, orchestration, metrics platform.
+
+---
+
 ## 2026-05-21 — Runtime Reliability & Operational Confidence (I1–I6)
 
 - **Что изменено:** `runtime_reliability_service` — `operational_confidence` (deterministic bands high/medium/low/critical), `replay_safety` (verdict per retryable run), `confidence_checks`; unified panels в diagnostics/integrity; smoke `check_runtime_reliability.py`.
-- **Git:** после H (`cc0b09d`); commit I + tag `v0.5-runtime-integrity` (см. отчёт).
+- **Git:** `cc0b09d` (H), `d8c8f23` (I); push `master`; tag `v0.5-runtime-integrity` → `d8c8f23`.
 - **Не делали:** SLO dashboard, auto-retry, metrics platform.
 
 ---

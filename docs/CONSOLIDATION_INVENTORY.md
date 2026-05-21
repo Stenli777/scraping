@@ -82,6 +82,7 @@ CANONICAL FOR ENFORCEMENT: governance/ENFORCEMENT_MATRIX.md
 | `runtime_authority_service` | Authority catalog in diagnostics | **Keep** — cohesion Phase G; read-only |
 | `runtime_integrity_service` | Stale RC archive/supersede, integrity scans | **Keep** — Integrity Phase H; bounded remediation |
 | `runtime_reliability_service` | operational_confidence, replay_safety | **Keep** — Phase I; deterministic bands, not metrics |
+| `runtime_predictability_service` | replay verdict catalog, retry chain, guarantees, recovery paths | **Keep** — Phase J; read-only cohesion, not orchestration |
 | `projects.trust_level` | Decorative for automation | **Keep** — visibility until ADR-002 engine |
 | Governance 17 files | High doc mass | **Keep** — canonical; sync ENFORCEMENT_MATRIX |
 | `DECISIONS.md` ADR-001..007 | Historical MVP | **Archive label** — see `docs/adr/` for Stage 5 |

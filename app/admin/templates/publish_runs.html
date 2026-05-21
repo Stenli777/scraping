@@ -9,7 +9,7 @@
   <thead>
     <tr{% if r.force_used %} class="force-row"{% endif %}>
       <th>ID</th><th>Doc</th><th>Path</th><th>Rev</th><th>Target</th><th>Payload</th><th>Status</th>
-      <th>Force</th><th>Retry</th><th>Remote</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th>
+      <th>Force</th><th>Retry</th><th>Replay verdict</th><th>Remote</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th>
     </tr>
   </thead>
   <tbody>
@@ -31,6 +31,7 @@
         {% if retryable.get(r.id) %}<span class="badge status-failed_retryable">retryable</span>{% else %}<span class="badge">terminal</span>{% endif %}
         {% if r.retry_count %}<br><small>count {{ r.retry_count }}</small>{% endif %}
       </td>
+      <td>{% if replay_verdicts.get(r.id) %}<code>{{ replay_verdicts[r.id].verdict_id }}</code>{% else %}-{% endif %}</td>
       <td>{{ r.remote_status or "?" }}</td>
       <td>{{ r.external_id or "?" }}</td>
       <td>{% if r.draft_url %}<a href="{{ r.draft_url }}" target="_blank">open</a>{% else %}?{% endif %}</td>

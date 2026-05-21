@@ -142,6 +142,7 @@ def admin_integrity(request: Request, db: Session = Depends(get_db)):
         build_runtime_integrity_report,
     )
     from app.services.runtime_reliability_service import build_operational_confidence
+    from app.services.runtime_predictability_service import build_operational_predictability
 
     op_msg = request.query_params.get("op_msg")
     op_error = request.query_params.get("op_error")
@@ -154,6 +155,7 @@ def admin_integrity(request: Request, db: Session = Depends(get_db)):
             "integrity": build_runtime_integrity_report(db),
             "recovery": build_recovery_discipline_report(db),
             "confidence": build_operational_confidence(db),
+            "predictability": build_operational_predictability(db),
             "op_msg": op_msg,
             "op_error": op_error,
         },
@@ -600,6 +602,9 @@ def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
     failure_kinds = {
         r.id: publish_failure_kind(r, targets.get(r.publish_target_id)) for r in runs
     }
+    from app.services.runtime_predictability_service import resolve_replay_verdict
+
+    replay_verdicts = {r.id: resolve_replay_verdict(db, r.id) for r in runs if retryable.get(r.id)}
     return templates.TemplateResponse(
         request,
         "publish_runs.html",
@@ -608,6 +613,7 @@ def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
             "runs": runs,
             "retryable": retryable,
             "chains": chains,
+            "replay_verdicts": replay_verdicts,
             "failure_kinds": failure_kinds,
             "revision_numbers": revision_numbers,
             "title": "Запуски публикации",

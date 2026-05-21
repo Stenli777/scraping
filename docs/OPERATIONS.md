@@ -51,6 +51,15 @@ Document ready → Create RC → Run QA → Operator approve → Publish from RC
 | Drift severity | `info` / `warning` / `critical` — visibility only, без auto-fix |
 | Incident triage | Блок top risks, queue pressure, publish/LLM failure samples |
 
+### Predictability Phase (J) — replay determinism & guarantees
+
+| Surface | Detail |
+|---------|--------|
+| Predictability model | `/admin/diagnostics` → operational_predictability, consistency_guarantees, replay_determinism |
+| Verdict catalog | `retry_allowed_same_revision`, `blocked_new_revision_required`, `blocked_stale_rc_on_document`, … |
+| Publish runs | Column **Replay verdict** + operator_action in diagnostics |
+| Smoke | `check_runtime_predictability.py` |
+
 ### Reliability Phase (I) — operational confidence & replay safety
 
 | Surface | Detail |

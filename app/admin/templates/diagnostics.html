@@ -20,6 +20,59 @@
   <h2>Runtime authority (read-only)</h2>
   <p class="field-help">Что реально enforced в коде vs governance-only / decorative. Canonical: <code>docs/governance/ENFORCEMENT_MATRIX.md</code>.</p>
   
+
+{% if diagnostics.operational_predictability %}
+<div class="panel">
+  <h2>Operational predictability</h2>
+  <p class="field-help">{{ diagnostics.operational_predictability.interpretation }}</p>
+  <ol>{% for step in diagnostics.operational_predictability.operator_read_order %}<li>{{ step }}</li>{% endfor %}</ol>
+</div>
+{% endif %}
+
+{% if diagnostics.consistency_guarantees %}
+<div class="panel">
+  <h2>Consistency guarantees</h2>
+  <h3>Runtime-enforced</h3>
+  <ul>{% for g in diagnostics.consistency_guarantees.runtime_enforced %}
+    <li><code>{{ g.id }}</code> — {{ g.guarantee }}</li>
+  {% endfor %}</ul>
+  <h3>Governance-only</h3>
+  <ul>{% for g in diagnostics.consistency_guarantees.governance_only %}
+    <li><code>{{ g.id }}</code> — {{ g.guarantee }}</li>
+  {% endfor %}</ul>
+</div>
+{% endif %}
+
+{% if diagnostics.replay_determinism and diagnostics.replay_determinism.items %}
+<div class="panel">
+  <h2>Replay determinism (sample)</h2>
+  <p>Allowed manual retry: {{ diagnostics.replay_determinism.manual_retry_allowed_count }} / {{ diagnostics.replay_determinism.retryable_sample_count }}</p>
+  <table class="table table-compact">
+    <thead><tr><th>Run</th><th>Verdict</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for item in diagnostics.replay_determinism.items[:10] %}
+      <tr>
+        <td>#{{ item.publish_run_id }}</td>
+        <td><code>{{ item.verdict.verdict_id }}</code></td>
+        <td><small>{{ item.verdict.operator_action }}</small></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if diagnostics.recovery_normalization %}
+<div class="panel">
+  <h2>Recovery normalization</h2>
+  <ul>{% for p in diagnostics.recovery_normalization.deterministic_paths %}
+    <li><strong>{{ p.id }}</strong>{% if p.active %} (active){% endif %} — <a href="{{ p.surface }}">{{ p.surface }}</a>
+      <ol>{% for s in p.steps %}<li>{{ s }}</li>{% endfor %}</ol>
+    </li>
+  {% endfor %}</ul>
+</div>
+{% endif %}
+
 {% if diagnostics.operational_confidence %}
 <div class="panel {% if diagnostics.operational_confidence.confidence_level == 'critical' %}warn-box{% elif diagnostics.operational_confidence.confidence_level == 'low' %}warn-box{% endif %}">
   <h2>Operational confidence</h2>
