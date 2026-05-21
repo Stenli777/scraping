@@ -15,6 +15,18 @@
   </ul>
 </aside>
 
+
+{% if recovery and recovery.scenarios %}
+<div class="panel warn-box">
+  <h2>Recovery hints</h2>
+  {% for s in recovery.scenarios %}
+  <p><strong>{{ s.title }}</strong></p>
+  <ol>{% for step in s.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+  {% endfor %}
+  <p><a class="btn" href="/admin/diagnostics">Диагностика и история</a></p>
+</div>
+{% endif %}
+
 <p><a class="btn" href="/admin">← Обзор</a></p>
 
 {% if stale_tasks %}

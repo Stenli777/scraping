@@ -35,6 +35,7 @@ class PublishRun(Base):
     draft_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     payload_version: Mapped[str] = mapped_column(String(32), default="article_v1")
     force_used: Mapped[bool] = mapped_column(Boolean, default=False)
+    force_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     retry_parent_publish_run_id: Mapped[int | None] = mapped_column(
         ForeignKey("publish_runs.id", ondelete="SET NULL"), nullable=True, index=True
     )

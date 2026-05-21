@@ -21,6 +21,7 @@ from app.api.canonical_groups import router as canonical_groups_router
 from app.api.campaigns import router as campaigns_router
 from app.api.pilots import router as pilots_router
 from app.api.system import router as system_router
+from app.api.diagnostics import router as diagnostics_router
 from app.api.llm import router as llm_router
 from app.api.prompts import router as prompts_router
 from app.api.project_agents import router as project_agents_router
@@ -79,6 +80,7 @@ app.include_router(campaigns_router)
 app.include_router(pilots_router)
 app.include_router(automation_router)
 app.include_router(system_router)
+app.include_router(diagnostics_router)
 app.include_router(discovery_router)
 app.include_router(manual_urls_router)
 app.include_router(llm_router)

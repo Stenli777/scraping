@@ -96,6 +96,22 @@ def _emit_rc_event(db: Session, task_id: int | None, action: str, payload: dict[
         logger.warning("release_candidate pipeline event failed: %s", exc)
 
 
+
+
+def _revision_stale_for_candidate(
+    db: Session, candidate: ContentReleaseCandidate
+) -> tuple[bool, str | None]:
+    """True when RC binds a revision that is no longer document latest."""
+    revision = db.get(DocumentRevision, candidate.document_revision_id)
+    latest = get_latest_revision(db, candidate.document_id)
+    if latest and revision and latest.id != revision.id:
+        return True, (
+            f"RC binds revision #{revision.revision_number} but document latest is "
+            f"#{latest.revision_number}. Create a new release candidate after content changes."
+        )
+    return False, None
+
+
 def _resolve_revision(db: Session, document: ParsedDocument, revision_id: int | None) -> DocumentRevision:
     if revision_id:
         rev = db.get(DocumentRevision, revision_id)
@@ -241,6 +257,15 @@ def _build_qa_checks(db: Session, candidate: ContentReleaseCandidate) -> list[QA
 
     add("document_exists", "Document exists", document is not None, True)
     add("revision_exists", "Revision exists", revision is not None, True)
+
+    stale, stale_detail = _revision_stale_for_candidate(db, candidate)
+    add(
+        "revision_current",
+        "Revision snapshot is current",
+        not stale,
+        True,
+        stale_detail,
+    )
 
     if not document or not revision:
         return checks
@@ -533,6 +558,9 @@ def approve_release_candidate(db: Session, candidate_id: int, *, notes: str | No
         raise ReleaseCandidateError(f"Cannot approve from status {candidate.status}")
     if candidate.blocking_issues_json:
         raise ReleaseCandidateError("Candidate has blocking issues; run QA or fix content first")
+    stale, stale_detail = _revision_stale_for_candidate(db, candidate)
+    if stale:
+        raise ReleaseCandidateError(stale_detail or "Cannot approve: revision is stale")
     if candidate.status == RC_DRAFT:
         run_release_qa(db, candidate_id)
         db.refresh(candidate)

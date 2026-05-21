@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.enums import EditorialStatus
 from app.core.feature_flags import is_editorial_workflow_enabled
 from app.models.parsed_document import ParsedDocument
+from app.services.human_override_service import mark_operator_touched
 from app.services.pipeline_event_service import emit_pipeline_event
 
 EDITORIAL_STAGE = "editorial"
@@ -113,6 +114,7 @@ def _transition(
                 "revision_number": document.current_revision_number,
             },
         )
+    mark_operator_touched(db, document.id, operator="editorial")
     db.flush()
     return document
 

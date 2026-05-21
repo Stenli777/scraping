@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+  <p class="page-subtitle">
+    <strong>Read-only diagnostics</strong> ??? queue, flags, incident triage, LLM failures, publish audit.
+    No auto-fix. No automation execution. Sample-based where noted.
+  </p>
+  {% if diagnostics.meta %}
+  <p class="field-help">
+    Limits: publish {{ diagnostics.meta.sample_limits.publish_runs }},
+    stale RC scan {{ diagnostics.meta.sample_limits.stale_rc_scan }},
+    LLM failures {{ diagnostics.meta.sample_limits.llm_failures }}.
+    {{ diagnostics.meta.access_note }}
+  </p>
+  {% endif %}
+</div>
+
+
+<div class="panel">
+  <h2>Runtime authority (read-only)</h2>
+  <p class="field-help">Что реально enforced в коде vs governance-only / decorative. Canonical: <code>docs/governance/ENFORCEMENT_MATRIX.md</code>.</p>
+  {% if diagnostics.authority_boundaries %}
+  <table class="table table-compact">
+    <thead><tr><th>Domain</th><th>Authority</th><th>Surface</th></tr></thead>
+    <tbody>
+      {% for d in diagnostics.authority_boundaries.domains %}
+      <tr>
+        <td><code>{{ d.id }}</code><br><small>{{ d.label }}</small></td>
+        <td><span class="badge {% if d.authority == 'runtime_enforced' %}status-done{% elif d.authority == 'dangerous_by_design' %}status-error{% elif d.authority == 'deprecated' %}status-failed_retryable{% elif d.authority == 'decorative' %}field-help{% else %}status-queued{% endif %}">{{ d.authority }}</span></td>
+        <td><small>{{ d.surface }}</small></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+{% if diagnostics.invariant_consistency %}
+<div class="panel {% if diagnostics.invariant_consistency.issue_count %}warn-box{% endif %}">
+  <h2>Invariant consistency (sample)</h2>
+  <p class="field-help">Invalid or risky states detected — visibility only. trust_level: <strong>{{ diagnostics.invariant_consistency.trust_level_semantics }}</strong></p>
+  {% if diagnostics.invariant_consistency.stale_approved_rc_count %}
+  <p class="warn-box"><strong>Stale approved RC:</strong> {{ diagnostics.invariant_consistency.stale_approved_rc_count }} — approve/publish blocked; create new RC.</p>
+  {% endif %}
+  {% if diagnostics.invariant_consistency.issues %}
+  <ul>{% for i in diagnostics.invariant_consistency.issues %}
+    <li><span class="badge {% if i.severity == 'critical' %}status-error{% else %}status-failed_retryable{% endif %}">{{ i.severity }}</span>
+      <code>{{ i.id }}</code> ({{ i.authority }}) — {{ i.message }}
+      {% if i.action %}<br><small>→ {{ i.action }}</small>{% endif %}
+    </li>
+  {% endfor %}</ul>
+  {% else %}<p class="ok-box">No consistency issues in current sample.</p>{% endif %}
+</div>
+{% endif %}
+
+
+{% if diagnostics.incident_triage %}
+<div class="panel warn-box">
+  <h2>Incident triage (read-only)</h2>
+  <p>Queue pressure: <strong>{{ diagnostics.incident_triage.queue_pressure }}</strong>
+    ?? failed_retryable tasks: <strong>{{ diagnostics.incident_triage.failed_retryable_tasks }}</strong>
+    ?? stale running: <strong>{{ diagnostics.incident_triage.stale_running_count }}</strong>
+  </p>
+  {% if diagnostics.incident_triage.top_current_risks %}
+  <h3>Top current risks</h3>
+  <ul>
+    {% for r in diagnostics.incident_triage.top_current_risks %}
+    <li><span class="badge {% if r.severity == 'critical' %}status-error{% elif r.severity == 'warning' %}status-failed_retryable{% endif %}">{{ r.severity }}</span>
+      <code>{{ r.id }}</code> ??? {{ r.message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if diagnostics.incident_triage.recent_publish_failures %}
+  <h3>Recent publish failures (sample)</h3>
+  <ul>{% for f in diagnostics.incident_triage.recent_publish_failures %}
+    <li>run #{{ f.id }} doc #{{ f.document_id }} ??? {{ f.status }} ??? {{ (f.error_message or '')[:80] }}</li>
+  {% endfor %}</ul>
+  {% endif %}
+  {% if diagnostics.incident_triage.recent_llm_failures %}
+  <h3>Recent LLM failures (sample)</h3>
+  <ul>{% for f in diagnostics.incident_triage.recent_llm_failures %}
+    <li>#{{ f.id }} {{ f.model_alias }} ??? {{ (f.error_message or '')[:80] }}</li>
+  {% endfor %}</ul>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if diagnostics.governance_drift %}
+<div class="panel">
+  <h2>Governance / runtime drift</h2>
+  <p class="field-help">Visibility only ??? operator must act manually.</p>
+  <ul>
+    {% for w in diagnostics.governance_drift %}
+    <li class="{% if w.severity == 'critical' %}warn-box{% elif w.severity == 'warning' %}field-help{% endif %}">
+      <span class="badge {% if w.severity == 'critical' %}status-error{% elif w.severity == 'warning' %}status-failed_retryable{% endif %}">{{ w.severity }}</span>
+      <code>{{ w.id }}</code> ??? {{ w.message }}
+      {% if w.enforcement %}<br><small>enforcement: {{ w.enforcement }}</small>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>Feature flags (safe booleans)</h2>
+  <table class="table table-compact">
+    <thead><tr><th>Flag</th><th>Enabled</th></tr></thead>
+    <tbody>
+      {% for k, v in diagnostics.feature_flags.items() %}
+      <tr><td><code>{{ k }}</code></td><td>{{ '????' if v else '??????' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="panel">
+  <h2>Queue / backlog</h2>
+  <p class="field-help">{{ diagnostics.queue.sample_note }}</p>
+  <p>Pressure: <span class="badge {% if diagnostics.queue.backlog_pressure == 'high' %}status-error{% elif diagnostics.queue.backlog_pressure == 'medium' %}status-failed_retryable{% else %}status-done{% endif %}">{{ diagnostics.queue.backlog_pressure }}</span></p>
+  <ul>
+    <li>Scraping queued: <strong>{{ diagnostics.queue.scraping_tasks.queued }}</strong>
+      {% if diagnostics.queue.scraping_tasks.oldest_queued_age_seconds %} (oldest {{ diagnostics.queue.scraping_tasks.oldest_queued_age_seconds }}s){% endif %}
+    </li>
+    <li>Scraping running: <strong>{{ diagnostics.queue.scraping_tasks.running }}</strong></li>
+    <li>failed_retryable: <strong>{{ diagnostics.queue.scraping_tasks.failed_retryable }}</strong></li>
+    <li>stale running: <strong>{{ diagnostics.queue.scraping_tasks.stale_running_count }}</strong></li>
+  </ul>
+  <p><a class="btn" href="/admin/failed-items">???????? ?? ????????????????</a></p>
+</div>
+
+{% if diagnostics.llm %}
+<div class="panel">
+  <h2>LLM / CLIProxy failures (sample)</h2>
+  <p class="field-help">{{ diagnostics.llm.cliproxy_note }} Window: {{ diagnostics.llm.window_hours }}h.
+    Failed 24h: <strong>{{ diagnostics.llm.failed_count_24h }}</strong>.
+    Rate-limit hints: <strong>{{ diagnostics.llm.rate_limit_hint_count }}</strong>.</p>
+  {% if diagnostics.llm.recent_failures %}
+  <table class="table table-compact">
+    <thead><tr><th>ID</th><th>Alias</th><th>Error</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for f in diagnostics.llm.recent_failures %}
+      <tr>
+        <td><a href="/admin/llm-runs">#{{ f.id }}</a></td>
+        <td><code>{{ f.model_alias }}</code></td>
+        <td class="url">{{ (f.error_message or '???')[:100] }}</td>
+        <td>{{ f.created_at or '???' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p>No recent failures in sample.</p>{% endif %}
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>Publish diagnostics (CRMFlow24 draft)</h2>
+  <p class="field-help">{{ diagnostics.publish.note }} {{ diagnostics.publish.sample_note }}</p>
+  <div class="scroll-x">
+  <table class="table table-compact">
+    <thead><tr><th>ID</th><th>Doc</th><th>Path</th><th>Status</th><th>Rev</th><th>Force</th></tr></thead>
+    <tbody>
+      {% for r in diagnostics.publish.recent_runs %}
+      <tr>
+        <td><a href="/admin/documents/{{ r.document_id }}#publish">#{{ r.id }}</a></td>
+        <td>#{{ r.document_id }}</td>
+        <td><code>{{ r.path }}</code></td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td>#{{ r.revision_number or '???' }}{% if r.revision_stale_binding %} stale{% endif %}</td>
+        <td>{% if r.force_used %}????{% else %}??????{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p><a class="btn" href="/admin/publish-runs">?????? publish runs</a></p>
+</div>
+
+<div class="panel">
+  <h2>Project trust <span class="badge field-help">decorative — not automation permission</span></h2>
+  <p class="field-help">{{ diagnostics.trust.automation_note }}</p>
+  <table class="table table-compact">
+    <thead><tr><th>ID</th><th>Slug</th><th>Trust</th></tr></thead>
+    <tbody>
+      {% for p in diagnostics.trust.projects %}
+      <tr>
+        <td><a href="/admin/projects/{{ p.id }}/edit">#{{ p.id }}</a></td>
+        <td><code>{{ p.slug }}</code></td>
+        <td>L{{ p.trust_level }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if diagnostics.operational_history %}
+<div class="panel">
+  <h2>Operational history (bounded snapshots)</h2>
+  <p class="field-help">
+    Sample-based trend memory ??? not Prometheus/realtime. Total snapshots: <strong>{{ diagnostics.operational_history.snapshot_total }}</strong>.
+    Retention: {{ diagnostics.operational_history.retention.max_days }}d / max {{ diagnostics.operational_history.retention.max_rows }} rows.
+  </p>
+
+  {% if diagnostics.operational_history.incident_memory.episodes %}
+  <h3>Incident memory (episodes)</h3>
+  <ul>
+    {% for ep in diagnostics.operational_history.incident_memory.episodes[:10] %}
+    <li><code>{{ ep.captured_at }}</code> ??? {{ ep.summary }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}<p>No recorded episodes in retention window.</p>{% endif %}
+
+  <h3>Queue trends</h3>
+  <p>{{ diagnostics.operational_history.queue_trends.sample_note }}</p>
+  {% if diagnostics.operational_history.queue_trends.points %}
+  <p>Latest pressure: <strong>{{ diagnostics.operational_history.queue_trends.latest_pressure }}</strong>
+    ?? ?? queued: {{ diagnostics.operational_history.queue_trends.delta.queued }}
+    ?? ?? failed_retryable: {{ diagnostics.operational_history.queue_trends.delta.failed_retryable }}</p>
+  <table class="table table-compact">
+    <thead><tr><th>Time</th><th>Queued</th><th>Running</th><th>Failed R</th><th>Stale</th><th>Pressure</th></tr></thead>
+    <tbody>
+      {% for p in diagnostics.operational_history.queue_trends.points[-12:] %}
+      <tr>
+        <td><small>{{ p.at }}</small></td>
+        <td>{{ p.queued }}</td><td>{{ p.running }}</td><td>{{ p.failed_retryable }}</td>
+        <td>{{ p.stale_running }}</td><td>{{ p.pressure }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h3>LLM failure trends</h3>
+  <p>{{ diagnostics.operational_history.llm_trends.sample_note }}
+    Degradation window: {% if diagnostics.operational_history.llm_trends.degradation_window %}<span class="badge status-failed_retryable">yes</span>{% else %}<span class="badge status-done">no</span>{% endif %}
+  </p>
+
+  <h3>Drift history (recurring)</h3>
+  <p>{{ diagnostics.operational_history.drift_history.sample_note }}</p>
+  {% if diagnostics.operational_history.drift_history.recurring_warnings %}
+  <ul>{% for r in diagnostics.operational_history.drift_history.recurring_warnings %}
+    <li><code>{{ r.drift_id }}</code> ??? {{ r.occurrences }}?? in window</li>
+  {% endfor %}</ul>
+  {% endif %}
+</div>
+{% endif %}
+
+
+{% if diagnostics.incident_history and diagnostics.incident_history.recent %}
+<div class="panel">
+  <h2>Incident history (bounded DB)</h2>
+  <p class="field-help">Persistent lightweight incidents — not ticketing. Total: {{ diagnostics.incident_history.total }}.
+    Retention: {{ diagnostics.incident_history.retention_days }}d / max {{ diagnostics.incident_history.max_rows }}.</p>
+  <table class="table table-compact">
+    <thead><tr><th>Time</th><th>Kind</th><th>Severity</th><th>Summary</th></tr></thead>
+    <tbody>
+      {% for i in diagnostics.incident_history.recent[:15] %}
+      <tr>
+        <td><small>{{ i.created_at }}</small></td>
+        <td><code>{{ i.kind }}</code></td>
+        <td><span class="badge {% if i.severity == 'critical' %}status-error{% elif i.severity == 'warning' %}status-failed_retryable{% else %}status-done{% endif %}">{{ i.severity }}</span></td>
+        <td>{{ i.summary }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if diagnostics.recovery_playbook and diagnostics.recovery_playbook.scenarios %}
+<div class="panel">
+  <h2>Recovery playbook (read-only)</h2>
+  <p class="field-help">Подсказки для оператора — без автоматического retry.</p>
+  {% for s in diagnostics.recovery_playbook.scenarios %}
+  <div class="help-block" style="margin-bottom:0.75rem">
+    <strong>{{ s.title }}</strong>
+    <ol>{% for step in s.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+    {% if s.link %}<a class="btn" href="{{ s.link }}">Перейти</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if diagnostics.operational_history.snapshot_comparison and diagnostics.operational_history.snapshot_comparison.available %}
+<div class="panel">
+  <h3>Snapshot comparison (latest vs previous)</h3>
+  <p>Δ queued: {{ diagnostics.operational_history.snapshot_comparison.delta.queue_queued }}
+    · Δ failed_retryable: {{ diagnostics.operational_history.snapshot_comparison.delta.queue_failed_retryable }}
+    · Δ llm_failed_24h: {{ diagnostics.operational_history.snapshot_comparison.delta.llm_failed_24h }}</p>
+  {% if diagnostics.operational_history.snapshot_comparison.pressure_changed %}
+  <p class="warn-box">Backlog pressure changed: {{ diagnostics.operational_history.snapshot_comparison.previous_pressure }} → {{ diagnostics.operational_history.snapshot_comparison.current_pressure }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if diagnostics.runtime_hygiene %}
+<div class="panel">
+  <h2>Runtime hygiene</h2>
+  <p class="field-help">Visibility only. Git clean: <strong>{{ diagnostics.runtime_hygiene.git.clean }}</strong>
+    · tmp artifacts: {{ diagnostics.runtime_hygiene.tmp_artifact_count }}
+    · snapshots: {{ diagnostics.runtime_hygiene.operational_tables.snapshots }}
+    · incidents: {{ diagnostics.runtime_hygiene.operational_tables.incidents }}</p>
+  {% if diagnostics.runtime_hygiene.tmp_artifacts %}
+  <ul>{% for t in diagnostics.runtime_hygiene.tmp_artifacts %}<li><code>{{ t }}</code></li>{% endfor %}</ul>
+  {% endif %}
+  <p><small>{{ diagnostics.runtime_hygiene.git.hint }}</small></p>
+</div>
+{% endif %}
+
+
+{% endblock %}

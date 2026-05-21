@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.pipeline_states import PipelineStage
 from app.llm.schemas import RewriteRequest, RewriteResponse
 from app.models.parsed_document import ParsedDocument
+from app.services.human_override_service import mark_operator_touched
 from app.models.scraping_task import ScrapingTask
 from app.rewriters.mock_rewriter import MockRewriter
 from app.services.llm_tasks import execute_rewrite
@@ -104,6 +105,7 @@ def rerun_rewrite_for_document(db: Session, document_id: int) -> RewriteStageRes
     document = db.get(ParsedDocument, document_id)
     if not document:
         raise ValueError(f"Document {document_id} not found")
+    mark_operator_touched(db, document_id, operator="rerun_rewrite")
     if not document.clean_text:
         raise ValueError("Document has no clean_text to rewrite")
 

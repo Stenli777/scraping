@@ -10,6 +10,25 @@ from app.models.parsed_document import ParsedDocument
 from app.models.seo_metadata import SeoMetadata
 
 
+from app.publishers.exceptions import PublishValidationError
+
+
+def validate_revision_current_for_publish(
+    db: Session,
+    document_id: int,
+    revision: DocumentRevision,
+) -> None:
+    """Block publish when revision is not the document latest (governance C4/P4)."""
+    latest = get_latest_revision(db, document_id)
+    if latest and revision and latest.id != revision.id:
+        raise PublishValidationError(
+            f"Revision #{revision.revision_number} is stale; "
+            f"latest is #{latest.revision_number}. "
+            "Create a new release candidate or re-run QA on the latest revision."
+        )
+
+
+
 def _seo_snapshot(seo: SeoMetadata | None) -> dict | None:
     if not seo:
         return None

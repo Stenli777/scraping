@@ -4,6 +4,8 @@
   <p class="page-subtitle">Сводка pipeline: задачи, discovery, сбои и последние события.</p>
 </div>
 
+<p class="field-help">Authority map & invariant checks: <a href="/admin/diagnostics">Diagnostics</a> (runtime_enforced vs governance-only vs decorative).</p>
+
 <div class="panel workflow-panel">
   <h2>С чего начать</h2>
   <p class="field-help">Короткий маршрут от URL до публикации. Основные действия идут слева направо: импорт → discovery → редактура → релиз-кандидат → публикация. Подробнее — <code>docs/admin-operator-workflow.md</code> в репозитории.</p>
@@ -58,6 +60,18 @@
     </li>
   </ol>
   <p class="field-help">Если что-то зависло или упало — откройте <a href="/admin/failed-items">Сбои и зависшие</a>.</p>
+</div>
+
+
+<div class="panel">
+  <h2>?????????????? / backlog</h2>
+  <p>????????????????: <span class="badge {% if queue_summary.backlog_pressure == 'high' %}status-error{% elif queue_summary.backlog_pressure == 'medium' %}status-failed_retryable{% else %}status-done{% endif %}">{{ queue_summary.backlog_pressure }}</span>
+    <a class="btn btn-secondary" href="/admin/diagnostics">?????????????????? ??????????????????????</a></p>
+  <ul class="stat-list">
+    <li>Scraping queued: <strong>{{ queue_summary.scraping_tasks.queued }}</strong> ?? running: <strong>{{ queue_summary.scraping_tasks.running }}</strong></li>
+    <li>Scraping stale: <strong>{{ queue_summary.scraping_tasks.stale_running_count }}</strong></li>
+    <li>Enrichment queued: <strong>{{ queue_summary.enrichment_jobs.queued }}</strong> ?? running: <strong>{{ queue_summary.enrichment_jobs.running }}</strong></li>
+  </ul>
 </div>
 
 <div class="stats-grid">

@@ -21,6 +21,7 @@ class Project(Base):
     publish_mode: Mapped[str] = mapped_column(String(32), default="draft")
     minimum_review_score_for_publish: Mapped[int] = mapped_column(Integer, default=60)
     require_review_take_for_publish: Mapped[bool] = mapped_column(Boolean, default=True)
+    trust_level: Mapped[int] = mapped_column(Integer, default=0)
 
     content_rules_md: Mapped[str | None] = mapped_column(Text, nullable=True)
     rewrite_instructions_md: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -30,6 +30,11 @@ CHECKS_DEFAULT = [
     "check_pipeline.py",
     "check_media.py",
     "check_publish.py",
+    "check_governance_invariants.py",
+    "check_runtime_diagnostics.py",
+    "check_operational_history.py",
+    "check_operational_incidents.py",
+    "check_runtime_cohesion.py",
     "check_scheduler.py",
     "check_pilots.py",
 ]

@@ -37,6 +37,9 @@ class ParsedDocument(Base):
     operator_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     approved_for_publish: Mapped[bool] = mapped_column(Boolean, default=False)
     current_revision_number: Mapped[int] = mapped_column(Integer, default=0)
+    operator_touched: Mapped[bool] = mapped_column(Boolean, default=False)
+    operator_touched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    operator_touched_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

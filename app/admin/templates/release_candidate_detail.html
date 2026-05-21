@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
+{% if op_error %}
+<div class="warn-box"><strong>Операция отклонена:</strong> {{ op_error }}</div>
+{% endif %}
 {% set publish_ok = not detail.blocking_issues %}
 <div class="page-header">
   <p class="page-subtitle">Карточка RC: QA, проверка черновика, публикация. Документ <a href="/admin/documents/{{ detail.document_id }}">#{{ detail.document_id }}</a>, ревизия #{{ detail.revision_number }}{% if detail.revision_stale %} <span class="warn-box">устарела</span>{% endif %}.</p>
@@ -28,6 +31,8 @@
       <h3>Следующий шаг</h3>
       {% if detail.blocking_issues %}
       <p class="warn-box">Сначала устраните блокирующие проблемы ниже. Публикация не готова.</p>
+      {% elif detail.revision_stale %}
+      <p class="warn-box"><strong>Ревизия устарела.</strong> Одобрение и публикация заблокированы. Создайте новый RC на карточке документа после rerun.</p>
       {% elif detail.qa_score is none %}
       <p>Запустите QA в блоке «Действия с релиз-кандидатом», затем проверьте блокировки.</p>
       {% elif not draft_review.draft_url %}
@@ -74,10 +79,18 @@
 <section class="panel stacked-actions" id="rc-actions">
   <h2>Действия с релиз-кандидатом</h2>
   <p class="field-help">QA и одобрение — до публикации. Отклонение необратимо с точки зрения workflow.</p>
+  {% if detail.revision_stale %}
+  <p class="warn-box">Действия approve/publish отключены: snapshot ревизии устарел относительно документа.</p>
+  {% endif %}
   <div class="btn-row">
     <form method="post" action="/admin/release-candidates/{{ detail.id }}/run-qa" style="display:inline"><button class="btn" type="submit">Запустить QA</button></form>
+    {% if not detail.revision_stale %}
     <form method="post" action="/admin/release-candidates/{{ detail.id }}/approve" style="display:inline"><button class="btn" type="submit">Одобрить</button></form>
     <form method="post" action="/admin/release-candidates/{{ detail.id }}/publish-draft" style="display:inline"><button class="btn primary" type="submit">Опубликовать черновик</button></form>
+    {% else %}
+    <button class="btn" type="button" disabled title="Ревизия устарела">Одобрить (заблокировано)</button>
+    <button class="btn primary" type="button" disabled title="Ревизия устарела">Опубликовать (заблокировано)</button>
+    {% endif %}
   </div>
   <div class="danger-zone panel">
     <h3>Опасные действия</h3>

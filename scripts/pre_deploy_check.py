@@ -24,6 +24,12 @@ def main() -> int:
 
     ok = git_clean()
     check("git_clean", ok)
+    if not ok:
+        from repo_checks import git_dirty_summary
+
+        s = git_dirty_summary()
+        print(f"       dirty: {s['changed_files']} files (mod ~{s['modified']}, untracked ~{s['untracked']})")
+        print(f"       {s['hint']}")
     failed += 0 if ok else 1
 
     tmp = find_tmp_artifacts()

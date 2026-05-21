@@ -1,6 +1,6 @@
 # Scrap — content scraping pipeline
 
-Production-ready сервис для парсинга, очистки, рерайта и экспорта контента.
+Manual-first production pipeline: scrape, parse, rewrite (CLIProxy), editorial/RC, draft publish to CRMFlow24. **Not** a fully autonomous content platform (automation/Stage 5 off by default).
 
 - **Путь на сервере:** `/opt/scrap`
 - **Домен:** `https://scrap.crmflow24.ru`
@@ -36,4 +36,8 @@ alembic upgrade head
 
 ## Документация
 
-См. каталог [`docs/`](docs/).
+См. каталог [`docs/`](docs/) и индекс [`docs/README.md`](docs/README.md).
+
+**Roadmap:** [`docs/ROADMAP.md`](docs/ROADMAP.md) — canonical execution map (phases, tracks, next tasks).
+
+**Governance:** [`docs/governance/`](docs/governance/) — политики; см. [`docs/CONSOLIDATION_INVENTORY.md`](docs/CONSOLIDATION_INVENTORY.md) для честной карты enforcement vs decorative.

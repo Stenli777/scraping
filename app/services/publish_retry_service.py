@@ -126,6 +126,7 @@ def retry_publish_run(db: Session, publish_run_id: int) -> PublishRetryResult:
         publish_target_id=parent.publish_target_id,
         dry_run=parent.dry_run,
         force=parent.force_used,
+        force_reason=parent.force_reason,
         retry_parent_publish_run_id=parent.id,
         retry_count=parent.retry_count + 1,
     )

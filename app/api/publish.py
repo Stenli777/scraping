@@ -24,6 +24,7 @@ class PublishDraftRequest(BaseModel):
     publish_target_id: int | None = None
     dry_run: bool | None = None
     force: bool = False
+    force_reason: str | None = None
 
 
 def _serialize_publish_run(db: Session, r: PublishRun) -> dict:
@@ -39,6 +40,7 @@ def _serialize_publish_run(db: Session, r: PublishRun) -> dict:
         "status": r.status,
         "dry_run": r.dry_run,
         "force_used": r.force_used,
+        "force_reason": r.force_reason,
         "payload_version": r.payload_version,
         "response_schema_version": r.response_schema_version,
         "response_status_code": r.response_status_code,
@@ -157,6 +159,12 @@ def api_publish_draft(
 
     payload = body or PublishDraftRequest()
 
+    if payload.force and not (payload.force_reason or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="force=true requires non-empty force_reason",
+        )
+
     if not payload.force:
         readiness = get_publish_readiness(
             db, document_id, publish_target_id=payload.publish_target_id
@@ -174,6 +182,7 @@ def api_publish_draft(
             publish_target_id=payload.publish_target_id,
             dry_run=payload.dry_run,
             force=payload.force,
+            force_reason=payload.force_reason,
         )
     except PublishValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -197,6 +206,7 @@ def api_publish_draft(
         "status": result.status,
         "dry_run": result.dry_run,
         "force": payload.force,
+        "force_reason": payload.force_reason if payload.force else None,
         "external_id": result.external_id,
         "draft_url": result.draft_url,
         "error_message": result.error_message,

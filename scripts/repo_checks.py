@@ -76,6 +76,22 @@ def git_clean() -> bool:
     return "nothing to commit" in _git("status") or not _git("status --porcelain").strip()
 
 
+def git_dirty_summary() -> dict[str, int | str]:
+    """Actionable summary for pre-deploy / ops hygiene."""
+    porcelain = _git("status", "--porcelain").strip().splitlines()
+    modified = sum(1 for ln in porcelain if ln.startswith(" M") or ln.startswith("M "))
+    untracked = sum(1 for ln in porcelain if ln.startswith("??"))
+    return {
+        "dirty": bool(porcelain),
+        "changed_files": len(porcelain),
+        "modified": modified,
+        "untracked": untracked,
+        "branch": git_branch(),
+        "head": git_head(),
+        "hint": "On hermes: review git status, commit deploy bundle, or stash WIP before smoke git_clean.",
+    }
+
+
 def git_branch() -> str:
     return _git("branch", "--show-current").strip() or "unknown"
 

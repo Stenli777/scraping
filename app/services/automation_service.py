@@ -455,7 +455,11 @@ def _run_pipeline_progression(db: Session, rule, cfg, run, affected) -> None:
     )
     if rule.project_id:
         q = q.where(ScrapingTask.project_id == rule.project_id)
-    candidates = [d for d in db.scalars(q).all() if not get_latest_quality_score(db, d.id)][:max_docs]
+    candidates = [
+        d
+        for d in db.scalars(q).all()
+        if not get_latest_quality_score(db, d.id) and not d.operator_touched
+    ][:max_docs]
     set_progress(run, current_step="quality_review", processed=0, total=len(candidates))
     touch_run_heartbeat(db, run)
     db.commit()

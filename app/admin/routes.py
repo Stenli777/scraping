@@ -103,6 +103,13 @@ from app.services.task_service import (
     reset_stale_running_task,
 )
 
+
+def _admin_op_error_redirect(path: str, message: str) -> RedirectResponse:
+    from urllib.parse import quote
+
+    sep = "&" if "?" in path else "?"
+    return RedirectResponse(f"{path}{sep}op_error={quote(message[:500])}", status_code=303)
+
 router = APIRouter(tags=["admin"])
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
@@ -110,6 +117,8 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 @router.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     stats = get_dashboard_stats(db)
+    from app.services.runtime_diagnostics_service import build_queue_summary
+    queue_summary = build_queue_summary(db)
     recent_tasks = list_tasks(db, limit=15)
     return templates.TemplateResponse(
         request,
@@ -117,6 +126,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
         {
             "request": request,
             "stats": stats,
+            "queue_summary": queue_summary,
             "recent_tasks": recent_tasks,
             "title": "Обзор",
         },
@@ -125,6 +135,8 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/admin/failed-items", response_class=HTMLResponse)
 def admin_failed_items(request: Request, db: Session = Depends(get_db)):
+    from app.services.runtime_diagnostics_service import build_recovery_playbook
+
     items = get_failed_items(db)
     stale = list_stale_running_tasks(db)
     targets = {tgt.id: tgt for tgt in db.query(PublishTarget).all()}
@@ -132,6 +144,7 @@ def admin_failed_items(request: Request, db: Session = Depends(get_db)):
         r.id: publish_failure_kind(r, targets.get(r.publish_target_id))
         for r in items.get("failed_publish_runs", [])
     }
+    recovery = build_recovery_playbook(db)
     return templates.TemplateResponse(
         request,
         "failed_items.html",
@@ -140,6 +153,7 @@ def admin_failed_items(request: Request, db: Session = Depends(get_db)):
             "items": items,
             "stale_tasks": stale,
             "publish_failure_kinds": publish_failure_kinds,
+            "recovery": recovery,
             "title": "Сбои и зависшие",
         },
     )
@@ -301,6 +315,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             )
     timeline = build_document_timeline(db, document)
     revision_count = document.current_revision_number or 0
+    op_error = request.query_params.get("op_error")
     return templates.TemplateResponse(
         request,
         "document_detail.html",
@@ -332,6 +347,7 @@ def admin_document_detail(document_id: int, request: Request, db: Session = Depe
             "pipeline_summary": pipeline_summary,
             "timeline": timeline,
             "revision_count": revision_count,
+            "op_error": op_error,
             "feature_flags": all_flags(),
             "settings": get_settings(),
             "title": f"Документ #{document_id}",
@@ -445,15 +461,35 @@ def admin_publish_draft(
     publish_target_id: int = Form(...),
     dry_run: str | None = Form(None),
     force: str | None = Form(None),
+    force_reason: str = Form(""),
+    force_confirm: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
-    publish_draft_for_document(
-        db,
-        document_id,
-        publish_target_id=publish_target_id,
-        dry_run=dry_run == "on",
-        force=force == "on",
-    )
+    from app.publishers.exceptions import PublishValidationError
+
+    use_force = force == "on"
+    if use_force and force_confirm != "on":
+        return _admin_op_error_redirect(
+            f"/admin/documents/{document_id}#publish",
+            "Force publish requires confirmation checkbox",
+        )
+    try:
+        result = publish_draft_for_document(
+            db,
+            document_id,
+            publish_target_id=publish_target_id,
+            dry_run=dry_run == "on",
+            force=use_force,
+            force_reason=force_reason.strip() or None,
+        )
+        if not result.success:
+            msg = result.error_message or "Publish failed"
+            db.rollback()
+            return _admin_op_error_redirect(f"/admin/documents/{document_id}#publish", msg)
+        db.commit()
+    except PublishValidationError as exc:
+        db.rollback()
+        return _admin_op_error_redirect(f"/admin/documents/{document_id}#publish", str(exc))
     return RedirectResponse(f"/admin/documents/{document_id}#publish", status_code=303)
 
 
@@ -481,7 +517,13 @@ def admin_publish_targets(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/admin/publish-runs", response_class=HTMLResponse)
 def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
+    from app.models.document_revision import DocumentRevision
     runs = db.query(PublishRun).order_by(PublishRun.id.desc()).limit(100).all()
+    revision_numbers = {}
+    for r in runs:
+        if r.document_revision_id:
+            rev = db.get(DocumentRevision, r.document_revision_id)
+            revision_numbers[r.id] = rev.revision_number if rev else None
     retryable = {r.id: is_retryable_publish_run(r) for r in runs}
     chains = {r.id: get_retry_chain(db, r.id) for r in runs[:30]}
     targets = {t.id: t for t in db.query(PublishTarget).all()}
@@ -497,6 +539,7 @@ def admin_publish_runs(request: Request, db: Session = Depends(get_db)):
             "retryable": retryable,
             "chains": chains,
             "failure_kinds": failure_kinds,
+            "revision_numbers": revision_numbers,
             "title": "Запуски публикации",
         },
     )
@@ -731,6 +774,24 @@ def admin_analytics(request: Request, db: Session = Depends(get_db)):
         },
     )
 
+
+
+
+@router.get("/admin/diagnostics", response_class=HTMLResponse)
+def admin_diagnostics(request: Request, db: Session = Depends(get_db)):
+    from app.services.runtime_diagnostics_service import build_runtime_diagnostics
+
+    diagnostics = build_runtime_diagnostics(db)
+    db.commit()
+    return templates.TemplateResponse(
+        request,
+        "diagnostics.html",
+        {
+            "request": request,
+            "diagnostics": diagnostics,
+            "title": "?????????????????????? runtime",
+        },
+    )
 
 @router.get("/admin/operations", response_class=HTMLResponse)
 def admin_operations(request: Request, db: Session = Depends(get_db)):
@@ -1319,28 +1380,42 @@ def admin_release_candidate_detail(candidate_id: int, request: Request, db: Sess
         ctx = _load_draft_review_context(db, candidate_id)
     except Exception:
         return RedirectResponse("/admin/release-candidates", status_code=302)
+    op_error = request.query_params.get("op_error")
     return templates.TemplateResponse(
         request,
         "release_candidate_detail.html",
-        {"request": request, "title": f"Release candidate #{candidate_id}", **ctx},
+        {
+            "request": request,
+            "title": f"Release candidate #{candidate_id}",
+            "op_error": op_error,
+            **ctx,
+        },
     )
 
 
 @router.post("/admin/release-candidates/{candidate_id}/run-qa")
 def admin_rc_run_qa(candidate_id: int, db: Session = Depends(get_db)):
-    from app.services.release_candidate_service import run_release_qa
+    from app.services.release_candidate_service import ReleaseCandidateError, run_release_qa
 
-    run_release_qa(db, candidate_id)
-    db.commit()
+    try:
+        run_release_qa(db, candidate_id)
+        db.commit()
+    except ReleaseCandidateError as exc:
+        db.rollback()
+        return _admin_op_error_redirect(f"/admin/release-candidates/{candidate_id}", str(exc))
     return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
 
 
 @router.post("/admin/release-candidates/{candidate_id}/approve")
 def admin_rc_approve(candidate_id: int, db: Session = Depends(get_db)):
-    from app.services.release_candidate_service import approve_release_candidate
+    from app.services.release_candidate_service import ReleaseCandidateError, approve_release_candidate
 
-    approve_release_candidate(db, candidate_id)
-    db.commit()
+    try:
+        approve_release_candidate(db, candidate_id)
+        db.commit()
+    except ReleaseCandidateError as exc:
+        db.rollback()
+        return _admin_op_error_redirect(f"/admin/release-candidates/{candidate_id}", str(exc))
     return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
 
 
@@ -1355,10 +1430,14 @@ def admin_rc_reject(candidate_id: int, db: Session = Depends(get_db)):
 
 @router.post("/admin/release-candidates/{candidate_id}/publish-draft")
 def admin_rc_publish(candidate_id: int, db: Session = Depends(get_db)):
-    from app.services.release_candidate_service import publish_draft_from_candidate
+    from app.services.release_candidate_service import ReleaseCandidateError, publish_draft_from_candidate
 
-    publish_draft_from_candidate(db, candidate_id)
-    db.commit()
+    try:
+        publish_draft_from_candidate(db, candidate_id)
+        db.commit()
+    except ReleaseCandidateError as exc:
+        db.rollback()
+        return _admin_op_error_redirect(f"/admin/release-candidates/{candidate_id}", str(exc))
     return RedirectResponse(f"/admin/release-candidates/{candidate_id}", status_code=303)
 
 

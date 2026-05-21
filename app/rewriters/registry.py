@@ -14,4 +14,7 @@ def get_rewriter(db: Session | None = None) -> BaseRewriter:
         return CLIProxyRewriter(db=db)
     if provider == "mock":
         return MockRewriter()
-    raise ValueError(f"Unknown rewriter provider: {provider}. Use mock or cliproxy.")
+    raise ValueError(
+        f"Unknown rewriter provider: {provider}. Use mock or cliproxy. "
+        "(lm_studio is deprecated and not registered)."
+    )

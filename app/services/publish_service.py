@@ -51,7 +51,10 @@ from app.publishers.versions import is_supported_payload_format
 from app.services.publish_retry_service import compute_next_retry_at, classify_failure
 from app.services.editorial_service import mark_published_draft
 from app.services.quality_service import MAX_SPAM_SCORE, get_latest_quality_score
-from app.services.revision_service import ensure_revision_for_publish
+from app.services.revision_service import (
+    ensure_revision_for_publish,
+    validate_revision_current_for_publish,
+)
 from app.services.media_service import build_media_block_for_publish, get_approved_preview_asset
 from app.services.publication_tracking_service import create_publication_from_publish_run
 from app.services.pipeline_event_service import emit_pipeline_event
@@ -207,6 +210,11 @@ def _validate_preconditions(
     return task, project, seo, review
 
 
+def _validate_force_override(*, force: bool, force_reason: str | None) -> None:
+    if force and not (force_reason or "").strip():
+        raise PublishValidationError("force=true requires non-empty force_reason")
+
+
 def publish_draft_for_document(
     db: Session,
     document_id: int,
@@ -214,6 +222,7 @@ def publish_draft_for_document(
     publish_target_id: int | None = None,
     dry_run: bool | None = None,
     force: bool = False,
+    force_reason: str | None = None,
     retry_parent_publish_run_id: int | None = None,
     retry_count: int = 0,
     document_revision_id: int | None = None,
@@ -241,6 +250,7 @@ def publish_draft_for_document(
         raise PublishValidationError("No publish target configured")
 
     try:
+        _validate_force_override(force=force, force_reason=force_reason)
         task, project, seo, review = _validate_preconditions(
             db, document, target, force=force
         )
@@ -290,6 +300,14 @@ def publish_draft_for_document(
             )
     else:
         revision = ensure_revision_for_publish(db, document)
+    try:
+        validate_revision_current_for_publish(db, document.id, revision)
+    except PublishValidationError as exc:
+        return PublishDraftResult(
+            success=False,
+            error_message=str(exc),
+            validation_error=True,
+        )
     payload = build_publish_payload(
         payload_format,
         document=document,
@@ -354,6 +372,7 @@ def publish_draft_for_document(
         request_payload_json=payload,
         payload_version=payload_format,
         force_used=force,
+        force_reason=(force_reason or "").strip() or None if force else None,
         retry_parent_publish_run_id=retry_parent_publish_run_id,
         retry_count=retry_count,
         release_candidate_id=release_candidate_id,

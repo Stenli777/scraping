@@ -2,13 +2,14 @@
 {% block content %}
 <div class="panel">
   <h2>Publish runs</h2>
+  <p class="field-help">Строки с force обходят review/QC/editorial. Path <code>rc</code> — предпочтительно.</p>
   <p class="warn-box">Draft-only publish audit. Retry chains link parent ? child runs.</p>
 
 <table class="table">
   <thead>
-    <tr>
-      <th>ID</th><th>Doc</th><th>Target</th><th>Payload</th><th>Status</th>
-      <th>Retry</th><th>Remote</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th>
+    <tr{% if r.force_used %} class="force-row"{% endif %}>
+      <th>ID</th><th>Doc</th><th>Path</th><th>Rev</th><th>Target</th><th>Payload</th><th>Status</th>
+      <th>Force</th><th>Retry</th><th>Remote</th><th>External ID</th><th>Draft URL</th><th>Error</th><th>Time</th>
     </tr>
   </thead>
   <tbody>
@@ -19,9 +20,12 @@
         {% if r.retry_parent_publish_run_id %}<br><small>parent #{{ r.retry_parent_publish_run_id }}</small>{% endif %}
       </td>
       <td><a href="/admin/documents/{{ r.document_id }}">#{{ r.document_id }}</a></td>
+      <td><code>{% if r.release_candidate_id %}rc{% else %}direct{% endif %}</code></td>
+      <td>{{ revision_numbers.get(r.id, '???') }}</td>
       <td>{{ r.publish_target_id }}</td>
       <td><code>{{ r.payload_version }}</code>{% if r.response_schema_version %}<br><small>{{ r.response_schema_version }}</small>{% endif %}</td>
       <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+      <td>{% if r.force_used %}<strong>FORCE</strong>{% if r.force_reason %}<br><small>{{ r.force_reason[:50] }}</small>{% endif %}{% else %}??????{% endif %}</td>
       <td>
         {% if failure_kinds.get(r.id) == 'historical_env' %}<span class="badge" title="Историческая ошибка env до настройки токена">historical env</span>{% elif failure_kinds.get(r.id) == 'test_target' %}<span class="badge" title="Тестовая цель / отключена">test target</span>{% endif %}
         {% if retryable.get(r.id) %}<span class="badge status-failed_retryable">retryable</span>{% else %}<span class="badge">terminal</span>{% endif %}
@@ -34,7 +38,7 @@
       <td>{{ r.created_at }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="11">Publish runs ???? ???</td></tr>
+    <tr><td colspan="13">Publish runs ???? ???</td></tr>
     {% endfor %}
   </tbody>
 </table>

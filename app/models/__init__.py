@@ -6,6 +6,8 @@ from app.models.publication_record import PublicationRecord
 from app.models.automation_rule import AutomationRule
 from app.models.automation_run import AutomationRun
 from app.models.scheduler_state import SchedulerState
+from app.models.operational_snapshot import OperationalSnapshot
+from app.models.operational_incident import OperationalIncident
 from app.models.analytics_snapshot import AnalyticsSnapshot
 from app.models.content_performance import ContentPerformance
 from app.models.campaign_document_link import CampaignDocumentLink
@@ -77,6 +79,8 @@ __all__ = [
     "AutomationRule",
     "AutomationRun",
     "SchedulerState",
+    "OperationalSnapshot",
+    "OperationalIncident",
     "ContentCampaign",
     "ContentPilot",
     "ContentPilotItem",
