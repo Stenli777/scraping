@@ -27,7 +27,7 @@
 ## 2026-05-21 — Runtime Determinism & Operational Predictability (J1–J6)
 
 - **Что изменено:** `runtime_predictability_service` — `resolve_replay_verdict` (catalog + operator_action), `normalize_retry_chain`, `build_replay_determinism_report`, `build_consistency_guarantees`, `build_recovery_normalization`, `build_operational_predictability`; diagnostics/publish_runs/integrity UX; smoke `check_runtime_predictability.py`.
-- **Git:** tag `v0.6-runtime-confidence` (см. отчёт).
+- **Git:** `d17e976` (phase), `c511660` (Jinja items fix); tag `v0.6-runtime-confidence` → `c511660` on `master`.
 - **Не делали:** auto-retry, orchestration, metrics platform.
 
 ---
