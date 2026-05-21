@@ -1,0 +1,29 @@
+---
+description: Check governance before automation, publish, or generated content changes
+alwaysApply: true
+---
+
+# Governance-first
+
+Before automation scaling, publish behavior changes, generated content (Stage 5), or orchestration changes:
+
+1. Read `docs/governance/SYSTEM_INVARIANTS.md`
+2. Check `docs/governance/ENFORCEMENT_MATRIX.md` for gaps
+3. Confirm `docs/ROADMAP.md` phase (prefer Phase A alignment before scaling automation)
+4. Assess rollback: `docs/governance/ROLLBACK_POLICY.md`
+
+## Forbidden without explicit approval
+
+- Hidden automation (rules on while ops thinks off)
+- Bypass audit (`llm_runs`, `publish_runs`, revisions)
+- Bypass release candidate + QA on production publish path
+- Auto-public publish from Scrap
+- Autonomous topic/generation loops
+
+## Dangerous changes
+
+- Behind feature flags (default **off**)
+- Kill-switch documented (`ENABLE_AUTOMATION`, `ENABLE_SCHEDULER`, disable rules)
+- Entry in `docs/PROJECT_LOG.md`
+
+Hermes (`/hermes`) and CLIProxyAPI (`/opt/cliproxyapi`) — do not modify without explicit user command.

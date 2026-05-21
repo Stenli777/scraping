@@ -1,0 +1,31 @@
+---
+description: Feature lifecycle documentation for Scrap changes
+alwaysApply: true
+---
+
+# Feature lifecycle
+
+New or risky features require documentation touch (not necessarily new governance files).
+
+## Minimum doc touch
+
+| Item | Where |
+|------|--------|
+| Current vs Target behavior | Canonical policy or ROADMAP |
+| Rollout / phase | `docs/ROADMAP.md` |
+| Governance impact | relevant `docs/governance/*.md` or ENFORCEMENT_MATRIX row |
+| Audit impact | PROVENANCE / AI_POLICY if LLM |
+| Shipped note | `docs/PROJECT_LOG.md` |
+
+## Dangerous features (default)
+
+- Feature flag, default **OFF**
+- Kill-switch path documented
+- Rollback per `docs/governance/ROLLBACK_POLICY.md`
+- No change to pipeline semantics without explicit user request
+
+## Skills
+
+- Governance review: `.cursor/skills/governance-alignment/SKILL.md`
+- Phase A guards: `.cursor/skills/runtime-alignment-change/SKILL.md`
+- Flagged rollout: `.cursor/skills/feature-flagged-change/SKILL.md`

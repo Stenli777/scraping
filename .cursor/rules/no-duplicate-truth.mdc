@@ -1,0 +1,26 @@
+---
+description: Avoid duplicating canonical semantics across Scrap docs
+alwaysApply: true
+---
+
+# No duplicate truth
+
+Do **not** copy full definitions into secondary docs. Link canonical sources (`docs/CANONICAL_OWNERSHIP.md`).
+
+## Do not duplicate
+
+- Queue semantics → `docs/governance/QUEUE_AND_CAPACITY_POLICY.md`
+- Pipeline / entity states → `docs/governance/STATE_MACHINES.md`
+- Publish draft vs public → `docs/governance/PUBLISH_POLICY.md`
+- Trust levels → `docs/governance/TRUST_POLICY.md`
+- Phase execution order → `docs/ROADMAP.md`
+- Shipped stage list → `docs/MASTER_PLAN.md`
+
+## Allowed in secondary docs
+
+- One-line summary + markdown link
+- Context-specific «see also»
+
+## When editing
+
+If content exists in canonical file → add link, do not paste duplicate section.

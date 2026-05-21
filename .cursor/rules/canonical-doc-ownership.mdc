@@ -1,0 +1,40 @@
+---
+description: Canonical doc ownership and conflict resolution for Scrap
+alwaysApply: true
+---
+
+# Canonical documentation ownership
+
+Authority model: `docs/CANONICAL_OWNERSHIP.md`.
+
+## Canonical sources (do not duplicate)
+
+| Domain | Canonical file |
+|--------|----------------|
+| Execution order / phases | `docs/ROADMAP.md` |
+| Shipped stages 4G–4V | `docs/MASTER_PLAN.md` |
+| Architecture | `docs/ARCHITECTURE.md` |
+| State lifecycles | `docs/governance/STATE_MACHINES.md` |
+| Policies / invariants | `docs/governance/*` |
+| Enforcement map | `docs/governance/ENFORCEMENT_MATRIX.md` |
+| Ops history | `docs/PROJECT_LOG.md` (historical, immutable log) |
+| ADR lifecycle | `docs/adr/ADR_LIFECYCLE.md` |
+
+## Conflict resolution order
+
+1. Runtime behavior (code + env on `/opt/scrap`)
+2. Canonical doc for that domain
+3. Governance policy
+4. Secondary references
+5. PROJECT_LOG / historical notes
+
+## Forbidden
+
+- Duplicate runtime truths across multiple docs
+- Duplicate state machine or roadmap definitions (link instead)
+- Treat PROJECT_LOG as current policy
+- Implement from ADR in `proposed` state as if accepted
+
+## On doc changes
+
+Update **canonical source first**, then links/references only.
