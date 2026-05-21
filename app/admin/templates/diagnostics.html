@@ -43,14 +43,14 @@
 </div>
 {% endif %}
 
-{% if diagnostics.replay_determinism and diagnostics.replay_determinism.items %}
+{% if diagnostics.replay_determinism and diagnostics.replay_determinism['items'] %}
 <div class="panel">
   <h2>Replay determinism (sample)</h2>
   <p>Allowed manual retry: {{ diagnostics.replay_determinism.manual_retry_allowed_count }} / {{ diagnostics.replay_determinism.retryable_sample_count }}</p>
   <table class="table table-compact">
     <thead><tr><th>Run</th><th>Verdict</th><th>Action</th></tr></thead>
     <tbody>
-      {% for item in diagnostics.replay_determinism.items[:10] %}
+      {% for item in diagnostics.replay_determinism['items'][:10] %}
       <tr>
         <td>#{{ item.publish_run_id }}</td>
         <td><code>{{ item.verdict.verdict_id }}</code></td>
