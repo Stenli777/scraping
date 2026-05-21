@@ -79,6 +79,7 @@ CANONICAL FOR ENFORCEMENT: governance/ENFORCEMENT_MATRIX.md
 | `operational_snapshots` | Bounded visibility | **Keep** — not metrics platform |
 | `operational_incidents` | Bounded incident memory | **Keep** — Ops Stability F1; not ticketing |
 | `runtime_hygiene_service` | Git/tmp/storage report | **Keep** — ops CLI only |
+| `runtime_authority_service` | Authority catalog in diagnostics | **Keep** — cohesion Phase G; read-only |
 | `projects.trust_level` | Decorative for automation | **Keep** — visibility until ADR-002 engine |
 | Governance 17 files | High doc mass | **Keep** — canonical; sync ENFORCEMENT_MATRIX |
 | `DECISIONS.md` ADR-001..007 | Historical MVP | **Archive label** — see `docs/adr/` for Stage 5 |

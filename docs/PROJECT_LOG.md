@@ -27,7 +27,7 @@
 ## 2026-05-21 — Runtime Cohesion & Boundary Enforcement (G1–G6) + Git tag v0.4-runtime-hardening
 
 - **Что изменено:** G1/G4 — `runtime_authority_service` + `authority_boundaries` в diagnostics (runtime_enforced / governance_only / decorative / deprecated / dangerous); G3 — `invariant_consistency` (stale approved RC sample, flags); G2/G5 — cohesion notes, trust «decorative» labels, удалены дубликаты governance docs в `docs/` root; smoke `check_runtime_cohesion.py`.
-- **Git:** логические коммиты на hermes, push `master`, tag `v0.4-runtime-hardening` (см. отчёт пользователю).
+- **Git:** `2d1310c` runtime, `bfd6e72` docs, `9fad61a` cursor; push `master`; tag `v0.4-runtime-hardening` → `9fad61a`.
 - **Команды:** `compileall`; cohesion/governance/diagnostics smokes PASS.
 - **Не делали:** trust engine, automation on, Stage 5, queue rewrite.
 
